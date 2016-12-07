@@ -6,10 +6,19 @@
 //////////////
 // TYPEDEFS //
 //////////////
+cbuffer LightBuffer
+{
+    float4 ambientColor;
+    float4 diffuseColor;
+    float3 lightDirection;
+    float padding;
+};
+
 struct PixelInputType
 {
     float4 position : SV_POSITION;
     float4 color : COLOR;
+	float3 normal : NORMAL;
 };
 
 
@@ -18,5 +27,31 @@ struct PixelInputType
 ////////////////////////////////////////////////////////////////////////////////
 float4 ColorPixelShader(PixelInputType input) : SV_TARGET
 {
-    return input.color;
+	float4 texColor;
+	float3 lightDir;
+	float lightIntensity;
+	float4 color;
+
+
+	texColor = input.color;
+
+	color = ambientColor;
+	lightDir = -lightDirection;
+
+	// Calculate the amount of light on this pixel.
+    lightIntensity = saturate(dot(input.normal, lightDir));
+
+	// Determine the final amount of diffuse color based on the diffuse color combined with the light intensity.
+	if (lightIntensity > 0.0f)
+	{
+		color += (diffuseColor * lightIntensity);
+	}
+   
+
+   	color = saturate(color);
+
+    // Multiply the texture pixel and the final diffuse color to get the final pixel color result.
+    color = color * texColor;
+
+    return color;
 }

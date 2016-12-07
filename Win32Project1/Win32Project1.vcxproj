@@ -66,6 +66,8 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\physx_debug.props" />
+    <Import Project="..\kinect2_debug.props" />
+    <Import Project="..\opencv_debug.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -155,20 +157,25 @@
     <ClCompile Include="d3dclass.cpp" />
     <ClCompile Include="fontclass.cpp" />
     <ClCompile Include="fontshaderclass.cpp" />
+    <ClCompile Include="GeometryGenerator.cpp" />
     <ClCompile Include="graphicsclass.cpp" />
     <ClCompile Include="inputclass.cpp" />
+    <ClCompile Include="kinectclass.cpp" />
     <ClCompile Include="leapclass.cpp" />
     <ClCompile Include="lightclass.cpp" />
     <ClCompile Include="lightshaderclass.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MathHelper.cpp" />
     <ClCompile Include="modelclass.cpp" />
     <ClCompile Include="nvStereo.cpp" />
     <ClCompile Include="physxclass.cpp" />
+    <ClCompile Include="shapeclass.cpp" />
     <ClCompile Include="systemclass.cpp" />
     <ClCompile Include="terrainclass.cpp" />
     <ClCompile Include="textclass.cpp" />
     <ClCompile Include="textureclass.cpp" />
     <ClCompile Include="textureshaderclass.cpp" />
+    <ClCompile Include="trackerclass.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="3dvisionclass.h" />
@@ -177,20 +184,25 @@
     <ClInclude Include="d3dclass.h" />
     <ClInclude Include="fontclass.h" />
     <ClInclude Include="fontshaderclass.h" />
+    <ClInclude Include="GeometryGenerator.h" />
     <ClInclude Include="graphicsclass.h" />
     <ClInclude Include="colorshaderclass.h" />
     <ClInclude Include="inputclass.h" />
+    <ClInclude Include="kinectclass.h" />
     <ClInclude Include="leapclass.h" />
     <ClInclude Include="lightclass.h" />
     <ClInclude Include="lightshaderclass.h" />
+    <ClInclude Include="MathHelper.h" />
     <ClInclude Include="modelclass.h" />
     <ClInclude Include="nvStereo.h" />
     <ClInclude Include="physxclass.h" />
+    <ClInclude Include="shapeclass.h" />
     <ClInclude Include="systemclass.h" />
     <ClInclude Include="terrainclass.h" />
     <ClInclude Include="textclass.h" />
     <ClInclude Include="textureclass.h" />
     <ClInclude Include="textureshaderclass.h" />
+    <ClInclude Include="trackerclass.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Color.ps">

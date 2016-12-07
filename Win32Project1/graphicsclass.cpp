@@ -21,6 +21,8 @@ GraphicsClass::GraphicsClass()
 	m_Leap = 0;
 	m_Bitmap = 0;
 	m_RenderHand = true;
+	m_Shape = 0;
+	globalFactor = 1;
 }
 
 
@@ -107,8 +109,8 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		return false;
 	}
 	m_Light->SetDirection(0.0f, 0.0f, 1.0f);
-	m_Light->SetDiffuseColor(1.0f, 1.0f, 1.0f,1.0f);
-	m_Light->SetAmbientColor(0.5f, 0.5f, 0.5f, 1.0f);
+	m_Light->SetDiffuseColor(1.0f,1.0f,1.0f,1.0f);
+	m_Light->SetAmbientColor(0.15,0.15,0.15f, 1.0f);
 
 	// Create the model object.
 	m_boxes = new ModelClass;
@@ -139,6 +141,18 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		return false;
 	}
 
+
+	m_Shape = new ShapeClass;
+	if (!m_Shape)
+	{
+		return false;
+	}
+	result = m_Shape->Initialize(m_Direct3D->GetDevice());
+	if(!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the shape object.", L"Error", MB_OK);
+		return false;
+	}
 	// Create the color shader object.
 	m_ColorShader = new ColorShaderClass;
 	if (!m_ColorShader)
@@ -189,12 +203,13 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		return false;
 	}
 
-	m_cylinder = GeometricPrimitive::CreateCylinder(m_Direct3D->GetDeviceContext(),1.0f,1.0f,32Ui64,false);
-	m_palm = GeometricPrimitive::CreateBox(m_Direct3D->GetDeviceContext(), XMFLOAT3(1.0f, 1.0f, 1.0f),false);
+	//m_cylinder = GeometricPrimitive::CreateCylinder(m_Direct3D->GetDeviceContext(),1.0f,1.0f,32Ui64,false);
+	//m_palm = GeometricPrimitive::CreateBox(m_Direct3D->GetDeviceContext(), XMFLOAT3(1.0f, 1.0f, 1.0f),false);
 
 
 	globalZ = 0;
-	globalFOV = 26.6;
+	globalFactor = 1;
+	globalFOV = 21.239;
 
 	StopCalibrate(false);
 	
@@ -259,6 +274,15 @@ void GraphicsClass::ChangeZvalue(float value)
 	}
 }
 
+void GraphicsClass::ChangeSize(float value)
+{
+	if (calibrateMode)
+	{
+		globalFactor += value;
+		m_Leap->clearHand();
+	}
+}
+
 void GraphicsClass::RenderActor()
 {
 	for (int i = 0; i < boxes.size(); i++)
@@ -277,13 +301,32 @@ void GraphicsClass::RenderHand()
 	for (int i = 0; i< mHandlist.size(); i++)
 	{
 		for (int j = 0; j < 5; j++)
-			for (int k = 0; k < 3; k++)
-				RenderCylinder(mHandlist[i].finger_actor[j][k], mHandlist[i].halfHeight[j][k]*2.0, mHandlist[i].fingerWidth[j][k]);
+		{
+			if (j == 0)
+			{
+				for (int k = 2; k < 4; k++)
+					RenderCylinder(mHandlist[i].finger_actor[j][k], mHandlist[i].halfHeight[j][k] * 2.0, mHandlist[i].fingerWidth[j][k]);
 
-		PxVec3 dimension = mHandlist[i].palmDimension;
-		RenderPalm(mHandlist[i].palm, dimension.x, dimension.y, dimension.z);
+				RenderPalm(mHandlist[i].finger_actor[j][1], mHandlist[i].halfHeight[j][1] * 2.0, mHandlist[i].fingerWidth[j][1], mHandlist[i].fingerWidth[j][1]/2.0);
+			}
+			else
+			{
+				for (int k = 1; k < 4; k++)
+					RenderCylinder(mHandlist[i].finger_actor[j][k], mHandlist[i].halfHeight[j][k] * 2.0, mHandlist[i].fingerWidth[j][k]);
+
+				RenderPalm(mHandlist[i].finger_actor[j][0], mHandlist[i].halfHeight[j][0] * 2.0, mHandlist[i].fingerWidth[j][0], mHandlist[i].fingerWidth[j][0]/2.0);
+
+			}
+
+		}
+
+
+		//PxVec3 dimension = mHandlist[i].palmDimension;
+		//RenderPalm(mHandlist[i].palm, dimension.x, dimension.y, dimension.z);
 	}
 }
+
+
 
 void GraphicsClass::RenderBox(PxRigidActor* box, float width, float height, float depth)
 {
@@ -295,6 +338,7 @@ void GraphicsClass::RenderBox(PxRigidActor* box, float width, float height, floa
 	m_Direct3D->GetWorldMatrix(worldMatrix);
 	m_Camera->GetViewMatrix(viewMatrix);
 	m_Direct3D->GetProjectionMatrix(projectionMatrix);
+	
 
 
 	while (nShapes--)
@@ -310,8 +354,10 @@ void GraphicsClass::RenderBox(PxRigidActor* box, float width, float height, floa
 
 		// Render the model using the color shader.
 		m_LightShader->Render(m_Direct3D->GetDeviceContext(), m_boxes->GetIndexCount(), mat, viewMatrix, projectionMatrix, m_boxes->GetTexture(),
-			m_Light->GetDirection(), m_Light->GetDiffuseColor(), m_Light->GetAmbientColor(), m_Camera->GetPosition());
+			m_Light->GetDirection(), m_Light->GetAmbientColor(), m_Light->GetDiffuseColor(), m_Camera->GetPosition());
 	}
+
+	delete[] shapes;
 }
 
 void GraphicsClass::RenderPalm(PxRigidActor* box, float width, float height, float depth)
@@ -336,8 +382,14 @@ void GraphicsClass::RenderPalm(PxRigidActor* box, float width, float height, flo
 		mat = s*r*mat;
 
 		// Put the model vertex and index buffers on the graphics pipeline to prepare them for drawing.
-		m_palm->Draw(mat, viewMatrix, projectionMatrix);
+
+		m_Shape->Render(m_Direct3D->GetDevice());
+		m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(),
+			m_Shape->GetBoxVertexOffset(), mat, viewMatrix, projectionMatrix, m_Light->GetDirection(), m_Light->GetAmbientColor(), m_Light->GetDiffuseColor(),
+			m_Camera->GetPosition());
 	}
+
+	delete[] shapes;
 }
 
 void GraphicsClass::RenderSphere(PxRigidActor* sphere, float radius)
@@ -365,8 +417,10 @@ void GraphicsClass::RenderSphere(PxRigidActor* sphere, float radius)
 
 		// Render the model using the color shader.
 		m_LightShader->Render(m_Direct3D->GetDeviceContext(), m_spheres->GetIndexCount(), mat, viewMatrix, projectionMatrix, m_spheres->GetTexture(),
-			m_Light->GetDirection(), m_Light->GetDiffuseColor(), m_Light->GetAmbientColor(), m_Camera->GetPosition());
+			m_Light->GetDirection(), m_Light->GetAmbientColor(), m_Light->GetDiffuseColor(), m_Camera->GetPosition());
 	}
+
+	delete[] shapes;
 }
 
 void GraphicsClass::CreateBox()
@@ -415,9 +469,14 @@ void GraphicsClass::RenderCylinder(PxRigidActor* cylinder, float height, float r
 		XMMATRIX s = XMMatrixScaling(radius, height, radius);
 		mat = s*r*mat;
 
-		m_cylinder->Draw(mat, viewMatrix, projectionMatrix);
+		m_Shape->Render(m_Direct3D->GetDevice());
+		m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetCylinderIndexCount(), m_Shape->GetCylinderIndexOffset(),
+			m_Shape->GetCylinderVertexOffset(), mat, viewMatrix, projectionMatrix, m_Light->GetDirection(), m_Light->GetAmbientColor(), m_Light->GetDiffuseColor(),
+			m_Camera->GetPosition());
 
 	}
+
+	delete[] shapes;
 }
 
 void GraphicsClass::RenderTerrian()
@@ -433,13 +492,16 @@ void GraphicsClass::RenderTerrian()
 	//XMMATRIX mat = rotat
 
 
-	m_Terrain->Render(m_Direct3D->GetDeviceContext());
-
-	m_ColorShader->Render(m_Direct3D->GetDeviceContext(),m_Terrain->GetIndexCount(), rotate*back, viewMatrix, projectionMatrix, m_Camera->GetPosition());
 
 	m_Terrain->Render(m_Direct3D->GetDeviceContext());
 
-	m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Terrain->GetIndexCount(), slant*back, viewMatrix, projectionMatrix, m_Camera->GetPosition());
+	m_ColorShader->Render(m_Direct3D->GetDeviceContext(),m_Terrain->GetIndexCount(),0,0, rotate*back, viewMatrix, projectionMatrix, m_Light->GetDirection(), m_Light->GetDiffuseColor(), m_Light->GetAmbientColor(),
+		m_Camera->GetPosition());
+
+	m_Terrain->Render(m_Direct3D->GetDeviceContext());
+
+	m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Terrain->GetIndexCount(),0,0, slant*back, viewMatrix, projectionMatrix, m_Light->GetDirection(), m_Light->GetAmbientColor(), m_Light->GetDiffuseColor(),
+		m_Camera->GetPosition());
 
 }
 
@@ -572,6 +634,8 @@ bool GraphicsClass::Render()
 
 
 	// Clear the buffers to begin the scene.
+
+
 	m_Direct3D->BeginScene(0.0f, 0.0f, 0.0f, 1.0f);
 
 	m_3dvision->Render(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(),8.0+globalZ);
@@ -586,12 +650,17 @@ bool GraphicsClass::Render()
 	
 	XMStoreFloat4x4(&proj, projectionMatrix);
 	
-	m_Leap->processFrame(0, 1.5, -8.0, globalZ, proj._11, proj._22);
+	m_Leap->processFrame(0, 1.5, -8.0, globalZ, proj._11, proj._22,globalFactor);
+	m_physx->setHandActor(m_Leap->getHandActor());
+	m_Leap->computeForce(m_physx->getActiveContact());
 
+	m_physx->applyForce(m_Leap->computeForce(m_physx->getActiveContact()));
 
 	m_physx->Render();
 	
 	RenderTerrian();
+
+
 	if(m_RenderHand)
 	RenderHand();
 	RenderActor();

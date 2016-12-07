@@ -21,6 +21,7 @@
 #include "leapclass.h"
 #include "bitmapclass.h"
 #include "textureshaderclass.h"
+#include "shapeclass.h"
 
 #include "GeometricPrimitive.h"
 #include "CommonStates.h"
@@ -34,7 +35,7 @@
 
 using namespace Eigen;
 
-const bool FULL_SCREEN = true;
+const bool FULL_SCREEN = false;
 const bool VSYNC_ENABLED = false;
 const float SCREEN_DEPTH = 100.0f;
 const float SCREEN_NEAR = 0.1f;
@@ -60,6 +61,7 @@ public:
 	void StartCalibrateOtho();
 	void ChangeZvalue(float);
 	void ChangeFOV(float);
+	void ChangeSize(float);
 	void CreateBox();
 	void CreateSphere();
 	bool m_RenderHand;
@@ -107,6 +109,7 @@ private:
 	TextClass* m_Text;
 	LeapClass* m_Leap;
 	BitmapClass* m_Bitmap;
+	ShapeClass* m_Shape;
 
 	XMMATRIX zoffset_matrix;
 
@@ -125,6 +128,7 @@ private:
 	float globalZ;
 	float globalFOV;
 	PxVec3 calibratePosition;
+	float globalFactor;
 
 
 };

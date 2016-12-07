@@ -11,15 +11,18 @@
 #include <PxVisualDebuggerExt.h>
 #include <stdio.h>
 #include <iostream>
+#include <map>
 
 #include <Windows.h>
+#include "leapclass.h"
 
 using namespace physx;
 using namespace std;
 
-class PhysxClass //: public PxSimulationEventCallback
+class PhysxClass : public PxSimulationEventCallback
 {
 public:
+
 	PhysxClass();
 	~PhysxClass();
 	bool Initialize();
@@ -36,8 +39,19 @@ public:
 
 	void removeActor(PxRigidActor* actor);
 	void moveWall(float z_offset);
+	int getActiveHandID();
+	PxRigidDynamic* getActiveActor();
+	std::map<int, PxRigidDynamic*> getActiveContact();
+	void applyForce(std::map<int, PxVec3>);
+	void setHandActor(std::vector<handActor> HandList);
 
-
+	virtual void							onTrigger(PxTriggerPair* pairs, PxU32 count) ;
+	virtual void							onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs) {};
+	virtual void							onConstraintBreak(PxConstraintInfo*, PxU32) {}
+	virtual void							onWake(PxActor**, PxU32) {}
+	virtual void							onSleep(PxActor**, PxU32) {}
+	bool gTouchFound;
+	int gTouchId;
 
 
 private:
@@ -60,8 +74,10 @@ private:
 	PxRigidStatic* moveAbleWall;
 	PxRigidStatic* moveAbleFloor;
 	
-
-
+	std::vector<handActor> mHandList;
+	PxRigidDynamic* activeActor;
+	PxRigidDynamic* activeHand;
+	std::map<int, PxRigidDynamic*> activeContact;
 
 	PxVisualDebuggerConnection* theConnection;
 

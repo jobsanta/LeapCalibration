@@ -47,6 +47,8 @@ public:
 	bool IsEscapePressed();
 	bool IsUpPressed();
 	bool IsDownPressed();
+	bool IsPageDownPressed();
+	bool IsPageUpPressed();
 
 	bool IsLeftPressed();
 	bool IsRightPressed();

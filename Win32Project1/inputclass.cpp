@@ -352,6 +352,32 @@ bool InputClass::IsRightPressed()
 	return false;
 }
 
+bool InputClass::IsPageUpPressed()
+{
+	// Do a bitwise and on the keyboard state to check if the escape key is currently being pressed.
+	if ((!(m_keyboardState[DIK_PGUP] & 0x80)) && (DIK_PGUP == pressKey))
+	{
+		pressKey = 0;
+		return true;
+	}
+	if (m_keyboardState[DIK_PGUP] & 0x80)
+		pressKey = DIK_PGUP;
+
+	return false;
+}
+bool InputClass::IsPageDownPressed()
+{
+	// Do a bitwise and on the keyboard state to check if the escape key is currently being pressed.
+	if ((!(m_keyboardState[DIK_PGDN] & 0x80)) && (DIK_PGDN == pressKey))
+	{
+		pressKey = 0;
+		return true;
+	}
+	if (m_keyboardState[DIK_PGDN] & 0x80)
+		pressKey = DIK_PGDN;
+
+	return false;
+}
 
 
 void InputClass::GetMouseLocation(int& mouseX, int& mouseY)

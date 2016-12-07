@@ -5,17 +5,33 @@ PxFilterFlags customFilterShader(PxFilterObjectAttributes attributes0, PxFilterD
 	PxFilterObjectAttributes attributes1, PxFilterData filterData1,
 	PxPairFlags& pairFlags, const void* constantBlock, PxU32 constantBlockSize)
 {
-	// all initial and persisting reports for everything, with per-point data
-	pairFlags = PxPairFlag::eCONTACT_DEFAULT
-		| PxPairFlag::eTRIGGER_DEFAULT
-		| PxPairFlag::eNOTIFY_CONTACT_POINTS
-		| PxPairFlag::eCCD_LINEAR; //Set flag to enable CCD (Continuous Collision Detection) 
+	 //all initial and persisting reports for everything, with per-point data
+	//pairFlags = PxPairFlag::eCONTACT_DEFAULT
+	//	| PxPairFlag::eTRIGGER_DEFAULT
+	//	| PxPairFlag::eNOTIFY_CONTACT_POINTS
+	//	| PxPairFlag::eCCD_LINEAR; //Set flag to enable CCD (Continuous Collision Detection) 
 
-								   //return PxFilterFlag::eDEFAULT;		
+	if (PxFilterObjectIsTrigger(attributes0) || PxFilterObjectIsTrigger(attributes1))
+	{
+		pairFlags = PxPairFlag::eTRIGGER_DEFAULT;
+		return PxFilterFlag::eDEFAULT;
+	}
+
+
+
+	pairFlags = PxPairFlag::eCONTACT_DEFAULT;
+
+	//if ((filterData0.word0 & filterData1.word1) && (filterData1.word0 & filterData0.word1))
+	//	return PxFilterFlag::eCALLBACK;
+
 	if ((filterData0.word0 & filterData1.word1) && (filterData1.word0 & filterData0.word1))
-		return PxFilterFlag::eKILL;
+	{
+		pairFlags |= PxPairFlag::eNOTIFY_TOUCH_FOUND;
 
-	return PxFilterFlag::eDEFAULT;
+		return PxFilterFlag::eDEFAULT;
+	}
+
+	return PxFilterFlag::eKILL;
 
 }
 
@@ -23,9 +39,10 @@ struct FilterGroup
 {
 	enum Enum
 	{
-		ePARTICLE = (1 << 0),
-		eBox = (1 << 1),
-		eInteract = (1 << 2),
+		eHand = (1 << 0),
+		eWall = (1 << 1),
+		eFinger = (1 << 4),
+		eBox = (1 << 2),
 	};
 };
 
@@ -61,6 +78,7 @@ void setupFiltering(PxRigidActor* actor, PxU32 filterGroup, PxU32 filterMask)
 PhysxClass::PhysxClass()
 {
 	moveAbleWall = nullptr;
+	activeActor = nullptr;
 }
 
 PhysxClass::~PhysxClass()
@@ -108,8 +126,9 @@ bool PhysxClass::Initialize()
 	if (!sceneDesc.filterShader)
 		sceneDesc.filterShader = customFilterShader;//gDefaultFilterShader;
 	//sceneDesc.simulationEventCallback = this;
-	sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
-
+	sceneDesc.simulationEventCallback = this;
+	sceneDesc.flags |=  PxSceneFlag::eENABLE_KINEMATIC_PAIRS ;
+	//
 	//PxCudaContextManagerDesc cudaContextManagerDesc;
 	//PxCudaContextManager* mCudaContextManager = PxCreateCudaContextManager(*gFoundation, cudaContextManagerDesc, mProfileZoneManager);
 	//if (mCudaContextManager) {
@@ -154,7 +173,7 @@ bool PhysxClass::Initialize()
 		return false;
 
 
-	setupFiltering(moveAbleFloor, FilterGroup::ePARTICLE, FilterGroup::eInteract | FilterGroup::ePARTICLE);
+	setupFiltering(moveAbleFloor, FilterGroup::eWall, FilterGroup::eBox);
 	gScene->addActor(*moveAbleFloor);
 
 
@@ -162,7 +181,7 @@ bool PhysxClass::Initialize()
 	PxRigidStatic* plane = gPhysicsSDK->createRigidStatic(pose);
 	shape = plane->createShape(PxPlaneGeometry(), *mMaterial);
 
-	setupFiltering(plane, FilterGroup::ePARTICLE, FilterGroup::eInteract | FilterGroup::ePARTICLE);
+	setupFiltering(plane, FilterGroup::eWall, FilterGroup::eBox);
 	gScene->addActor(*plane);
 
 
@@ -170,22 +189,22 @@ bool PhysxClass::Initialize()
 	plane = gPhysicsSDK->createRigidStatic(pose);
 	shape = plane->createShape(PxPlaneGeometry(), *mMaterial);
 
-	setupFiltering(plane, FilterGroup::ePARTICLE, FilterGroup::eInteract | FilterGroup::ePARTICLE);
+	setupFiltering(plane, FilterGroup::eWall, FilterGroup::eBox);
 	gScene->addActor(*plane);
 
 
-	pose = PxTransform(PxVec3(0.0f, 0.0f, 0.0f), PxQuat(PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f)));
+	pose = PxTransform(PxVec3(0.0f, 0.0f, -0.5f), PxQuat(PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f)));
 	moveAbleWall = gPhysicsSDK->createRigidStatic(pose);
 	shape = moveAbleWall->createShape(PxPlaneGeometry(), *mMaterial);
 
-	setupFiltering(moveAbleWall, FilterGroup::ePARTICLE, FilterGroup::eInteract | FilterGroup::ePARTICLE);
+	setupFiltering(moveAbleWall, FilterGroup::eWall, FilterGroup::eBox);
 	gScene->addActor(*moveAbleWall);
 
-	pose = PxTransform(PxVec3(0.0f, 0.0f, -4.0f), PxQuat(-PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f)));
+	pose = PxTransform(PxVec3(0.0f, 0.0f, -6.0f), PxQuat(-PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f)));
 	plane = gPhysicsSDK->createRigidStatic(pose);
 	shape = plane->createShape(PxPlaneGeometry(), *mMaterial);
 
-	setupFiltering(plane, FilterGroup::ePARTICLE, FilterGroup::eInteract | FilterGroup::ePARTICLE);
+	setupFiltering(plane, FilterGroup::eWall, FilterGroup::eBox);
 	gScene->addActor(*plane);
 
 
@@ -231,7 +250,7 @@ bool PhysxClass::Initialize()
 	//}
 	start_time = milliseconds_now();
 
-
+	return true;
 }
 
 void PhysxClass::Render()
@@ -240,6 +259,8 @@ void PhysxClass::Render()
 	float deltaTime = (timeSinceStart - oldTimeSinceStart) / 1000.0f;
 	oldTimeSinceStart = timeSinceStart;
 
+	//activeActor = nullptr;
+	//activeHand = nullptr;
 	mAccumulator += deltaTime;
 
 	while (mAccumulator > myTimestep) //Simulate at not more than 'gTimeStep' time-interval 
@@ -247,6 +268,28 @@ void PhysxClass::Render()
 		mAccumulator -= myTimestep;
 		StepPhysx();
 	}
+}
+
+void PhysxClass::applyForce(std::map<int, PxVec3> forces)
+{
+
+	for (map<int, PxVec3>::iterator ii = forces.begin(); ii != forces.end(); ++ii)
+	{
+		if (gTouchFound == true)
+		{
+			if ((*ii).second == PxVec3(0, 0, 0))
+			{
+				activeContact[(*ii).first] = nullptr;
+				activeContact.erase((*ii).first);
+
+			}
+			else
+				activeContact[(*ii).first]->addForce((*ii).second);
+		}
+	}
+
+	if (activeContact.size() == 0)
+		gTouchFound = false;
 }
 
 PxRigidDynamic* PhysxClass::createBox(PxVec3 dimension, PxVec3 pose, PxQuat quat)
@@ -257,6 +300,9 @@ PxRigidDynamic* PhysxClass::createBox(PxVec3 dimension, PxVec3 pose, PxQuat quat
 
 	PxRigidDynamic* actor = PxCreateDynamic(*gPhysicsSDK, transform, geometry, *mMaterial, density);
 	actor->setSolverIterationCounts(16, 8);
+	//actor->setMass(1.0);
+	//actor->setMassSpaceInertiaTensor(PxVec3(1.0, 1.0, 1.0));
+	setupFiltering(actor, FilterGroup::eBox, FilterGroup::eBox | FilterGroup::eFinger | FilterGroup::eWall | FilterGroup::eHand);
 	gScene->addActor(*actor);
 
 	return actor;
@@ -270,6 +316,9 @@ PxRigidDynamic* PhysxClass::createSphere(PxReal radius, PxVec3 pose, PxQuat quat
 
 	PxRigidDynamic* actor = PxCreateDynamic(*gPhysicsSDK, transform, geometry, *mMaterial, density);
 	actor->setSolverIterationCounts(16, 8);
+	//actor->setMass(1.0);
+	//actor->setMassSpaceInertiaTensor(PxVec3(1.0, 1.0, 1.0));
+	setupFiltering(actor, FilterGroup::eBox, FilterGroup::eBox | FilterGroup::eFinger | FilterGroup::eWall | FilterGroup::eHand);
 	gScene->addActor(*actor);
 
 	return actor;
@@ -287,6 +336,7 @@ PxRigidStatic* PhysxClass::createStaticSphere(PxReal radius, PxVec3 pose, PxQuat
 
 	return actor;
 }
+
 PxRigidDynamic* PhysxClass::createCapsule(PxReal radius, PxReal halfHeight, PxVec3 pose, PxQuat quat)
 {
 	PxReal density = 1.0f;
@@ -295,6 +345,7 @@ PxRigidDynamic* PhysxClass::createCapsule(PxReal radius, PxReal halfHeight, PxVe
 
 	PxRigidDynamic* actor = PxCreateDynamic(*gPhysicsSDK, transform, geometry, *mMaterial, density);
 	actor->setSolverIterationCounts(16, 8);
+	//setupFiltering(actor, FilterGroup::eBox, FilterGroup::eBox | FilterGroup::eFinger | FilterGroup::eWall | FilterGroup::eHand);
 	gScene->addActor(*actor);
 
 	return actor;
@@ -352,6 +403,79 @@ void PhysxClass::moveWall(float zoffset)
 	PxTransform pose = PxTransform(PxVec3(0.0f, 0.0f, zoffset), slantFloor);
 
 	moveAbleFloor->setGlobalPose(pose);
+}
+
+
+void PhysxClass::setHandActor(std::vector<handActor> HandList)
+{
+	mHandList = HandList;
+}
+int PhysxClass::getActiveHandID()
+{
+	return gTouchId;
+}
+PxRigidDynamic* PhysxClass::getActiveActor()
+{
+	return activeActor;
+}
+
+std::map<int, PxRigidDynamic*> PhysxClass::getActiveContact()
+{
+	return activeContact;
+}
+
+
+
+
+void PhysxClass::onTrigger(PxTriggerPair* pairs, PxU32 count)
+{
+	//for (PxU32 i = 0; i < nbPairs; i++)
+	//{
+	//	const PxContactPair& cp = pairs[i];
+
+	//	if (cp.events & PxPairFlag::eNOTIFY_TOUCH_FOUND)
+	//	{
+	//			PxFilterData filterData_1 = cp.shapes[0]->getSimulationFilterData();
+	//			PxFilterData filterData_2 = cp.shapes[1]->getSimulationFilterData();
+	//			if (filterData_1.word0 == FilterGroup::eHand && filterData_2.word0 == FilterGroup::eBox)
+	//			{
+	//				for (int j = 0; j < mHandList.size(); j++)
+	//				{
+	//					if ((PxRigidDynamic*)pairHeader.actors[0] == mHandList[j].palm)
+	//					{
+	//						gTouchId = mHandList[j].id;
+	//						activeActor = (PxRigidDynamic*)pairHeader.actors[1];
+	//						gTouchFound = true;
+	//					}
+	//				}
+	//			}
+	//	}
+	//}
+
+	for (PxU32 i = 0; i < count; i++)
+	{
+		// ignore pairs when shapes have been deleted
+		if (pairs[i].flags & (PxTriggerPairFlag::eREMOVED_SHAPE_TRIGGER |
+			PxTriggerPairFlag::eREMOVED_SHAPE_OTHER))
+			continue;
+
+
+		if (pairs[i].otherShape->getGeometryType() == PxGeometryType::eBOX || pairs[i].otherShape->getGeometryType() == PxGeometryType::eSPHERE) 
+		{
+			
+				for (int j = 0; j < mHandList.size(); j++)
+				{
+					if (pairs[i].triggerActor == mHandList[j].palm)
+					{
+						activeContact[mHandList[j].id] = (PxRigidDynamic*)pairs[i].otherActor;
+
+						//gTouchId = mHandList[j].id;
+						//activeActor = (PxRigidDynamic*)pairs[i].otherActor;
+						gTouchFound = true;
+					}
+				}
+		}
+	}
 }
 
 

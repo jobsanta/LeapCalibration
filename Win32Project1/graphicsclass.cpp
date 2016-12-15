@@ -23,6 +23,7 @@ GraphicsClass::GraphicsClass()
 	m_RenderHand = true;
 	m_Shape = 0;
 	globalFactor = 1;
+	m_Kinect = 0;
 }
 
 
@@ -78,7 +79,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		return false;
 	}
 	result = m_physx->Initialize();
-	if(!result)
+	if (!result)
 	{
 		MessageBox(hwnd, L"Could not initialize Physx ", L"Error", MB_OK);
 		return false;
@@ -91,6 +92,21 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	}
 	m_Leap->connect();
 	m_Leap->InitPhysx(m_physx->getPhysicsSDK(), m_physx->getScene());
+
+	m_Kinect = new KinectClass;
+	if (!m_Kinect)
+	{
+		return false;
+	}
+	m_Kinect->Initialize();
+
+	m_Tracker = new TrackerClass();
+	if (!m_Tracker)
+	{
+		return false;
+	}
+
+
 
 
 	// Create the camera object.
@@ -541,6 +557,13 @@ void GraphicsClass::Shutdown()
 		delete m_ColorShader;
 		m_ColorShader = 0;
 	}
+
+	if (m_Tracker)
+	{
+		delete m_Tracker;
+		m_Tracker = 0;
+	}
+
 	if (m_LightShader)
 	{
 		m_LightShader->Shutdown();
@@ -603,6 +626,13 @@ void GraphicsClass::Shutdown()
 		m_Direct3D = 0;
 	}
 
+	if (m_Kinect)
+	{
+		m_Kinect->Shutdown();
+		delete m_Kinect;
+		m_Kinect = 0;
+	}
+
 	return;
 }
 
@@ -628,29 +658,51 @@ bool GraphicsClass::Render()
 {
 	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
 	XMFLOAT4X4 proj;
+	XMFLOAT4X4 view;
 	bool result;
+	HRESULT hr;
+	Point3f* head_pos = NULL;
+	
 
+	
+	hr = m_Kinect->Process();
+	if (SUCCEEDED(hr))
+	{
+		hr = m_Tracker->Process(m_Kinect->getDepthWidth(), m_Kinect->getDepthHeight(), m_Kinect->getColorWidth(), m_Kinect->getColorHeight(),
+			m_Kinect->getMinDistance(), m_Kinect->getMaxDistance(), m_Kinect->getDepthBuffer(), m_Kinect->getColorBuffer(), m_Kinect->getCoordinateMapper());
+
+		if (SUCCEEDED(hr))
+			head_pos = m_Tracker->goggleDetection();
+	}
+
+	if (head_pos!=NULL)
+	{
+		m_Camera->SetPosition(head_pos->x, head_pos->y, head_pos->z);
+		globalFOV = m_Direct3D->CalculateFOV(head_pos->x, head_pos->y, head_pos->z);
+		m_Direct3D->ChangeFOV(globalFOV, m_screenWidth, m_screenHeight, SCREEN_NEAR, SCREEN_DEPTH);
+
+	}
 
 
 
 	// Clear the buffers to begin the scene.
-
-
 	m_Direct3D->BeginScene(0.0f, 0.0f, 0.0f, 1.0f);
 
-	m_3dvision->Render(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(),8.0+globalZ);
+	m_3dvision->Render(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), -m_Camera->GetPosition().z + globalZ);
 
 	// Generate the view matrix based on the camera's position.
-	m_Camera->Render(XMFLOAT3(0.0f,1.5f,0.0f));
+	m_Camera->Render(XMFLOAT3(0.0f, 1.5f, 0.0f));
 
 	// Get the world, view, and projection matrices from the camera and d3d objects.
 	m_Direct3D->GetWorldMatrix(worldMatrix);
 	m_Camera->GetViewMatrix(viewMatrix);
 	m_Direct3D->GetProjectionMatrix(projectionMatrix);
-	
+
 	XMStoreFloat4x4(&proj, projectionMatrix);
-	
-	m_Leap->processFrame(0, 1.5, -8.0, globalZ, proj._11, proj._22,globalFactor);
+	XMStoreFloat4x4(&view, viewMatrix);
+
+
+	m_Leap->processFrame(m_Camera->GetPosition().x, m_Camera->GetPosition().y, m_Camera->GetPosition().z, globalZ, view, proj ,globalFactor);
 	m_physx->setHandActor(m_Leap->getHandActor());
 	m_Leap->computeForce(m_physx->getActiveContact());
 

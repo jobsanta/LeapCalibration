@@ -96,22 +96,22 @@ bool LeapClass::capturePalm(float*z)
 	return true;
 }
 
-void LeapClass::processFrame(float x, float y, float z, float offset,float xScale, float yScale,float factor)
+void LeapClass::processFrame(float headPosition_x, float headPosition_y, float headPosition_z, float offset_z, XMFLOAT4X4 mView, XMFLOAT4X4 mProj, float factor)
 {
 	while (!controller.isConnected());
 	Frame frame = controller.frame();
 	if (frame.id() == lastFrameID) return;
 
-	x_head = x;
-	y_head = y;
-	z_head = z;
+	x_head = headPosition_x;
+	y_head = headPosition_y;
+	z_head = headPosition_z;
 
 	HandList hands = frame.hands();
 	//bool createHand = false;
 
-	z_offset = offset;
-	x_scale = xScale;
-	y_scale = yScale;
+	z_offset = offset_z;
+	viewMatrix = mView;
+	projectionMatrix = mProj;
 	
 	//FingerList fingers = hand.fingers();
 	//Leap::PointableList pointables = frame.pointables();
@@ -250,17 +250,54 @@ PxVec3 LeapClass::leapToWorld(Leap::Vector bone_center)
 	converted.x = bone_center.x / 100.f;
 	converted.y = bone_center.y / 100.f - 3.35f;
 	converted.z = -bone_center.z / 100.f - 1.5f;
+	y_head = y_head - 3.35f;
 
-	converted.x = (converted.x)*z_head/ (z_head - converted.z);
-	converted.y = (converted.y)*z_head / (z_head - converted.z);
+	converted.x = (x_head-converted.x)*z_head/ (z_head - converted.z);
+	converted.y = (y_head-converted.y)*z_head / (z_head - converted.z);
 
-	float xs = converted.x / 3.0f;
-	float ys  = converted.y /1.7f;
+	float sx = -(converted.x - x_head)/ 3.0f;
+	float sy  = -(converted.y-y_head) /1.7f;
+
+	float xScale = projectionMatrix._11;
+	float yScale = projectionMatrix._22;
+	float xx = viewMatrix._11;
+	float xy = viewMatrix._21;
+	float xz = viewMatrix._31;
+	float dx = -viewMatrix._41;
+
+	float yx = viewMatrix._12;
+	float yy = viewMatrix._22;
+	float yz = viewMatrix._32;
+	float dy = -viewMatrix._42;
+
+	float zx = viewMatrix._13;
+	float zy = viewMatrix._23;
+	float zz = viewMatrix._33;
+	float dz = -viewMatrix._43;
+
+	float xp, yp, zp = converted.z + z_offset;
+	MatrixXf a(2,2);
+	a(0, 0) = -xScale*xx + sx*zx;
+	a(1, 0) = -yScale*yx + sy*zx;
+	a(0, 1) = -xScale*xy + sx*zy;
+	a(1, 1) = -yScale*yy + sy*zy;
+	VectorXf b(2);
+	b(0) = dz*sx - dx*xScale + xScale*xz*zp - sx*zp*zz;
+	b(1) = dz*sy - dy*yScale + yScale*yz*zp - sy*zp*zz;
+	VectorXf c = a.jacobiSvd(ComputeThinU | ComputeThinV).solve(b);
 	//converted.z = (converted.z - 0.1) / (-0.1*converted.z);
 
-	converted.x = xs*(converted.z+z_offset + 8.0f) / x_scale;
-	converted.y = (ys*(converted.z+ z_offset + 8.0f) + y_scale*1.5) / y_scale;
-	converted.z = converted.z + z_offset;
+	converted.x = c(0);
+	converted.y = c(1);
+	converted.z = zp;
+
+
+
+
+
+	//converted.x = xs*(converted.z+z_offset + 8.0f) / x_scale;
+	//converted.y = (ys*(converted.z+ z_offset + 8.0f) + y_scale*1.5) / y_scale;
+	//converted.z = converted.z + z_offset;
 
 	//converted.w = 1;
 
@@ -278,12 +315,12 @@ PxVec3 LeapClass::leapToWorld(Leap::Vector bone_center)
 
 void LeapClass::setProjectionMatrix(PxMat44 mat)
 {
-	projectionMatrix = mat;
+	//projectionMatrix = mat;
 }
 
 void LeapClass::setViewMatrix(PxMat44 mat)
 {
-	viewMatrix = mat;
+	//viewMatrix = mat;
 }
 
 void LeapClass::setMatrix(PxMat44 mat)

@@ -1,4 +1,8 @@
 #include "Leap.h"
+#include "d3dclass.h"
+#include <iostream>
+#include <Eigen/Eigen>
+#include <Eigen/Dense>
 
 //-- Physx Library
 #include <PxPhysicsAPI.h>
@@ -19,6 +23,8 @@
 using namespace std;
 using namespace Leap;
 using namespace physx;
+using namespace DirectX;
+using namespace Eigen;
 
 
 //static const float particleSize = 0.075f;
@@ -54,7 +60,7 @@ public:
 	vector<PxRigidActor*> proxyParticleJoint;
 
 	void connect();
-	void processFrame(float x, float y , float z, float offset,float xScale, float yScale,float factor);
+	void processFrame(float headPosition_x, float headPosition_y, float headPosition_z, float offset_z, XMFLOAT4X4 mView, XMFLOAT4X4 mProj, float factor);
 	void InitPhysx(PxPhysics* sdk, PxScene* scene);
 	vector<PxRigidActor*> getProxyParticle();
 	vector<PxRigidActor*> getProxyJoint();
@@ -81,8 +87,8 @@ private:
 	PxPhysics* gPhysicsSDK;
 	PxScene* gScene;
 	PxMat44 ltoworldtransform;
-	PxMat44 viewMatrix;
-	PxMat44 projectionMatrix;
+	XMFLOAT4X4 viewMatrix;
+	XMFLOAT4X4 projectionMatrix;
 	Hand calibrateHand;
 
 	float x_head, y_head, z_head;
@@ -101,8 +107,8 @@ private:
 	PxRigidDynamic* createCylinder(PxReal radius, PxReal halfHeight, PxVec3 pos, PxAggregate* aggregate);
 	void setupFiltering(PxRigidActor* actor, PxU32 filterGroup, PxU32 filterMask);
 	float z_offset;
-	float x_scale;
-	float y_scale;
+	//float x_scale;
+	//float y_scale;
 
 
 

@@ -51,6 +51,7 @@ public:
 	void TurnOffAlphaBlending();
 
 	void ChangeFOV(float degree, int screenWidth, int screenHeight, float screenNear, float screenDepth);
+	float CalculateFOV(float x, float y, float z);
 
 private:
 	bool m_vsync_enabled;

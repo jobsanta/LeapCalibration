@@ -2,19 +2,30 @@
 
 KinectClass::KinectClass()
 {
+	m_colorToDepthDivisor = cColorWidth / cDepthWidth;
+
 	m_pCoordinateMapper = NULL;
 	m_pKinectSensor = NULL;
 	m_pMultiSourceFrameReader = NULL;
+
+	m_pColorRGBX = new RGBQUAD[cColorWidth * cColorHeight];
+	m_pDepthBuffer = new UINT16[cDepthWidth*cDepthHeight];
+
+	m_pDepthCoordinates = new DepthSpacePoint[cColorWidth * cColorHeight];
+
 }
 
 KinectClass::~KinectClass()
 {
+
 }
 
 HRESULT KinectClass::Initialize()
 {
 	HRESULT hr;
 	hr = CreateFirstConnected();
+
+
 	return hr;
 }
 
@@ -91,20 +102,21 @@ HRESULT KinectClass::Process()
 	}
 
 	// If all succeeded combine frame
+	// If all succeeded combine frame
 	if (SUCCEEDED(hr))
 	{
 		INT64                 nDepthTime = 0;
 		IFrameDescription*    pDepthFrameDescription = NULL;
-		int                   nDepthWidth = 0;
-		int                   nDepthHeight = 0;
-		USHORT	              nMaxDistance = 0;
-		USHORT                nMinDistance = 0;
+		//int                   nDepthWidth = 0;
+		//int                   nDepthHeight = 0;
+		//USHORT	              nMaxDistance = 0;
+		//USHORT                nMinDistance = 0;
 		UINT                  nDepthBufferSize = 0;
 		UINT16                *pDepthBuffer = NULL;
 
 		IFrameDescription* pColorFrameDescription = NULL;
-		int                nColorWidth = 0;
-		int                nColorHeight = 0;
+		//int                nColorWidth = 0;
+		//int                nColorHeight = 0;
 		ColorImageFormat   imageFormat = ColorImageFormat_None;
 		UINT               nColorBufferSize = 0;
 		RGBQUAD            *pColorBuffer = NULL;
@@ -112,15 +124,16 @@ HRESULT KinectClass::Process()
 
 
 		pDepthFrame->get_RelativeTime(&nDepthTime);
-		pDepthFrame->get_DepthMaxReliableDistance(&nMaxDistance);
-		pDepthFrame->get_DepthMinReliableDistance(&nMinDistance);
+		pDepthFrame->get_DepthMaxReliableDistance(&m_pMaxDistance);
+		pDepthFrame->get_DepthMinReliableDistance(&m_pMinDistance);
 		hr = pDepthFrame->get_FrameDescription(&pDepthFrameDescription);
 
 		if (SUCCEEDED(hr))
 		{
-			pDepthFrameDescription->get_Width(&nDepthWidth);
-			pDepthFrameDescription->get_Height(&nDepthHeight);
-			hr = pDepthFrame->AccessUnderlyingBuffer(&nDepthBufferSize, &pDepthBuffer);
+			pDepthFrameDescription->get_Width(&m_pDepthWidth);
+			pDepthFrameDescription->get_Height(&m_pDepthHeight);
+			nDepthBufferSize = cDepthWidth*cDepthHeight;
+			hr = pDepthFrame->CopyFrameDataToArray(nDepthBufferSize, m_pDepthBuffer);
 		}
 
 		// get color frame data
@@ -130,8 +143,8 @@ HRESULT KinectClass::Process()
 		}
 		if (SUCCEEDED(hr))
 		{
-			pColorFrameDescription->get_Width(&nColorWidth);
-			pColorFrameDescription->get_Height(&nColorHeight);
+			pColorFrameDescription->get_Width(&m_pColorWidth);
+			pColorFrameDescription->get_Height(&m_pColorHeight);
 			hr = pColorFrame->get_RawColorImageFormat(&imageFormat);
 		}
 
@@ -139,15 +152,15 @@ HRESULT KinectClass::Process()
 		//Copy color data to the heap
 		if (SUCCEEDED(hr))
 		{
-			if (imageFormat == ColorImageFormat_Bgra)
-			{
-				hr = pColorFrame->AccessRawUnderlyingBuffer(&nColorBufferSize, reinterpret_cast<BYTE**>(&pColorBuffer));
-			}
-			else if (m_pColorRGBX)
+			//if (imageFormat == ColorImageFormat_Bgra)
+			//{
+			//	hr = pColorFrame->AccessRawUnderlyingBuffer(&nColorBufferSize, reinterpret_cast<BYTE**>(&pColorBuffer));
+			//}
+			if (m_pColorRGBX)
 			{
 				pColorBuffer = m_pColorRGBX;
 				nColorBufferSize = cColorWidth * cColorHeight * sizeof(RGBQUAD);
-				hr = pColorFrame->CopyConvertedFrameDataToArray(nColorBufferSize, reinterpret_cast<BYTE*>(pColorBuffer), ColorImageFormat_Bgra);
+				hr = pColorFrame->CopyConvertedFrameDataToArray(nColorBufferSize, reinterpret_cast<BYTE*>(m_pColorRGBX), ColorImageFormat_Bgra);
 			}
 			else
 			{
@@ -156,10 +169,12 @@ HRESULT KinectClass::Process()
 		}
 
 
-		if (SUCCEEDED(hr))
+	/*	if (SUCCEEDED(hr))
 		{
-			//Process frame here
-		}
+			 ProcessFrame(nDepthTime, pDepthBuffer, nDepthWidth, nDepthHeight,
+				pColorBuffer, nColorWidth, nColorHeight,
+				nMinDistance, nMaxDistance);
+		}*/
 
 		SafeRelease(pDepthFrameDescription);
 		SafeRelease(pColorFrameDescription);
@@ -168,7 +183,49 @@ HRESULT KinectClass::Process()
 	SafeRelease(pDepthFrame);
 	SafeRelease(pColorFrame);
 	SafeRelease(pMultiSourceFrame);
+
+	return hr;
 }
+
+int KinectClass::getDepthWidth()
+{
+	return m_pDepthWidth;
+}
+int KinectClass::getDepthHeight()
+{
+	return m_pDepthHeight;
+}
+int KinectClass::getColorWidth()
+{
+	return m_pColorWidth;
+}
+int KinectClass::getColorHeight()
+{
+	return m_pColorHeight;
+}
+UINT16* KinectClass::getDepthBuffer()
+{
+	return m_pDepthBuffer;
+}
+RGBQUAD* KinectClass::getColorBuffer()
+{
+	return m_pColorRGBX;
+}
+
+USHORT KinectClass::getMinDistance()
+{
+	return m_pMinDistance;
+}
+USHORT KinectClass::getMaxDistance()
+{
+	return m_pMaxDistance;
+}
+
+ICoordinateMapper* KinectClass::getCoordinateMapper()
+{
+	return m_pCoordinateMapper;
+}
+
 
 void KinectClass::Shutdown()
 {
@@ -176,9 +233,29 @@ void KinectClass::Shutdown()
 	{
 		m_pKinectSensor->Close();
 	}
+
+
+
 	SafeRelease(m_pKinectSensor);
 
 	SafeRelease(m_pMultiSourceFrameReader);
 
 
+}
+
+
+void KinectClass::ProcessFrame(INT64 nTime,
+	UINT16* pDepthBuffer, int nDepthWidth, int nDepthHeight,
+	RGBQUAD* pColorBuffer, int nColorWidth, int nColorHeight,
+	USHORT nMinDistance, USHORT nMaxDistance)
+{
+	if (m_pCoordinateMapper && m_pDepthCoordinates  &&
+		pDepthBuffer && (nDepthWidth == cDepthWidth) && (nDepthHeight == cDepthHeight) &&
+		pColorBuffer && (nColorWidth == cColorWidth) && (nColorHeight == cColorHeight))
+	{
+		//HRESULT hr = m_Tracker->Process(nDepthWidth, nDepthHeight, nColorWidth, nColorHeight, nMinDistance, nMaxDistance, pDepthBuffer, pColorBuffer, m_pCoordinateMapper);
+		//
+		//if(SUCCEEDED(hr))
+		//m_Tracker->goggleDetection();
+	}
 }

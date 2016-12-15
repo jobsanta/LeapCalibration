@@ -615,3 +615,20 @@ void D3DClass::ChangeFOV(float degree, int screenWidth, int screenHeight, float 
 	// Create the projection matrix for 3D rendering.
 	m_projectionMatrix = XMMatrixPerspectiveFovLH(fieldOfView, screenAspect, screenNear, screenDepth);
 }
+
+float D3DClass::CalculateFOV(float x, float y, float z)
+{
+	float c = 3.4f; //physical Screen size = 34cm
+	float top_y = 3.4f;
+	float buttom_y = 0;
+	float lookat_z = 0; //assume look at the center of the scene
+
+	//Use the law of cosine compute given triangle ABC compute C
+	float a = (top_y - y)*(top_y - y) + (lookat_z - z)*(lookat_z - z);
+	float b = (buttom_y - y)*(buttom_y - y) + (lookat_z - z)*(lookat_z - z);
+
+	float fovy = acosf((a + b - c*c) / (2 * sqrt(a)*sqrt(b)));
+	return fovy*180/XM_PI;
+
+
+}

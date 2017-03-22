@@ -43,6 +43,7 @@ struct FilterGroup
 		eWall = (1 << 1),
 		eFinger = (1 << 4),
 		eBox = (1 << 2),
+		eTarget = (1 << 3),
 	};
 };
 
@@ -96,6 +97,10 @@ bool PhysxClass::Initialize()
 	if (gPhysicsSDK == NULL) {
 		return false;
 	}
+
+	gCooking = PxCreateCooking(PX_PHYSICS_VERSION, *gFoundation, PxCookingParams(PxTolerancesScale()));
+	if (!gCooking)
+		return false;
 
 	if (!PxInitExtensions(*gPhysicsSDK))
 		return false;
@@ -162,7 +167,7 @@ bool PhysxClass::Initialize()
 	PxQuat flatGround = PxQuat(PxHalfPi, PxVec3(0, 0, 1.0f));
 	PxQuat slant = PxQuat(7 * PxPi / 180, PxVec3(1, 0, 0));
 	PxQuat slantFloor = slant*flatGround;
-	PxTransform pose = PxTransform(PxVec3(0.0f, 0.0f, 0.0f), slantFloor);
+	PxTransform pose = PxTransform(PxVec3(0.0f, 0.5, 0.0f), flatGround);
 
 	moveAbleFloor = gPhysicsSDK->createRigidStatic(pose);
 	if (!moveAbleFloor)
@@ -173,23 +178,23 @@ bool PhysxClass::Initialize()
 		return false;
 
 
-	setupFiltering(moveAbleFloor, FilterGroup::eWall, FilterGroup::eBox);
+	setupFiltering(moveAbleFloor, FilterGroup::eWall, FilterGroup::eBox | FilterGroup::eTarget);
 	gScene->addActor(*moveAbleFloor);
 
 
-	pose = PxTransform(PxVec3(-3.0f, 0.0f, 0.0f), PxQuat(0.0, PxVec3(0.0f, 1.0f, 0.0f)));
+	pose = PxTransform(PxVec3(-2.5f, FLOOR_LEVEL, 0.0f), PxQuat(0.0, PxVec3(0.0f, 1.0f, 0.0f)));
 	PxRigidStatic* plane = gPhysicsSDK->createRigidStatic(pose);
 	shape = plane->createShape(PxPlaneGeometry(), *mMaterial);
 
-	setupFiltering(plane, FilterGroup::eWall, FilterGroup::eBox);
+	setupFiltering(plane, FilterGroup::eWall, FilterGroup::eBox | FilterGroup::eTarget);
 	gScene->addActor(*plane);
 
 
-	pose = PxTransform(PxVec3(3.0f, 0.0f, 0.0f), PxQuat(PxPi, PxVec3(0.0f, 1.0f, 0.0f)));
+	pose = PxTransform(PxVec3(2.5f, FLOOR_LEVEL, 0.0f), PxQuat(PxPi, PxVec3(0.0f, 1.0f, 0.0f)));
 	plane = gPhysicsSDK->createRigidStatic(pose);
 	shape = plane->createShape(PxPlaneGeometry(), *mMaterial);
 
-	setupFiltering(plane, FilterGroup::eWall, FilterGroup::eBox);
+	setupFiltering(plane, FilterGroup::eWall, FilterGroup::eBox | FilterGroup::eTarget);
 	gScene->addActor(*plane);
 
 
@@ -197,16 +202,31 @@ bool PhysxClass::Initialize()
 	moveAbleWall = gPhysicsSDK->createRigidStatic(pose);
 	shape = moveAbleWall->createShape(PxPlaneGeometry(), *mMaterial);
 
-	setupFiltering(moveAbleWall, FilterGroup::eWall, FilterGroup::eBox);
+	setupFiltering(moveAbleWall, FilterGroup::eWall, FilterGroup::eBox | FilterGroup::eTarget);
 	gScene->addActor(*moveAbleWall);
 
-	pose = PxTransform(PxVec3(0.0f, 0.0f, -6.0f), PxQuat(-PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f)));
-	plane = gPhysicsSDK->createRigidStatic(pose);
-	shape = plane->createShape(PxPlaneGeometry(), *mMaterial);
+	pose = PxTransform(PxVec3(0.0f, 0.0f, -8.0f), PxQuat(-PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f)));
+	moveAbleFrontWall = gPhysicsSDK->createRigidStatic(pose);
+	shape = moveAbleFrontWall->createShape(PxPlaneGeometry(), *mMaterial);
 
-	setupFiltering(plane, FilterGroup::eWall, FilterGroup::eBox);
-	gScene->addActor(*plane);
+	setupFiltering(moveAbleFrontWall, FilterGroup::eWall, FilterGroup::eBox | FilterGroup::eTarget);
+	gScene->addActor(*moveAbleFrontWall);
 
+
+	//PxTriangleMesh* cup = createTriangleMesh("cup._obj");
+	//PxMeshScale scale(PxVec3(1,1,1), PxQuat(PxIdentity));
+	//PxTriangleMeshGeometry geom(cup, scale);
+	//PxBoxGeometry box(1, 1, 1);
+
+	////PxRigidActor* myActor = gPhysicsSDK->createRigidDynamic(PxTransform(PxVec3(0, 5, -2)));
+	////shape = myActor->createShape(geom, *mMaterial);
+	//PxTransform relativePose(PxVec3(0, 5, -2));
+	//PxRigidDynamic* aCapsuleActor = gPhysicsSDK->createRigidDynamic(PxTransform(relativePose));
+	//
+	//PxShape* aCapsuleShape = aCapsuleActor->createShape(geom,
+	//	*mMaterial);
+	//PxRigidBodyExt::updateMassAndInertia(*aCapsuleActor, 1.0f);
+	//gScene->addActor(*aCapsuleActor);
 
 	////2)           Create cube	 
 	//PxReal         density = 1.0f;
@@ -284,12 +304,25 @@ void PhysxClass::applyForce(std::map<int, PxVec3> forces)
 
 			}
 			else
-				activeContact[(*ii).first]->addForce((*ii).second);
+				activeContact[(*ii).first]->setLinearVelocity((*ii).second);
 		}
 	}
 
 	if (activeContact.size() == 0)
 		gTouchFound = false;
+}
+
+void PhysxClass::clearContact()
+{
+	if (gTouchFound == true)
+	{	
+		//for (map<int, PxRigidDynamic*>::iterator it = activeContact.begin(); it != activeContact.end(); it++) {
+		//	removeActor(it->second);
+		//	it->second = nullptr;
+		//}
+		activeContact.clear();
+
+	}
 }
 
 PxRigidDynamic* PhysxClass::createBox(PxVec3 dimension, PxVec3 pose, PxQuat quat)
@@ -302,12 +335,45 @@ PxRigidDynamic* PhysxClass::createBox(PxVec3 dimension, PxVec3 pose, PxQuat quat
 	actor->setSolverIterationCounts(16, 8);
 	//actor->setMass(1.0);
 	//actor->setMassSpaceInertiaTensor(PxVec3(1.0, 1.0, 1.0));
-	setupFiltering(actor, FilterGroup::eBox, FilterGroup::eBox | FilterGroup::eFinger | FilterGroup::eWall | FilterGroup::eHand);
+	setupFiltering(actor, FilterGroup::eBox, FilterGroup::eBox | FilterGroup::eFinger | FilterGroup::eWall | FilterGroup::eHand | FilterGroup::eTarget );
 	gScene->addActor(*actor);
 
 	return actor;
 
 }
+
+PxRigidActor* PhysxClass::createBarrier(PxVec3 dimension, PxVec3 pose, PxQuat quat)
+{
+	PxReal density = 1.0f;
+	PxTransform transform(pose, quat);
+	PxBoxGeometry geometry(dimension);
+
+	PxRigidActor* actor = PxCreateStatic(*gPhysicsSDK, transform, geometry,*mMaterial);
+	//actor->setMass(1.0);
+	//actor->setMassSpaceInertiaTensor(PxVec3(1.0, 1.0, 1.0));
+	setupFiltering(actor, FilterGroup::eWall, FilterGroup::eBox | FilterGroup::eFinger | FilterGroup::eWall | FilterGroup::eHand | FilterGroup::eTarget);
+	gScene->addActor(*actor);
+
+	return actor;
+
+}
+
+PxRigidActor* PhysxClass::createTarget(PxVec3 dimension, PxVec3 pose, PxQuat quat)
+{
+	PxReal density = 1.0f;
+	PxTransform transform(pose, quat);
+	PxBoxGeometry geometry(dimension);
+
+	PxRigidStatic* actor = PxCreateStatic(*gPhysicsSDK, transform, geometry, *mMaterial);
+	//actor->setMass(1.0);
+	//actor->setMassSpaceInertiaTensor(PxVec3(1.0, 1.0, 1.0));
+	setupFiltering(actor, FilterGroup::eTarget, FilterGroup::eBox | FilterGroup::eWall);
+	gScene->addActor(*actor);
+
+	return actor;
+
+}
+
 PxRigidDynamic* PhysxClass::createSphere(PxReal radius, PxVec3 pose, PxQuat quat)
 {
 	PxReal density = 1.0f;
@@ -318,7 +384,7 @@ PxRigidDynamic* PhysxClass::createSphere(PxReal radius, PxVec3 pose, PxQuat quat
 	actor->setSolverIterationCounts(16, 8);
 	//actor->setMass(1.0);
 	//actor->setMassSpaceInertiaTensor(PxVec3(1.0, 1.0, 1.0));
-	setupFiltering(actor, FilterGroup::eBox, FilterGroup::eBox | FilterGroup::eFinger | FilterGroup::eWall | FilterGroup::eHand);
+	setupFiltering(actor, FilterGroup::eBox, FilterGroup::eBox | FilterGroup::eFinger | FilterGroup::eWall | FilterGroup::eHand | FilterGroup::eTarget);
 	gScene->addActor(*actor);
 
 	return actor;
@@ -345,13 +411,11 @@ PxRigidDynamic* PhysxClass::createCapsule(PxReal radius, PxReal halfHeight, PxVe
 
 	PxRigidDynamic* actor = PxCreateDynamic(*gPhysicsSDK, transform, geometry, *mMaterial, density);
 	actor->setSolverIterationCounts(16, 8);
-	//setupFiltering(actor, FilterGroup::eBox, FilterGroup::eBox | FilterGroup::eFinger | FilterGroup::eWall | FilterGroup::eHand);
+	setupFiltering(actor, FilterGroup::eBox, FilterGroup::eBox | FilterGroup::eFinger | FilterGroup::eWall | FilterGroup::eHand);
 	gScene->addActor(*actor);
 
 	return actor;
 }
-
-
 
 void PhysxClass::removeActor(PxRigidActor* actor)
 {
@@ -394,26 +458,38 @@ void PhysxClass::Shutdown()
 		gPhysicsSDK->release();
 }
 
-void PhysxClass::moveWall(float zoffset)
+void PhysxClass::moveBackWall(float zoffset)
 {
-	moveAbleWall->setGlobalPose(PxTransform(PxVec3(0.0f, 0.0f, zoffset), PxQuat(PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f))));
+	moveAbleWall->setGlobalPose(PxTransform(PxVec3(0.0f, FLOOR_LEVEL, -0.5+zoffset), PxQuat(PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f))));
 	PxQuat flatGround = PxQuat(PxHalfPi, PxVec3(0, 0, 1.0f));
-	PxQuat slant = PxQuat(7 * PxPi / 180, PxVec3(1, 0, 0));
-	PxQuat slantFloor = slant*flatGround;
-	PxTransform pose = PxTransform(PxVec3(0.0f, 0.0f, zoffset), slantFloor);
+	//PxQuat slant = PxQuat(7 * PxPi / 180, PxVec3(1, 0, 0));
+	//PxQuat slantFloor = slant*flatGround;
+	PxTransform pose = PxTransform(PxVec3(0.0f, FLOOR_LEVEL, -0.5+zoffset), flatGround);
 
 	moveAbleFloor->setGlobalPose(pose);
 }
 
+void PhysxClass::moveFloor(float yoffset)
+{
+	PxTransform wall = moveAbleWall->getGlobalPose();
+	wall.p.y = yoffset;
+	moveAbleWall->setGlobalPose(wall);
+	PxTransform floor = moveAbleFloor->getGlobalPose();
+	floor.p.y = yoffset;
+
+	moveAbleFloor->setGlobalPose(floor);
+}
 
 void PhysxClass::setHandActor(std::vector<handActor> HandList)
 {
 	mHandList = HandList;
 }
+
 int PhysxClass::getActiveHandID()
 {
 	return gTouchId;
 }
+
 PxRigidDynamic* PhysxClass::getActiveActor()
 {
 	return activeActor;
@@ -424,8 +500,15 @@ std::map<int, PxRigidDynamic*> PhysxClass::getActiveContact()
 	return activeContact;
 }
 
+bool PhysxClass::getTargetStatus()
+{
+	return gTargetHit;
+}
 
-
+void PhysxClass::clearTargetStatus()
+{
+	gTargetHit = false;
+}
 
 void PhysxClass::onTrigger(PxTriggerPair* pairs, PxU32 count)
 {
@@ -462,7 +545,8 @@ void PhysxClass::onTrigger(PxTriggerPair* pairs, PxU32 count)
 
 		if (pairs[i].otherShape->getGeometryType() == PxGeometryType::eBOX || pairs[i].otherShape->getGeometryType() == PxGeometryType::eSPHERE) 
 		{
-			
+			if (pairs[i].otherActor->isRigidDynamic())
+			{
 				for (int j = 0; j < mHandList.size(); j++)
 				{
 					if (pairs[i].triggerActor == mHandList[j].palm)
@@ -474,8 +558,309 @@ void PhysxClass::onTrigger(PxTriggerPair* pairs, PxU32 count)
 						gTouchFound = true;
 					}
 				}
+			}
+			
+
 		}
 	}
 }
 
+void PhysxClass::onContact(const PxContactPairHeader& pairHeader,
+	const PxContactPair* pairs, PxU32 nbPairs)
+{
 
+	const PxU32 buff = 64; //buffer size
+	PxContactPairPoint contacts[buff];
+	std::vector<PxContactPairPoint> contactPoints;
+
+	//loop through all contact pairs of PhysX simulation
+	for (PxU32 i = 0; i < nbPairs; i++)
+	{
+		//extract contant info from current contact-pair 
+		const PxContactPair& curContactPair = pairs[i];
+		if (curContactPair.events & PxPairFlag::eNOTIFY_TOUCH_FOUND)
+		{
+			PxFilterData filterData_1 = curContactPair.shapes[0]->getSimulationFilterData();
+			PxFilterData filterData_2 = curContactPair.shapes[1]->getSimulationFilterData();
+			if (filterData_1.word0 == FilterGroup::eBox && filterData_2.word0 == FilterGroup::eTarget ||
+				filterData_1.word0 == FilterGroup::eTarget && filterData_2.word0 == FilterGroup::eBox)
+			{
+				if (pairs->shapes[1]->getGeometryType() == PxGeometryType::eBOX && pairs->shapes[0]->getGeometryType() == PxGeometryType::eBOX)
+				{
+					gTargetHit = true;
+				}
+			}
+
+		}
+	}
+}
+void PhysxClass::moveFrontWall(float z)
+{
+	moveAbleFrontWall->setGlobalPose(PxTransform(PxVec3(0.0f, 0.0f, z), PxQuat(-PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f))));
+}
+
+bool PhysxClass::ReadFromObj(char* filename, int& vertexCount, int& faceCount)
+{
+	ifstream fin;
+	char input;
+
+
+	// Initialize the counts.
+	vertexCount = 0;
+	faceCount = 0;
+
+	// Open the file.
+	fin.open(filename);
+
+	// Check if it was successful in opening the file.
+	if (fin.fail() == true)
+	{
+		return false;
+	}
+
+	// Read from the file and continue to read until the end of the file is reached.
+	fin.get(input);
+	while (!fin.eof())
+	{
+		// If the line starts with 'v' then count either the vertex, the texture coordinates, or the normal vector.
+		if (input == 'v')
+		{
+			fin.get(input);
+			if (input == ' ') { vertexCount++; }
+		}
+
+		// If the line starts with 'f' then increment the face count.
+		if (input == 'f')
+		{
+			fin.get(input);
+			if (input == ' ') { faceCount++; }
+		}
+
+		// Otherwise read in the remainder of the line.
+		while (input != '\n')
+		{
+			fin.get(input);
+		}
+
+		// Start reading the beginning of the next line.
+		fin.get(input);
+	}
+
+	// Close the file.
+	fin.close();
+
+	return true;
+}
+
+bool PhysxClass::LoadDataStructures(char* filename, int vertexCount,  int faceCount, PxVec3 vertices[], PxU32 faces[] )
+{
+	ifstream fin;
+
+	int vertexIndex, faceIndex;
+	int skiped;
+	char input, input2;
+	ofstream fout;
+
+
+	// Initialize the four data structures.
+	vertices = new PxVec3[vertexCount];
+	if (!vertices)
+	{
+		return false;
+	}
+
+	faces = new PxU32[faceCount*3];
+	if (!faces)
+	{
+		return false;
+	}
+
+	// Initialize the indexes.
+	vertexIndex = 0;
+	faceIndex = 0;
+
+	// Open the file.
+	fin.open(filename);
+
+	// Check if it was successful in opening the file.
+	if (fin.fail() == true)
+	{
+		return false;
+	}
+
+	// Read in the vertices, texture coordinates, and normals into the data structures.
+	// Important: Also convert to left hand coordinate system since Maya uses right hand coordinate system.
+	fin.get(input);
+	while (!fin.eof())
+	{
+		if (input == 'v')
+		{
+			fin.get(input);
+
+			// Read in the vertices.
+			if (input == ' ')
+			{
+				fin >> vertices[vertexIndex].x >> vertices[vertexIndex].y >> vertices[vertexIndex].z;
+
+				// Invert the Z vertex to change to left hand system.
+				//vertices[vertexIndex].z = vertices[vertexIndex].z * -1.0f;
+				vertexIndex++;
+			}
+
+		}
+
+		// Read in the faces.
+		if (input == 'f')
+		{
+			fin.get(input);
+			if (input == ' ')
+			{
+				// Read the face data in backwards to convert it to a left hand system from right hand system.
+				fin >> faces[faceIndex] >> input2 >> skiped >> input2 >> skiped
+					>> faces[faceIndex+1] >> input2 >> skiped >> input2 >> skiped
+					>> faces[faceIndex+2] >> input2 >> skiped >> input2 >> skiped;
+				faceIndex+=3;
+			}
+		}
+
+		// Read in the remainder of the line.
+		while (input != '\n')
+		{
+			fin.get(input);
+		}
+
+		// Start reading the beginning of the next line.
+		fin.get(input);
+	}
+
+	// Close the file.
+	fin.close();
+
+
+
+	return true;
+}
+
+PxTriangleMesh*  PhysxClass::createTriangleMesh(char* filename)
+{
+	PxTriangleMeshDesc meshDesc;
+	int nbVerts, triCount;
+	PxVec3* vertices =NULL;
+	PxU32* faces = NULL;
+	ifstream fin;
+
+	int vertexIndex, faceIndex;
+	int skiped;
+	char input, input2;
+	ReadFromObj(filename, nbVerts, triCount);
+	vertices = new PxVec3[nbVerts];
+
+	faces = new PxU32[triCount * 3];
+
+	// Initialize the indexes.
+	vertexIndex = 0;
+	faceIndex = 0;
+
+	// Open the file.
+	fin.open(filename);
+
+	// Check if it was successful in opening the file.
+	if (fin.fail() == true)
+	{
+		return false;
+	}
+
+	// Read in the vertices, texture coordinates, and normals into the data structures.
+	// Important: Also convert to left hand coordinate system since Maya uses right hand coordinate system.
+	fin.get(input);
+	while (!fin.eof())
+	{
+		if (input == 'v')
+		{
+			fin.get(input);
+
+			// Read in the vertices.
+			if (input == ' ')
+			{
+				fin >> vertices[vertexIndex].x >> vertices[vertexIndex].y >> vertices[vertexIndex].z;
+
+				// Invert the Z vertex to change to left hand system.
+				//vertices[vertexIndex].z = vertices[vertexIndex].z * -1.0f;
+				vertexIndex++;
+			}
+
+		}
+
+		// Read in the faces.
+		if (input == 'f')
+		{
+			fin.get(input);
+			if (input == ' ')
+			{
+				// Read the face data in backwards to convert it to a left hand system from right hand system.
+				fin >> faces[faceIndex ] >> input2 >> skiped >> input2 >> skiped
+					>> faces[faceIndex +1] >> input2 >> skiped >> input2 >> skiped
+					>> faces[faceIndex +2] >> input2 >> skiped >> input2 >> skiped;
+				faceIndex += 3;
+			}
+		}
+
+		// Read in the remainder of the line.
+		while (input != '\n')
+		{
+			fin.get(input);
+		}
+
+		// Start reading the beginning of the next line.
+		fin.get(input);
+	}
+
+	// Close the file.
+	fin.close();
+
+
+	ofstream fout;
+	fout.open("model.txt");
+
+	// Write out the file header that our model format uses.
+	fout << "Vertex Count: " << (triCount * 3) << endl;
+	fout << endl;
+	fout << "Data:" << endl;
+	fout << endl;
+
+	int vIndex = 0, fIndex = 0;
+	// Now loop through all the faces and output the three vertices for each face.
+	for (int i = 0; i<nbVerts; i++)
+	{
+		fout << vertices[i].x << " " << vertices[i].y << " " << vertices[i].z << "\n";
+	}
+
+	for (int i = 0; i<triCount*3; i += 3)
+	{
+		faces[i] = faces[i] - 1;
+		faces[i+1] = faces[i+1] - 1;
+		faces[i+2] = faces[i+2] - 1;
+		fout << faces[i] << " " << faces[i + 1] << " " << faces[i + 2] << "\n";
+	}
+
+	// Close the output file.
+	fout.close();
+
+	meshDesc.points.count = nbVerts;
+	meshDesc.points.stride = sizeof(PxVec3);
+	meshDesc.points.data = vertices;
+
+	meshDesc.triangles.count = triCount;
+	meshDesc.triangles.stride = 3*sizeof(PxU32);
+	meshDesc.triangles.data = faces;
+
+
+
+	PxDefaultMemoryOutputStream writeBuffer;
+	bool status = gCooking->cookTriangleMesh(meshDesc, writeBuffer);
+	if (!status)
+		return NULL;
+
+	PxDefaultMemoryInputData readBuffer(writeBuffer.getData(), writeBuffer.getSize());
+	return gPhysicsSDK->createTriangleMesh(readBuffer);
+}

@@ -33,7 +33,7 @@ bool ShapeClass::BuildGeometryBuffers(ID3D11Device* device)
 
 	GeometryGenerator geoGen;
 	geoGen.CreateBox(1.0f, 1.0f, 1.0f, box);
-	geoGen.CreateCylinder(0.5f,0.3f, 1.0f, 20, 20, cylinder);
+	geoGen.CreateCylinder(0.5f,0.5f, 1.0f, 20, 20, cylinder);
 
 	// Cache the vertex offsets to each object in the concatenated vertex buffer.
 	mBoxVertexOffset = 0;

@@ -266,6 +266,20 @@ bool InputClass::IsPPressed()
 	return false;
 }
 
+bool InputClass::IsIPressed()
+{
+	// Do a bitwise and on the keyboard state to check if the escape key is currently being pressed.
+	if ((!(m_keyboardState[DIK_I] & 0x80)) && (DIK_I == pressKey))
+	{
+		pressKey = 0;
+		return true;
+	}
+	if (m_keyboardState[DIK_I] & 0x80)
+		pressKey = DIK_I;
+
+	return false;
+}
+
 
 bool InputClass::IsBPressed()
 {
@@ -305,6 +319,49 @@ bool InputClass::IsOPressed()
 	}
 	if (m_keyboardState[DIK_O] & 0x80)
 		pressKey = DIK_O;
+
+	return false;
+}
+
+bool InputClass::IsOnePressed()
+{
+	// Do a bitwise and on the keyboard state to check if the escape key is currently being pressed.
+	if ((!(m_keyboardState[DIK_1] & 0x80)) && (DIK_1 == pressKey))
+	{
+		pressKey = 0;
+		return true;
+	}
+	if (m_keyboardState[DIK_1] & 0x80)
+		pressKey = DIK_1;
+
+	return false;
+}
+
+bool InputClass::IsTwoPressed()
+{
+	// Do a bitwise and on the keyboard state to check if the escape key is currently being pressed.
+	if ((!(m_keyboardState[DIK_2] & 0x80)) && (DIK_2 == pressKey))
+	{
+		pressKey = 0;
+		return true;
+	}
+	if (m_keyboardState[DIK_2] & 0x80)
+		pressKey = DIK_2;
+
+	return false;
+}
+
+
+bool InputClass::IsThreePressed()
+{
+	// Do a bitwise and on the keyboard state to check if the escape key is currently being pressed.
+	if ((!(m_keyboardState[DIK_3] & 0x80)) && (DIK_3 == pressKey))
+	{
+		pressKey = 0;
+		return true;
+	}
+	if (m_keyboardState[DIK_3] & 0x80)
+		pressKey = DIK_3;
 
 	return false;
 }

@@ -8,7 +8,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <Link>
-      <AdditionalDependencies>PhysX3DEBUG_x64.lib;PhysX3CommonDEBUG_x64.lib;PhysX3ExtensionsDEBUG.lib;PhysXVisualDebuggerSDKDEBUG.lib;PhysXProfileSDKDEBUG.lib;PxTaskDEBUG.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>PhysX3DEBUG_x64.lib;PhysX3CommonDEBUG_x64.lib;PhysX3ExtensionsDEBUG.lib;PhysXVisualDebuggerSDKDEBUG.lib;PhysXProfileSDKDEBUG.lib;PxTaskDEBUG.lib;PhysX3CookingDEBUG_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup />

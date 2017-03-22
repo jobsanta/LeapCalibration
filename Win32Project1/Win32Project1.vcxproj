@@ -68,6 +68,7 @@
     <Import Project="..\physx_debug.props" />
     <Import Project="..\kinect2_debug.props" />
     <Import Project="..\opencv_debug.props" />
+    <Import Project="pcl_debug.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -155,10 +156,13 @@
     <ClCompile Include="cameraclass.cpp" />
     <ClCompile Include="colorshaderclass.cpp" />
     <ClCompile Include="d3dclass.cpp" />
+    <ClCompile Include="depthshaderclass.cpp" />
     <ClCompile Include="fontclass.cpp" />
     <ClCompile Include="fontshaderclass.cpp" />
     <ClCompile Include="GeometryGenerator.cpp" />
     <ClCompile Include="graphicsclass.cpp" />
+    <ClCompile Include="groundshaderclass.cpp" />
+    <ClCompile Include="horizontalblurshaderclass.cpp" />
     <ClCompile Include="inputclass.cpp" />
     <ClCompile Include="kinectclass.cpp" />
     <ClCompile Include="leapclass.cpp" />
@@ -168,7 +172,10 @@
     <ClCompile Include="MathHelper.cpp" />
     <ClCompile Include="modelclass.cpp" />
     <ClCompile Include="nvStereo.cpp" />
+    <ClCompile Include="orthowindowclass.cpp" />
     <ClCompile Include="physxclass.cpp" />
+    <ClCompile Include="rendertextureclass.cpp" />
+    <ClCompile Include="shadowshaderclass.cpp" />
     <ClCompile Include="shapeclass.cpp" />
     <ClCompile Include="systemclass.cpp" />
     <ClCompile Include="terrainclass.cpp" />
@@ -176,17 +183,21 @@
     <ClCompile Include="textureclass.cpp" />
     <ClCompile Include="textureshaderclass.cpp" />
     <ClCompile Include="trackerclass.cpp" />
+    <ClCompile Include="verticalblurshaderclass.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="3dvisionclass.h" />
     <ClInclude Include="bitmapclass.h" />
     <ClInclude Include="cameraclass.h" />
     <ClInclude Include="d3dclass.h" />
+    <ClInclude Include="depthshaderclass.h" />
     <ClInclude Include="fontclass.h" />
     <ClInclude Include="fontshaderclass.h" />
     <ClInclude Include="GeometryGenerator.h" />
     <ClInclude Include="graphicsclass.h" />
     <ClInclude Include="colorshaderclass.h" />
+    <ClInclude Include="groundshaderclass.h" />
+    <ClInclude Include="horizontalblurshaderclass.h" />
     <ClInclude Include="inputclass.h" />
     <ClInclude Include="kinectclass.h" />
     <ClInclude Include="leapclass.h" />
@@ -195,7 +206,10 @@
     <ClInclude Include="MathHelper.h" />
     <ClInclude Include="modelclass.h" />
     <ClInclude Include="nvStereo.h" />
+    <ClInclude Include="orthowindowclass.h" />
     <ClInclude Include="physxclass.h" />
+    <ClInclude Include="rendertextureclass.h" />
+    <ClInclude Include="shadowshaderclass.h" />
     <ClInclude Include="shapeclass.h" />
     <ClInclude Include="systemclass.h" />
     <ClInclude Include="terrainclass.h" />
@@ -203,6 +217,7 @@
     <ClInclude Include="textureclass.h" />
     <ClInclude Include="textureshaderclass.h" />
     <ClInclude Include="trackerclass.h" />
+    <ClInclude Include="verticalblurshaderclass.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Color.ps">
@@ -211,10 +226,29 @@
     <None Include="Color.vs">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </None>
+    <None Include="cup.cmo" />
+    <None Include="depth.ps">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </None>
+    <None Include="depth.vs">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </None>
     <None Include="font.ps">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </None>
     <None Include="font.vs">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </None>
+    <None Include="ground.ps">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </None>
+    <None Include="ground.vs">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </None>
+    <None Include="horizontalblur.ps">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </None>
+    <None Include="horizontalblur.vs">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </None>
     <None Include="light.ps">
@@ -223,10 +257,22 @@
     <None Include="light.vs">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </None>
+    <None Include="shadow.ps">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </None>
+    <None Include="shadow.vs">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </None>
     <None Include="texture.ps">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </None>
     <None Include="texture.vs">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </None>
+    <None Include="verticalblur.ps">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </None>
+    <None Include="verticalblur.vs">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </None>
   </ItemGroup>
@@ -234,6 +280,9 @@
     <ProjectReference Include="..\DirectXTK\DirectXTK_Desktop_2015.vcxproj">
       <Project>{e0b52ae7-e160-4d32-bf3f-910b785e5a8e}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\..\..\..\Desktop\dx11exe08\Engine\cup.jpg" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

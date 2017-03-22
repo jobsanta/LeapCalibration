@@ -99,6 +99,11 @@ bool TextClass::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceCont
 		return false;
 	}
 
+	result = UpdateSentence(m_sentence1, "Hello", 100, 100, 1.0, 1.0, 1.0, deviceContext);
+	if (!result)
+	{
+		return false;
+	}
 
 	return true;
 }

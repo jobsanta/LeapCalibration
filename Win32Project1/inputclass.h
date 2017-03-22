@@ -49,6 +49,11 @@ public:
 	bool IsDownPressed();
 	bool IsPageDownPressed();
 	bool IsPageUpPressed();
+	bool IsIPressed();
+
+	bool IsOnePressed();
+	bool IsTwoPressed();
+	bool IsThreePressed();
 
 	bool IsLeftPressed();
 	bool IsRightPressed();

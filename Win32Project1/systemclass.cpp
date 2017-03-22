@@ -142,12 +142,27 @@ bool SystemClass::Frame()
 
 	if (m_Input->IsPPressed() == true)
 	{
-		m_Graphics->StartCalibrateOtho();
+		m_Graphics->StartCalibrate();
 	}
 	if (m_Input->IsQPressed() == true)
 	{
 	//	m_Graphics->CalculateCalibration();
 		m_Graphics->StopCalibrate(true);
+	}
+
+	if (m_Input->IsOnePressed() == true)
+	{
+		m_Graphics->StartGameMode(1);
+	}
+
+	if (m_Input->IsTwoPressed() == true)
+	{
+		m_Graphics->StartGameMode(2);
+	}
+
+	if (m_Input->IsThreePressed() == true)
+	{
+		m_Graphics->StartGameMode(3);
 	}
 
 	//if (m_Input->IsCPressed() == true)
@@ -162,6 +177,10 @@ bool SystemClass::Frame()
 	{
 		m_Graphics->CreateSphere();
 	}
+	if (m_Input->IsIPressed() == true)
+	{
+		m_Graphics->CreateCylinder();
+	}
 	if (m_Input->IsCPressed() == true)
 	{
 		m_Graphics->m_RenderHand = !m_Graphics->m_RenderHand;
@@ -170,21 +189,21 @@ bool SystemClass::Frame()
 
 	if (m_Input->IsDownPressed() == true)
 	{
-		m_Graphics->ChangeZvalue(-0.001);
+		m_Graphics->ChangeZvalue(-0.025);
 	}
 
 	if (m_Input->IsUpPressed() == true)
 	{
-		m_Graphics->ChangeZvalue(0.001);
+		m_Graphics->ChangeZvalue(0.025);
 	}
-	if (m_Input->IsLeftPressed() == true)
-	{
-		m_Graphics->ChangeFOV(-0.01);
-	}
-	if (m_Input->IsRightPressed() == true)
-	{
-		m_Graphics->ChangeFOV(0.01);
-	}
+	//if (m_Input->IsLeftPressed() == true)
+	//{
+	//	m_Graphics->ChangeFOV(-0.01);
+	//}
+	//if (m_Input->IsRightPressed() == true)
+	//{
+	//	m_Graphics->ChangeFOV(0.01);
+	//}
 	if (m_Input->IsPageDownPressed() == true)
 	{
 		m_Graphics->ChangeSize(-0.05);
@@ -193,6 +212,8 @@ bool SystemClass::Frame()
 	{
 		m_Graphics->ChangeSize(+0.05);
 	 }
+
+
 
 
 	// Do the frame processing for the graphics object.

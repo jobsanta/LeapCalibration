@@ -49,7 +49,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 	D3D11_DEPTH_STENCIL_DESC depthDisabledStencilDesc;
 	D3D11_BLEND_DESC blendStateDescription;
 	D3D11_RASTERIZER_DESC rasterDesc;
-	D3D11_VIEWPORT viewport;
+	
 	float fieldOfView, screenAspect;
 
 	// Store the vsync setting.
@@ -323,15 +323,15 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 	m_deviceContext->RSSetState(m_rasterState);
 
 	// Setup the viewport for rendering.
-	viewport.Width = (float)screenWidth;
-	viewport.Height = (float)screenHeight;
-	viewport.MinDepth = 0.0f;
-	viewport.MaxDepth = 1.0f;
-	viewport.TopLeftX = 0.0f;
-	viewport.TopLeftY = 0.0f;
+	m_viewport.Width = (float)screenWidth;
+	m_viewport.Height = (float)screenHeight;
+	m_viewport.MinDepth = 0.0f;
+	m_viewport.MaxDepth = 1.0f;
+	m_viewport.TopLeftX = 0.0f;
+	m_viewport.TopLeftY = 0.0f;
 
 	// Create the viewport.
-	m_deviceContext->RSSetViewports(1, &viewport);
+	m_deviceContext->RSSetViewports(1, &m_viewport);
 
 	// Setup the projection matrix.
 	fieldOfView = 26.6/180.0 *XM_PI;
@@ -616,6 +616,11 @@ void D3DClass::ChangeFOV(float degree, int screenWidth, int screenHeight, float 
 	m_projectionMatrix = XMMatrixPerspectiveFovLH(fieldOfView, screenAspect, screenNear, screenDepth);
 }
 
+void D3DClass::ChangeHeadPosition(XMFLOAT3 eye_pos, XMFLOAT3 left, XMFLOAT3 right, XMFLOAT3 top, float screenNear, float screenDepth)
+{
+	m_projectionMatrix = GeneralizedPerspectiveProjection(left, right, top, eye_pos, screenNear, screenDepth);
+}
+
 float D3DClass::CalculateFOV(float x, float y, float z)
 {
 	float c = 3.4f; //physical Screen size = 34cm
@@ -631,4 +636,129 @@ float D3DClass::CalculateFOV(float x, float y, float z)
 	return fovy*180/XM_PI;
 
 
+}
+
+void D3DClass::SetBackBufferRenderTarget()
+{
+	// Bind the render target view and depth stencil buffer to the output render pipeline.
+	m_deviceContext->OMSetRenderTargets(1, &m_renderTargetView, m_depthStencilView);
+
+	return;
+}
+
+
+void D3DClass::ResetViewport()
+{
+	// Set the viewport.
+	m_deviceContext->RSSetViewports(1, &m_viewport);
+
+	return;
+}
+
+XMMATRIX D3DClass::GeneralizedPerspectiveProjection(XMFLOAT3 pointa, XMFLOAT3 pointb, XMFLOAT3 pointc, XMFLOAT3 pointe, float fn, float ff)
+{
+	XMVECTOR va, vb, vc;
+	XMVECTOR vr, vu, vn;
+	XMVECTOR pa, pb, pc, pe;
+	pa = XMLoadFloat3(&pointa);
+	pb = XMLoadFloat3(&pointb);
+	pc = XMLoadFloat3(&pointc);
+	pe = XMLoadFloat3(&pointe);
+	float left, right, bottom, top, eyedistance;
+
+	XMFLOAT4X4 transformMatrix;
+	XMMATRIX projectionM;
+	XMFLOAT4X4 eyeTranslateM;
+	XMMATRIX finalProjection;
+
+	//Calculate the orthonormal for the screen (the screen coordinate system
+
+	vr = pb - pa;
+	vr = XMVector3Normalize(vr);
+	vu = pc - pa;
+	vu = XMVector3Normalize(vu);
+	vn = XMVector3Cross(vr, vu);
+	vn = XMVector3Normalize(vn);
+	
+
+	//Calculate the vector from eye (pe) to screen corners (pa, pb, pc)
+	va = pa - pe;
+	vb = pb - pe;
+	vc = pc - pe;
+
+	//Get the distance;; from the eye to the screen plane
+
+	eyedistance = (MvectorDot(va,vn));
+
+	//Get the varaibles for the off center projection
+	left = (MvectorDot(vr, va)*fn) / eyedistance;
+	right = (MvectorDot(vr, vb)*fn) / eyedistance;
+	bottom = (MvectorDot(vu, va)*fn) / eyedistance;
+	top = (MvectorDot(vu, vc)*fn) / eyedistance;
+
+	//Get this projection
+	projectionM = XMMatrixPerspectiveOffCenterLH(left, right, bottom, top, fn, ff);
+
+	//Fill in the transform matrix
+	XMFLOAT3 v_r, v_u, v_n;
+	XMStoreFloat3(&v_r, vr);
+	XMStoreFloat3(&v_u, vu);
+	XMStoreFloat3(&v_n, vn);
+
+	
+	transformMatrix.m[0][0] = v_r.x;
+	transformMatrix.m[0][1] = v_r.y;
+	transformMatrix.m[0][2] = v_r.z;
+	transformMatrix.m[0][3] = 0;
+	transformMatrix.m[1][0] = v_u.x;
+	transformMatrix.m[1][1] = v_u.y;
+	transformMatrix.m[1][2] = v_u.z;
+	transformMatrix.m[1][3] = 0;
+	transformMatrix.m[2][0] = v_n.x;
+	transformMatrix.m[2][1] = v_n.y;
+	transformMatrix.m[2][2] = v_n.z;
+	transformMatrix.m[2][3] = 0;
+	transformMatrix.m[3][0] = 0;
+	transformMatrix.m[3][1] = 0;
+	transformMatrix.m[3][2] = 0;
+	transformMatrix.m[3][3] = 1;
+
+
+	//Now for the eye transform
+	eyeTranslateM.m[0][0] = 1;
+	eyeTranslateM.m[0][1] = 0;
+	eyeTranslateM.m[0][2] = 0;
+	eyeTranslateM.m[0][3] = -pointe.x;
+	eyeTranslateM.m[1][0] = 0;
+	eyeTranslateM.m[1][1] = 1;
+	eyeTranslateM.m[1][2] = 0;
+	eyeTranslateM.m[1][3] = -pointe.y;
+	eyeTranslateM.m[2][0] = 0;
+	eyeTranslateM.m[2][1] = 0;
+	eyeTranslateM.m[2][2] = 1;
+	eyeTranslateM.m[2][3] = -pointe.z;
+	eyeTranslateM.m[3][0] = 0;
+	eyeTranslateM.m[3][1] = 0;
+	eyeTranslateM.m[3][2] = 0;
+	eyeTranslateM.m[3][3] = 1;
+
+	//Multiply all together
+	XMMATRIX tm, em;
+	tm = XMLoadFloat4x4(&transformMatrix);
+	em = XMLoadFloat4x4(&eyeTranslateM);
+
+
+	finalProjection = projectionM*tm;
+
+	//finally return
+	return finalProjection;
+}
+
+float D3DClass::MvectorDot(XMVECTOR v1, XMVECTOR v2)
+{
+	XMVECTOR d = XMVector3Dot(v1, v2);
+	XMFLOAT3 ed;
+	XMStoreFloat3(&ed, d);
+
+	return ed.x;
 }

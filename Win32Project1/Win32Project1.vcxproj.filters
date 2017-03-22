@@ -96,6 +96,27 @@
     <ClCompile Include="trackerclass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="depthshaderclass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rendertextureclass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="groundshaderclass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="shadowshaderclass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="horizontalblurshaderclass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="orthowindowclass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="verticalblurshaderclass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="systemclass.h">
@@ -173,6 +194,27 @@
     <ClInclude Include="trackerclass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="depthshaderclass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="rendertextureclass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="groundshaderclass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="shadowshaderclass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="horizontalblurshaderclass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="orthowindowclass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="verticalblurshaderclass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Color.vs">
@@ -199,5 +241,41 @@
     <None Include="texture.vs">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="depth.ps">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="depth.vs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="ground.ps">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="ground.vs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shadow.ps">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shadow.vs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="horizontalblur.ps">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="horizontalblur.vs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="verticalblur.ps">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="verticalblur.vs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="cup.cmo" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\..\..\..\Desktop\dx11exe08\Engine\cup.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

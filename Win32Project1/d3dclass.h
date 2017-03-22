@@ -51,7 +51,11 @@ public:
 	void TurnOffAlphaBlending();
 
 	void ChangeFOV(float degree, int screenWidth, int screenHeight, float screenNear, float screenDepth);
+	void ChangeHeadPosition(XMFLOAT3 eye_pos, XMFLOAT3 left, XMFLOAT3 right, XMFLOAT3 top, float screenNear, float screenDepth);
 	float CalculateFOV(float x, float y, float z);
+
+	void SetBackBufferRenderTarget();
+	void ResetViewport();
 
 private:
 	bool m_vsync_enabled;
@@ -73,6 +77,11 @@ private:
 	XMMATRIX m_projectionMatrix;
 	XMMATRIX m_worldMatrix;
 	XMMATRIX m_orthoMatrix;
+	D3D11_VIEWPORT m_viewport;
+	
+
+	XMMATRIX GeneralizedPerspectiveProjection(XMFLOAT3 pa, XMFLOAT3 pb, XMFLOAT3 pc, XMFLOAT3 pe, float fn, float ff);
+	float MvectorDot(XMVECTOR v1, XMVECTOR v2);
 };
 
 #endif

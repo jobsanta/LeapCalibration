@@ -44,6 +44,8 @@ GraphicsClass::GraphicsClass()
 	m_FullScreenWindow = 0;
 
 	handlength = 150;
+
+
 }
 
 
@@ -498,11 +500,11 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 
 	//auto teapot = Model::CreateFromCMO(m_Direct3D->GetDevice(), L"teapot.cmo", fx);
 
-	m_states = std::make_unique<CommonStates>(m_Direct3D->GetDevice());
+	//m_states = std::make_unique<CommonStates>(m_Direct3D->GetDevice());
 
-	m_fxFactory = std::make_unique<EffectFactory>(m_Direct3D->GetDevice());
+	//m_fxFactory = std::make_unique<EffectFactory>(m_Direct3D->GetDevice());
 
-	m_model = Model::CreateFromSDKMESH(m_Direct3D->GetDevice(), L"teapot.sdkmesh", *m_fxFactory);
+	//m_model = Model::CreateFromSDKMESH(m_Direct3D->GetDevice(), L"teapot.sdkmesh", *m_fxFactory);
 
 	m_world = SimpleMath::Matrix::Identity;
 
@@ -518,7 +520,8 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	ReadFile();
 	StopCalibrate(false);
 
-	
+	floor_trans = XMMatrixTranslation(0, m_physx->FLOOR_LEVEL - 0.26, -0.0f);
+	floor_scale = XMMatrixScaling(6, 0.5, 8);
 	return true;
 }
 
@@ -582,6 +585,8 @@ void GraphicsClass::StopCalibrate(bool writeMode)
 	targetHit = false;
 	handColor = HANDCOLOR;
 	WriteFile();
+
+
 }
 
 void GraphicsClass::StartGameMode(int mode)
@@ -1121,6 +1126,12 @@ void GraphicsClass::CreateBox()
 		PxRigidActor* box = m_physx->createBox(PxVec3(0.25, 0.25, 0.25), pose, PxQuat::createIdentity());
 		boxes.push_back(box);
 	}
+	else
+	{
+		PxVec3 pose = PxVec3(0, 3, -1);
+		PxRigidActor* box = m_physx->createBox(PxVec3(0.25, 0.25, 0.25), pose, PxQuat::createIdentity());
+		boxes.push_back(box);
+	}
 
 }
 
@@ -1131,6 +1142,12 @@ void GraphicsClass::CreateSphere()
 	{
 		PxVec3 pose = mHandlist[0].palm->getGlobalPose().p;
 		pose = PxVec3(pose.x, pose.y + 2, pose.z);
+		PxRigidActor* sphere = m_physx->createSphere(0.25, pose, PxQuat::createIdentity());
+		spheres.push_back(sphere);
+	}
+	else
+	{
+		PxVec3 pose = PxVec3(0, 3, -1);
 		PxRigidActor* sphere = m_physx->createSphere(0.25, pose, PxQuat::createIdentity());
 		spheres.push_back(sphere);
 	}
@@ -1209,8 +1226,7 @@ void GraphicsClass::RenderTerrian(int mode =0)
 	m_Light->GetProjectionMatrix(lightProjectionMatrix);
 
 
-	XMMATRIX trans2 = XMMatrixTranslation(0, m_physx->FLOOR_LEVEL - 0.26, -0.0f);
-	XMMATRIX s = XMMatrixScaling(5, 0.5, 8);
+
 	XMMATRIX trans = XMMatrixTranslation(-3, m_physx->FLOOR_LEVEL, -4.0f);
 	XMMATRIX back = XMMatrixTranslation(-3, m_physx->FLOOR_LEVEL, -0.5);
 	XMMATRIX rotate = XMMatrixRotationX(-XM_PI / 2);
@@ -1218,12 +1234,15 @@ void GraphicsClass::RenderTerrian(int mode =0)
 	//XMMATRIX mat = rotat
 	if (mode == 0 || mode == 2 || mode ==3)
 	{
+		if (SHADOW_ENABLED)
+		{
+			m_Shape->Render(m_Direct3D->GetDevice());
 
-		m_Shape->Render(m_Direct3D->GetDevice());
+			m_groundShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset(), floor_scale*floor_trans,
+				viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_UpSampleTexure->GetShaderResourceView(),
+				m_Light->GetPositions(), m_Light->GetAmbientColor(), m_Light->GetDiffuseColor());
+		}
 
-		m_groundShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(),m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset(), s*trans2, 
-			viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_UpSampleTexure->GetShaderResourceView(),
-			m_Light->GetPositions(), m_Light->GetAmbientColor(), m_Light->GetDiffuseColor());
 
 
 		m_Terrain->Render(m_Direct3D->GetDeviceContext());
@@ -1602,38 +1621,43 @@ bool GraphicsClass::Render()
 		}
 	}
 
+
+
 	result = RenderSceneToTexture();
 	if (!result)
 	{
 		return false;
 	}
-
-	 //Next render the shadowed scene in black and white.
-	result = RenderBlackAndWhiteShadows();
-	if (!result)
+	if (SHADOW_ENABLED)
 	{
-		return false;
-	}
+		//Next render the shadowed scene in black and white.
+		result = RenderBlackAndWhiteShadows();
+		if (!result)
+		{
+			return false;
+		}
 
-	// Then down sample the black and white scene texture.
-	result = DownSampleTexture();
-	if (!result)
-	{
-		return false;
-	}
+		// Then down sample the black and white scene texture.
+		result = DownSampleTexture();
+		if (!result)
+		{
+			return false;
+		}
 
-	// Perform a horizontal blur on the down sampled texture.
-	result = RenderHorizontalBlurToTexture();
-	if (!result)
-	{
-		return false;
-	}
+		// Perform a horizontal blur on the down sampled texture.
+		result = RenderHorizontalBlurToTexture();
+		if (!result)
+		{
+			return false;
+		}
 
-	// Now perform a vertical blur on the texture.
-	result = RenderVerticalBlurToTexture();
-	if (!result)
-	{
-		return false;
+		// Now perform a vertical blur on the texture.
+		result = RenderVerticalBlurToTexture();
+		if (!result)
+		{
+			return false;
+		}
+
 	}
 
 	// Finally up sample the final blurred render to texture that can now be used in the soft shadow shader.
@@ -2028,40 +2052,36 @@ bool GraphicsClass::RenderSceneToTexture()
 	m_RenderTexture->SetRenderTarget(m_Direct3D->GetDeviceContext());
 
 	// Clear the render to texture.
-	m_RenderTexture->ClearRenderTarget(m_Direct3D->GetDeviceContext(), 0.0f, 0.0f, 0.0f, 1.0f);
+	if(SHADOW_ENABLED)
+		m_RenderTexture->ClearRenderTarget(m_Direct3D->GetDeviceContext(), 0.0f, 0.0f, 0.0f, 1.0f);
+	else
+		m_RenderTexture->ClearRenderTarget(m_Direct3D->GetDeviceContext(), 1.0f, 1.0f, 1.0f, 1.0f);
 	//Generate the view matrix of the light.
 
+
+	if (SHADOW_ENABLED)
+	{
 		// Generate the light view matrix based on the light's position.
-	m_Light->GenerateViewMatrix();
+		m_Light->GenerateViewMatrix();
 
-	// Get the world matrix from the d3d object.
-	m_Direct3D->GetWorldMatrix(worldMatrix);
+		// Get the world matrix from the d3d object.
+		m_Direct3D->GetWorldMatrix(worldMatrix);
 
-	// Get the view and orthographic matrices from the light object.
-	m_Light->GetViewMatrix(lightViewMatrix);
-	m_Light->GetProjectionMatrix(lightProjectionMatrix);
-	//Render all the objects in the scene using the depth shader and the light view and projection matrices.
+		// Get the view and orthographic matrices from the light object.
+		m_Light->GetViewMatrix(lightViewMatrix);
+		m_Light->GetProjectionMatrix(lightProjectionMatrix);
+		//Render all the objects in the scene using the depth shader and the light view and projection matrices.
 
+		m_Shape->Render(m_Direct3D->GetDevice());
 
-	// Render the cube model with the depth shader.
-	//m_CubeModel->Render(m_Direct3D->GetDeviceContext());
-	//result = m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_CubeModel->GetIndexCount(), worldMatrix, lightViewMatrix, lightProjectionMatrix);
-	//if (!result)
-	//{
-	//	return false;
-	//}	
+		m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(),
+			m_Shape->GetBoxVertexOffset(), floor_scale*floor_trans, lightViewMatrix, lightProjectionMatrix, m_Camera->GetPosition());
 
-	XMMATRIX trans2 = XMMatrixTranslation(0, m_physx->FLOOR_LEVEL - 0.25, 0.0f);
-	XMMATRIX s = XMMatrixScaling(5, 0.5, 8);
+		RenderHand(0);
 
-	m_Shape->Render(m_Direct3D->GetDevice());
+		RenderActor(0);
+	}
 
-	m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(),
-		m_Shape->GetBoxVertexOffset(), s*trans2, lightViewMatrix, lightProjectionMatrix, m_Camera->GetPosition());
-
-	RenderHand(0);
-
-	RenderActor(0);
 
 
 
@@ -2087,35 +2107,39 @@ bool GraphicsClass::RenderBlackAndWhiteShadows()
 	m_BlackWhiteRenderTexture->SetRenderTarget(m_Direct3D->GetDeviceContext());
 
 	// Clear the render to texture.
-	m_BlackWhiteRenderTexture->ClearRenderTarget(m_Direct3D->GetDeviceContext(), 0.0f, 0.0f, 0.0f, 1.0f);
+	if(SHADOW_ENABLED)
+	{
+		m_BlackWhiteRenderTexture->ClearRenderTarget(m_Direct3D->GetDeviceContext(), 0.0f, 0.0f, 0.0f, 1.0f);
+		// Generate the light view matrix based on the light's position.
+		m_Light->GenerateViewMatrix();
+
+		// Get the world, view, and projection matrices from the camera and d3d objects.
+		m_Camera->GetViewMatrix(viewMatrix);
+		m_Direct3D->GetWorldMatrix(worldMatrix);
+		m_Direct3D->GetProjectionMatrix(projectionMatrix);
+
+		// Get the light's view and projection matrices from the light object.
+		m_Light->GetViewMatrix(lightViewMatrix);
+		m_Light->GetProjectionMatrix(lightProjectionMatrix);
+
+
+
+		m_Shape->Render(m_Direct3D->GetDevice());
+
+		m_ShadowShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(),
+			m_Shape->GetBoxVertexOffset(), floor_scale*floor_trans, viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_RenderTexture->GetShaderResourceView(), m_Light->GetPositions());
+
+		RenderHand(1);
+
+		RenderActor(1);
+	}
+	else
+	m_BlackWhiteRenderTexture->ClearRenderTarget(m_Direct3D->GetDeviceContext(), 1.0f, 1.0f, 1.0f, 1.0f);
 
 	// Generate the view matrix based on the camera's position.
 	//m_Camera->Render();
 
-	// Generate the light view matrix based on the light's position.
-	m_Light->GenerateViewMatrix();
 
-	// Get the world, view, and projection matrices from the camera and d3d objects.
-	m_Camera->GetViewMatrix(viewMatrix);
-	m_Direct3D->GetWorldMatrix(worldMatrix);
-	m_Direct3D->GetProjectionMatrix(projectionMatrix);
-
-	// Get the light's view and projection matrices from the light object.
-	m_Light->GetViewMatrix(lightViewMatrix);
-	m_Light->GetProjectionMatrix(lightProjectionMatrix);
-
-
-	XMMATRIX trans2 = XMMatrixTranslation(0, m_physx->FLOOR_LEVEL - 0.25, 0.0f);
-	XMMATRIX s = XMMatrixScaling(5, 0.5, 8);
-
-	m_Shape->Render(m_Direct3D->GetDevice());
-
-	m_ShadowShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(),
-		m_Shape->GetBoxVertexOffset(), s*trans2,viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_RenderTexture->GetShaderResourceView(),m_Light->GetPositions());
-
-	RenderHand(1);
-
-	RenderActor(1);
 
 	// Reset the render target back to the original back buffer and not the render to texture anymore.
 	m_Direct3D->SetBackBufferRenderTarget();
@@ -2139,7 +2163,7 @@ bool GraphicsClass::DownSampleTexture()
 	m_DownSampleTexure->ClearRenderTarget(m_Direct3D->GetDeviceContext(), 0.0f, 0.0f, 0.0f, 1.0f);
 
 	// Generate the view matrix based on the camera's position.
-	m_Camera->Render(XMFLOAT3(0.0f, 1.5f, 0.0f));
+	m_Camera->Render(XMFLOAT3(0.0f, 0.0f, 0.0f));
 
 	// Get the world and view matrices from the camera and d3d objects.
 	m_Direct3D->GetWorldMatrix(worldMatrix);
@@ -2308,8 +2332,12 @@ bool GraphicsClass::UpSampleTexture()
 	m_FullScreenWindow->Render(m_Direct3D->GetDeviceContext());
 
 	// Render the full screen ortho window using the texture shader and the small sized final blurred render to texture resource.
+	if(SHADOW_ENABLED)
 	result = m_TextureShader->Render(m_Direct3D->GetDeviceContext(), m_FullScreenWindow->GetIndexCount(), worldMatrix, baseViewMatrix, orthoMatrix,
 		m_VerticalBlurTexture->GetShaderResourceView());
+	else
+	result = m_TextureShader->Render(m_Direct3D->GetDeviceContext(), m_FullScreenWindow->GetIndexCount(), worldMatrix, baseViewMatrix, orthoMatrix,
+			m_RenderTexture->GetShaderResourceView());
 	if (!result)
 	{
 		return false;

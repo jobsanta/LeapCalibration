@@ -1078,10 +1078,10 @@ void LeapClass::updateHand(Hand hand, handActor actor)
 	}
 
 	PxD6JointDrive  drive[4];  
-	drive[3] = PxD6JointDrive(500, 0.01, PX_MAX_F32, true);
-	drive[2] = PxD6JointDrive(500, 0.01, PX_MAX_F32, true);
-	drive[1] = PxD6JointDrive(500, 0.01, PX_MAX_F32, true);
-	drive[0] = PxD6JointDrive(500.0, 0.01, PX_MAX_F32, true);
+	drive[3] = PxD6JointDrive(1000, 0.01, PX_MAX_F32, true);
+	drive[2] = PxD6JointDrive(1000, 0.01, PX_MAX_F32, true);
+	drive[1] = PxD6JointDrive(1000, 0.01, PX_MAX_F32, true);
+	drive[0] = PxD6JointDrive(1000.0, 0.01, PX_MAX_F32, true);
 
 
 	int i = 0;

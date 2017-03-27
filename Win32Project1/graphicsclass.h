@@ -56,6 +56,7 @@ using namespace Eigen;
 
 const bool FULL_SCREEN = true;
 const bool VSYNC_ENABLED = false;
+const bool SHADOW_ENABLED = false;
 const bool CORRECT_PERPECTIVE = true;
 const float SCREEN_DEPTH = 100.0f;
 const float SCREEN_NEAR = 1.0f;
@@ -230,6 +231,8 @@ private:
 
 	 XMFLOAT4 targetColor;
 	 XMFLOAT4 handColor;
+	 XMMATRIX floor_trans;
+	 XMMATRIX floor_scale;
 
 };
 

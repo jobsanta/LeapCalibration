@@ -23,6 +23,7 @@ GraphicsClass::GraphicsClass()
 	m_Leap = 0;
 	m_Bitmap = 0;
 	m_RenderHand = true;
+	m_RenderMirrorHand = true;
 	m_Shape = 0;
 	globalFactor = 1;
 	m_Kinect = 0;
@@ -44,6 +45,7 @@ GraphicsClass::GraphicsClass()
 	m_FullScreenWindow = 0;
 
 	handlength = 150;
+	handMode = 0;
 
 
 }
@@ -578,7 +580,7 @@ void GraphicsClass::StopCalibrate(bool writeMode)
 		fingertipDetected = 0;
 	}
 
-	m_physx->moveBackWall(0);
+	m_physx->moveBackWall(5);
 	lastGameMode = gameMode;
 	gameMode = 0;
 	calibrateMode = false;
@@ -620,7 +622,7 @@ void GraphicsClass::StartGameMode(int mode)
 		{
 			countDownTimer = 5;
 			countFrame = 0;
-			m_physx->moveBackWall(2.0f);
+			m_physx->moveBackWall(5.0f);
 			m_physx->moveFloor(0.0f);
 		}
 		else if (gameMode == 2)
@@ -701,10 +703,10 @@ void GraphicsClass::ChangeSize(float value)
 {
 	if (calibrateMode)
 	{
-		std::vector<handActor> handactor = m_Leap->getHandActor();
+		std::vector<handActor*> handactor = m_Leap->getHandActor();
 		if (handactor.size() == 1)
 		{
-			PxVec3 wristPos = m_Leap->getWristPosition(handactor[0].id);
+			PxVec3 wristPos = m_Leap->getWristPosition(handactor[0]->id);
 			float hs = m_Tracker->handMeasurement(wristPos);
 			if (hs > 50)
 			{
@@ -724,6 +726,13 @@ void GraphicsClass::ChangeSize(float value)
 			}
 		}
 	}
+}
+
+void GraphicsClass::ChangeMirrorHand()
+{
+	handMode++;
+	handMode = handMode % 3;
+	m_Leap->switchMirrorHand(handMode);
 }
 
 void GraphicsClass::RenderActor(int mode)
@@ -748,6 +757,12 @@ void GraphicsClass::RenderActor(int mode)
 	}
 
 
+	std::vector<PxRigidActor*> v;
+	v = m_Leap->getBoxes();
+	for (int i = 0; i < v.size(); i++)
+	{
+		RenderTextureBox(mode, v[i], m_boxes->GetTexture(), BOX_SIZE.x, BOX_SIZE.y, BOX_SIZE.z);
+	}
 
 	for (int i = 0; i < folders.size(); i++)
 	{
@@ -769,48 +784,93 @@ void GraphicsClass::RenderActor(int mode)
 void GraphicsClass::RenderHand(int mode)
 {
 	mHandlist = m_Leap->getHandActor();
-
-	if(mHandlist.size() != 0.0 && !FULL_SCREEN )
-	m_Tracker->handVisualize(mHandlist);
-	
-
-	
+	mMirrorHandlist = m_Leap->getMirrorHandActor();
+	//if(mHandlist.size() != 0.0 && !FULL_SCREEN )
+	//m_Tracker->handVisualize(mHandlist);
 	
 	for (int i = 0; i< mHandlist.size(); i++)
 	{
-		
-		for (int j = 0; j < 5; j++)
+		if (mHandlist[i]->isInMirror)
 		{
-			//for (int k = 0; k < 5; k++)
-			//{
-			//	Leap::Vector px = Leap::Vector( mHandlist[i].leapJointPosition[j * 4 + k].x, mHandlist[i].leapJointPosition[j * 4 + k].y, mHandlist[i].leapJointPosition[j * 4 + k].z);
-			//	RenderDebugSphere(mode, m_Leap->leapToWorld(px), 0.05, handColor);
-			//}
-
-			//RenderColorSphere(mode, mHandlist[i].finger_tip_achor[j], mHandlist[i].fingerWidth[j][3]/2, handColor);
-
-
-			if (j == 0)
+			for (int j = 0; j < 5; j++)
 			{
-				for (int k = 2; k < 4; k++)
-					RenderCylinder(mode, mHandlist[i].finger_actor[j][k],handColor, mHandlist[i].halfHeight[j][k] * 2.0, mHandlist[i].fingerWidth[j][k]);
+				//for (int k = 0; k < 5; k++)
+				//{
+				//	Leap::Vector px = Leap::Vector( mHandlist[i]->leapJointPosition[j * 4 + k].x, mHandlist[i]->leapJointPosition[j * 4 + k].y, mHandlist[i]->leapJointPosition[j * 4 + k].z);
+				//	RenderDebugSphere(mode, m_Leap->leapToWorld(px), 0.05, handColor);
+				//}
 
-				RenderPalm(mode, mHandlist[i].finger_actor[j][1], handColor, mHandlist[i].halfHeight[j][1] * 2.0, mHandlist[i].fingerWidth[j][1], mHandlist[i].fingerWidth[j][1]/2);
-			}
-			else
-			{
-				for (int k = 1; k < 4; k++)
-					RenderCylinder(mode, mHandlist[i].finger_actor[j][k], handColor, mHandlist[i].halfHeight[j][k] * 2.0, mHandlist[i].fingerWidth[j][k]);
+				//for (int k = 0; k < 5; k++)
+				//{
+				//	Leap::Vector px = Leap::Vector(mHandlist[i]->leapJointPosition2[j * 4 + k].x, mHandlist[i]->leapJointPosition2[j * 4 + k].y, mHandlist[i]->leapJointPosition2[j * 4 + k].z);
+				//	RenderDebugSphere(mode, m_Leap->leapToWorld(px), 0.05, handColor);
+				//}
 
-				RenderPalm(mode, mHandlist[i].finger_actor[j][0], handColor, mHandlist[i].halfHeight[j][0] * 2.0, mHandlist[i].fingerWidth[j][0], mHandlist[i].fingerWidth[j][0]/2);
+				//RenderColorSphere(mode, mHandlist[i]->finger_tip_achor[j], mHandlist[i]->fingerWidth[j][3]/2, handColor);
 
+
+				if (j == 0)
+				{
+					for (int k = 2; k < 4; k++)
+						RenderCylinder(mode, mHandlist[i]->finger_actor[j][k], XMFLOAT4(handColor.x, handColor.y, handColor.z, mHandlist[i]->alphaValue), mHandlist[i]->halfHeight[j][k] * 2.0, mHandlist[i]->fingerWidth[j][k]);
+
+					RenderPalm(mode, mHandlist[i]->finger_actor[j][1], XMFLOAT4(handColor.x, handColor.y, handColor.z, mHandlist[i]->alphaValue), mHandlist[i]->halfHeight[j][1] * 2.0, mHandlist[i]->fingerWidth[j][1], mHandlist[i]->fingerWidth[j][1] / 2);
+				}
+				else
+				{
+					for (int k = 1; k < 4; k++)
+						RenderCylinder(mode, mHandlist[i]->finger_actor[j][k], XMFLOAT4(handColor.x, handColor.y, handColor.z, mHandlist[i]->alphaValue), mHandlist[i]->halfHeight[j][k] * 2.0, mHandlist[i]->fingerWidth[j][k]);
+
+					RenderPalm(mode, mHandlist[i]->finger_actor[j][0], XMFLOAT4(handColor.x, handColor.y, handColor.z, mHandlist[i]->alphaValue), mHandlist[i]->halfHeight[j][0] * 2.0, mHandlist[i]->fingerWidth[j][0], mHandlist[i]->fingerWidth[j][0] / 2);
+
+				}
 			}
 		}
 
-
-		//PxVec3 dimension = mHandlist[i].palmDimension;
-		//RenderPalm(mHandlist[i].palm, dimension.x, dimension.y, dimension.z);
 	}
+	for (int i = 0; i< mHandlist.size(); i++)
+	{
+		if (!mHandlist[i]->isInMirror)
+		{
+			for (int j = 0; j < 5; j++)
+			{
+				//for (int k = 0; k < 5; k++)
+				//{
+				//	Leap::Vector px = Leap::Vector( mHandlist[i]->leapJointPosition[j * 4 + k].x, mHandlist[i]->leapJointPosition[j * 4 + k].y, mHandlist[i]->leapJointPosition[j * 4 + k].z);
+				//	RenderDebugSphere(mode, m_Leap->leapToWorld(px), 0.05, handColor);
+				//}
+
+				//for (int k = 0; k < 5; k++)
+				//{
+				//	Leap::Vector px = Leap::Vector(mHandlist[i]->leapJointPosition2[j * 4 + k].x, mHandlist[i]->leapJointPosition2[j * 4 + k].y, mHandlist[i]->leapJointPosition2[j * 4 + k].z);
+				//	RenderDebugSphere(mode, m_Leap->leapToWorld(px), 0.05, handColor);
+				//}
+
+				//RenderColorSphere(mode, mHandlist[i]->finger_tip_achor[j], mHandlist[i]->fingerWidth[j][3]/2, handColor);
+
+
+				if (j == 0)
+				{
+					for (int k = 2; k < 4; k++)
+						RenderCylinder(mode, mHandlist[i]->finger_actor[j][k], XMFLOAT4(handColor.x, handColor.y, handColor.z, mHandlist[i]->alphaValue), mHandlist[i]->halfHeight[j][k] * 2.0, mHandlist[i]->fingerWidth[j][k]);
+
+					RenderPalm(mode, mHandlist[i]->finger_actor[j][1], XMFLOAT4(handColor.x, handColor.y, handColor.z, mHandlist[i]->alphaValue), mHandlist[i]->halfHeight[j][1] * 2.0, mHandlist[i]->fingerWidth[j][1], mHandlist[i]->fingerWidth[j][1] / 2);
+				}
+				else
+				{
+					for (int k = 1; k < 4; k++)
+						RenderCylinder(mode, mHandlist[i]->finger_actor[j][k], XMFLOAT4(handColor.x, handColor.y, handColor.z, mHandlist[i]->alphaValue), mHandlist[i]->halfHeight[j][k] * 2.0, mHandlist[i]->fingerWidth[j][k]);
+
+					RenderPalm(mode, mHandlist[i]->finger_actor[j][0], XMFLOAT4(handColor.x, handColor.y, handColor.z, mHandlist[i]->alphaValue), mHandlist[i]->halfHeight[j][0] * 2.0, mHandlist[i]->fingerWidth[j][0], mHandlist[i]->fingerWidth[j][0] / 2);
+
+				}
+			}
+		}
+
+	}
+
+
+
 }
 
 void GraphicsClass::RenderTextureBox(int mode,PxRigidActor* box,
@@ -827,7 +887,6 @@ void GraphicsClass::RenderTextureBox(int mode,PxRigidActor* box,
 	m_Direct3D->GetProjectionMatrix(projectionMatrix);
 	m_Light->GetViewMatrix(lightViewMatrix);
 	m_Light->GetProjectionMatrix(lightProjectionMatrix);
-	
 
 
 	while (nShapes--)
@@ -855,8 +914,23 @@ void GraphicsClass::RenderTextureBox(int mode,PxRigidActor* box,
 		}
 		else
 		{
-			m_LightShader->Render(m_Direct3D->GetDeviceContext(), m_boxes->GetIndexCount(), mat, viewMatrix, projectionMatrix, m_boxes->GetTexture(),
-				m_UpSampleTexure->GetShaderResourceView(),m_Light->GetPositions(), m_Light->GetAmbientColor(), m_Light->GetDiffuseColor(), m_Camera->GetPosition(),globalZ);
+			
+			if (((PxRigidDynamic*)box)->isSleeping())
+				*(int*)shapes[nShapes]->userData = 0;
+
+			int test = *(int*)shapes[nShapes]->userData;
+			if (test > 0)
+			{
+				m_LightShader->Render(m_Direct3D->GetDeviceContext(), m_boxes->GetIndexCount(), mat, viewMatrix, projectionMatrix, m_boxes->GetTexture(),
+					m_UpSampleTexure->GetShaderResourceView(), m_Light->GetPositions(), m_Light->GetAmbientColor(), XMFLOAT4(1, 0, 0, 1), m_Camera->GetPosition(), globalZ);
+			}
+			else
+			{
+				m_LightShader->Render(m_Direct3D->GetDeviceContext(), m_boxes->GetIndexCount(), mat, viewMatrix, projectionMatrix, m_boxes->GetTexture(),
+					m_UpSampleTexure->GetShaderResourceView(), m_Light->GetPositions(), m_Light->GetAmbientColor(), m_Light->GetDiffuseColor(), m_Camera->GetPosition(), globalZ);
+
+			}
+			
 		}
 
 		// Render the model using the color shader.
@@ -1121,7 +1195,7 @@ void GraphicsClass::CreateBox()
 	mHandlist = m_Leap->getHandActor();
 	if (mHandlist.size() > 0)
 	{
-		PxVec3 pose = mHandlist[0].palm->getGlobalPose().p;
+		PxVec3 pose = mHandlist[0]->palm->getGlobalPose().p;
 		pose = PxVec3(pose.x, pose.y + 2, pose.z);
 		PxRigidActor* box = m_physx->createBox(PxVec3(0.25, 0.25, 0.25), pose, PxQuat::createIdentity());
 		boxes.push_back(box);
@@ -1140,15 +1214,15 @@ void GraphicsClass::CreateSphere()
 	mHandlist = m_Leap->getHandActor();
 	if (mHandlist.size() > 0)
 	{
-		PxVec3 pose = mHandlist[0].palm->getGlobalPose().p;
+		PxVec3 pose = mHandlist[0]->palm->getGlobalPose().p;
 		pose = PxVec3(pose.x, pose.y + 2, pose.z);
-		PxRigidActor* sphere = m_physx->createSphere(0.25, pose, PxQuat::createIdentity());
+		PxRigidActor* sphere = m_physx->createSphere(SPHERE_RAD, pose, PxQuat::createIdentity());
 		spheres.push_back(sphere);
 	}
 	else
 	{
 		PxVec3 pose = PxVec3(0, 3, -1);
-		PxRigidActor* sphere = m_physx->createSphere(0.25, pose, PxQuat::createIdentity());
+		PxRigidActor* sphere = m_physx->createSphere(SPHERE_RAD, pose, PxQuat::createIdentity());
 		spheres.push_back(sphere);
 	}
 }
@@ -1158,7 +1232,7 @@ void GraphicsClass::CreateCylinder()
 	mHandlist = m_Leap->getHandActor();
 	if (mHandlist.size() > 0)
 	{
-		PxVec3 pose = mHandlist[0].palm->getGlobalPose().p;
+		PxVec3 pose = mHandlist[0]->palm->getGlobalPose().p;
 		pose = PxVec3(pose.x, pose.y + 2, pose.z);
 		PxRigidActor* sphere = m_physx->createCapsule(SPHERE_RAD,SPHERE_RAD, pose, PxQuat::createIdentity());
 		cylinders.push_back(sphere);
@@ -1228,7 +1302,7 @@ void GraphicsClass::RenderTerrian(int mode =0)
 
 
 	XMMATRIX trans = XMMatrixTranslation(-3, m_physx->FLOOR_LEVEL, -4.0f);
-	XMMATRIX back = XMMatrixTranslation(-3, m_physx->FLOOR_LEVEL, -0.5);
+	XMMATRIX back = XMMatrixTranslation(-3, m_physx->FLOOR_LEVEL, -0.0);
 	XMMATRIX rotate = XMMatrixRotationX(-XM_PI / 2);
 	XMMATRIX slant = XMMatrixRotationX(187*XM_PI / 180);
 	//XMMATRIX mat = rotat
@@ -1695,7 +1769,25 @@ bool GraphicsClass::Render()
 
 
 	m_Leap->processFrame(m_Camera->GetPosition().x, m_Camera->GetPosition().y, m_Camera->GetPosition().z, 0, view, proj , handlength );
-	m_physx->setHandActor(m_Leap->getHandActor());
+	//std::vector<int> tobedeleted;
+	//for (int i = 0; i < m_Leap->deleteBoxes.size(); i++)
+	//{
+	//	for (int j = 0; j < boxes.size(); j++)
+	//	{
+	//		if (m_Leap->deleteBoxes[i] == boxes[j])
+	//			tobedeleted.push_back(j);
+	//	}
+	//}
+	//int size = tobedeleted.size();
+	//for (int i = 0; i < size; i++)
+	//{
+	//	m_physx->removeActor(boxes[i]);
+	//	boxes.erase(boxes.begin() + (int)tobedeleted.back());
+	//	tobedeleted.pop_back();
+	//}
+	//tobedeleted.clear();
+
+	//m_physx->setHandActor(m_Leap->getHandActor());
 
 	map<int, PxRigidDynamic*> contacts = m_physx->getActiveContact();
 	if (contacts.size() > 0)
@@ -1737,14 +1829,15 @@ bool GraphicsClass::Render()
 	}
 	RenderTerrian(gameMode);
 
-
-
-
-	if(m_RenderHand)
-		RenderHand(2);
-
 	RenderActor(2);
 
+	m_Direct3D->TurnOnAlphaBlending();
+
+	RenderHand(2);
+
+
+
+	m_Direct3D->TurnOffAlphaBlending();
 
 	RenderText(Head_Error,head_pos);
 
@@ -1938,7 +2031,7 @@ void GraphicsClass::GameFrame()
 void GraphicsClass::RenderText(bool Head_Error, Point3f* head_pos)
 {
 	spriteBatch->Begin();
-	std::vector<handActor> handactor = m_Leap->getHandActor();
+	std::vector<handActor*> handactor = m_Leap->getHandActor();
 
 	if (Head_Error)
 	{
@@ -1953,14 +2046,14 @@ void GraphicsClass::RenderText(bool Head_Error, Point3f* head_pos)
 	{
 		if (handactor.size() > 0)
 		{
-			if (handactor[0].isExtended[0] && handactor[0].isExtended[1] && handactor[0].isExtended[2] && handactor[0].isExtended[3] && handactor[0].isExtended[4] && !FULL_SCREEN)
+			if (handactor[0]->isExtended[0] && handactor[0]->isExtended[1] && handactor[0]->isExtended[2] && handactor[0]->isExtended[3] && handactor[0]->isExtended[4] && !FULL_SCREEN)
 			{
-				fingertipDetected = m_Tracker->fingerTipDetection(handactor[0].fingerTipPosition);
+				fingertipDetected = m_Tracker->fingerTipDetection(handactor[0]->fingerTipPosition);
 			}
 
-			std::wstring s = L"hand size: " + std::to_wstring(handlength) /*+ L"T:" + std::to_wstring((int)handactor[0].isExtended[0])
-				+ L"I:" + std::to_wstring((int)handactor[0].isExtended[1]) + L"M:" + std::to_wstring((int)handactor[0].isExtended[2])
-				+ L"R:" + std::to_wstring((int)handactor[0].isExtended[3]) + L"P:" + std::to_wstring((int)handactor[0].isExtended[4]) */
+			std::wstring s = L"hand size: " + std::to_wstring(handlength) /*+ L"T:" + std::to_wstring((int)handactor[0]->isExtended[0])
+				+ L"I:" + std::to_wstring((int)handactor[0]->isExtended[1]) + L"M:" + std::to_wstring((int)handactor[0]->isExtended[2])
+				+ L"R:" + std::to_wstring((int)handactor[0]->isExtended[3]) + L"P:" + std::to_wstring((int)handactor[0]->isExtended[4]) */
 				+ L"FingerTip Detected:" + std::to_wstring(fingertipDetected);
 			m_font->DrawString(spriteBatch.get(), s.c_str(), XMFLOAT2(100, 200), Colors::Red);
 		}

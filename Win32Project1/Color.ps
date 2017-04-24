@@ -32,6 +32,7 @@ struct PixelInputType
 float4 ColorPixelShader(PixelInputType input) : SV_TARGET
 {
 	float4 color;
+	float alpha = diffuseColor.a;
     float lightIntensity;
     float2 projectTexCoord;
     float shadowValue;
@@ -60,6 +61,6 @@ float4 ColorPixelShader(PixelInputType input) : SV_TARGET
 
     // Combine the shadows with the final color.
     color = color;
-
+	color.a = alpha;
     return color;
 }

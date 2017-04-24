@@ -62,6 +62,7 @@ public:
 	virtual void							onWake(PxActor**, PxU32) {}
 	virtual void							onSleep(PxActor**, PxU32) {}
 	bool gTouchFound;
+	bool gGrabFound;
 	bool gTargetHit;
 	int gTouchId;
 
@@ -95,6 +96,7 @@ private:
 	PxRigidDynamic* activeActor;
 	PxRigidDynamic* activeHand;
 	std::map<int, PxRigidDynamic*> activeContact;
+	std::map<int, PxRigidDynamic*> activeTouch;
 
 	PxVisualDebuggerConnection* theConnection;
 

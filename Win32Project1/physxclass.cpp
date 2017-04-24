@@ -26,8 +26,10 @@ PxFilterFlags customFilterShader(PxFilterObjectAttributes attributes0, PxFilterD
 
 	if ((filterData0.word0 & filterData1.word1) && (filterData1.word0 & filterData0.word1))
 	{
+		pairFlags = PxPairFlag::eSOLVE_CONTACT;
+		pairFlags |= PxPairFlag::eDETECT_DISCRETE_CONTACT;
 		pairFlags |= PxPairFlag::eNOTIFY_TOUCH_FOUND;
-
+		pairFlags |= PxPairFlag::eNOTIFY_TOUCH_LOST;
 		return PxFilterFlag::eDEFAULT;
 	}
 
@@ -72,6 +74,7 @@ void setupFiltering(PxRigidActor* actor, PxU32 filterGroup, PxU32 filterMask)
 	{
 		PxShape* shape = shapes[i];
 		shape->setSimulationFilterData(filterData);
+		shape->setQueryFilterData(filterData);
 	}
 }
 
@@ -80,6 +83,7 @@ PhysxClass::PhysxClass()
 {
 	moveAbleWall = nullptr;
 	activeActor = nullptr;
+	gGrabFound = true;
 }
 
 PhysxClass::~PhysxClass()
@@ -133,6 +137,7 @@ bool PhysxClass::Initialize()
 	//sceneDesc.simulationEventCallback = this;
 	sceneDesc.simulationEventCallback = this;
 	sceneDesc.flags |=  PxSceneFlag::eENABLE_KINEMATIC_PAIRS ;
+	sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
 	//
 	//PxCudaContextManagerDesc cudaContextManagerDesc;
 	//PxCudaContextManager* mCudaContextManager = PxCreateCudaContextManager(*gFoundation, cudaContextManagerDesc, mProfileZoneManager);
@@ -157,9 +162,12 @@ bool PhysxClass::Initialize()
 
 	gScene->setVisualizationParameter(PxVisualizationParameter::eSCALE, 1.0);
 	gScene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, 1.0f);
+	gPhysicsSDK->getVisualDebugger()->setVisualDebuggerFlags
+	(PxVisualDebuggerFlag::eTRANSMIT_CONTACTS | PxVisualDebuggerFlag::eTRANSMIT_CONSTRAINTS);
+	gScene->setVisualizationParameter(PxVisualizationParameter::eJOINT_LOCAL_FRAMES, 1.0f);
+	gScene->setVisualizationParameter(PxVisualizationParameter::eJOINT_LIMITS, 1.0f);
 
-
-	mMaterial = gPhysicsSDK->createMaterial(0.5, 0.5, 0.5);
+	mMaterial = gPhysicsSDK->createMaterial(1.0,1.0,0.5);
 
 	//Create actors 
 	//1) Create ground plane
@@ -198,14 +206,14 @@ bool PhysxClass::Initialize()
 	gScene->addActor(*plane);
 
 
-	pose = PxTransform(PxVec3(0.0f, 0.0f, -0.5f), PxQuat(PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f)));
+	pose = PxTransform(PxVec3(0.0f, 0.0f, 5.0f), PxQuat(PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f)));
 	moveAbleWall = gPhysicsSDK->createRigidStatic(pose);
 	shape = moveAbleWall->createShape(PxPlaneGeometry(), *mMaterial);
 
 	setupFiltering(moveAbleWall, FilterGroup::eWall, FilterGroup::eBox | FilterGroup::eTarget);
 	gScene->addActor(*moveAbleWall);
 
-	pose = PxTransform(PxVec3(0.0f, 0.0f, -8.0f), PxQuat(-PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f)));
+	pose = PxTransform(PxVec3(0.0f, 0.0f, -5.0f), PxQuat(-PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f)));
 	moveAbleFrontWall = gPhysicsSDK->createRigidStatic(pose);
 	shape = moveAbleFrontWall->createShape(PxPlaneGeometry(), *mMaterial);
 
@@ -330,12 +338,21 @@ PxRigidDynamic* PhysxClass::createBox(PxVec3 dimension, PxVec3 pose, PxQuat quat
 	PxReal density = 1.0f;
 	PxTransform transform(pose, quat);
 	PxBoxGeometry geometry(dimension);
-
+	//mMaterial = gPhysicsSDK->createMaterial(0, 0, 0.5);
 	PxRigidDynamic* actor = PxCreateDynamic(*gPhysicsSDK, transform, geometry, *mMaterial, density);
-	actor->setSolverIterationCounts(16, 8);
+	actor->setSolverIterationCounts(32, 255);
 	//actor->setMass(1.0);
 	//actor->setMassSpaceInertiaTensor(PxVec3(1.0, 1.0, 1.0));
 	setupFiltering(actor, FilterGroup::eBox, FilterGroup::eBox | FilterGroup::eFinger | FilterGroup::eWall | FilterGroup::eHand | FilterGroup::eTarget );
+	actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
+	PxU32 nShapes = actor->getNbShapes();
+	PxShape** shapes = new PxShape*[nShapes];
+
+	actor->getShapes(shapes, nShapes);
+	int* test = (int*)malloc(sizeof(int));
+	*test = 0;
+	shapes[0]->userData = test;
+	*(int*)shapes[0]->userData = 0;
 	gScene->addActor(*actor);
 
 	return actor;
@@ -381,7 +398,7 @@ PxRigidDynamic* PhysxClass::createSphere(PxReal radius, PxVec3 pose, PxQuat quat
 	PxSphereGeometry geometry(radius);
 
 	PxRigidDynamic* actor = PxCreateDynamic(*gPhysicsSDK, transform, geometry, *mMaterial, density);
-	actor->setSolverIterationCounts(16, 8);
+	actor->setSolverIterationCounts(32, 255);
 	//actor->setMass(1.0);
 	//actor->setMassSpaceInertiaTensor(PxVec3(1.0, 1.0, 1.0));
 	setupFiltering(actor, FilterGroup::eBox, FilterGroup::eBox | FilterGroup::eFinger | FilterGroup::eWall | FilterGroup::eHand | FilterGroup::eTarget);
@@ -552,7 +569,6 @@ void PhysxClass::onTrigger(PxTriggerPair* pairs, PxU32 count)
 					if (pairs[i].triggerActor == mHandList[j].palm)
 					{
 						activeContact[mHandList[j].id] = (PxRigidDynamic*)pairs[i].otherActor;
-
 						//gTouchId = mHandList[j].id;
 						//activeActor = (PxRigidDynamic*)pairs[i].otherActor;
 						gTouchFound = true;
@@ -590,13 +606,106 @@ void PhysxClass::onContact(const PxContactPairHeader& pairHeader,
 					gTargetHit = true;
 				}
 			}
+			else if (filterData_1.word0 == FilterGroup::eBox && filterData_2.word0 == FilterGroup::eFinger ||
+				filterData_1.word0 == FilterGroup::eFinger && filterData_2.word0 == FilterGroup::eBox)
+			{
+				if (curContactPair.flags & PxContactPairFlag::eACTOR_PAIR_HAS_FIRST_TOUCH)
+				{
+					if (!(curContactPair.flags & PxContactPairFlag::eDELETED_SHAPE_0) && !(curContactPair.flags & PxContactPairFlag::eREMOVED_SHAPE_0))
+					{
+						if(pairs->shapes[0]->getGeometryType() == PxGeometryType::eBOX)
+						{
+							if ((int*)pairs->shapes[0]->userData == NULL)
+							{
+								int* test = (int*)malloc(sizeof(int));
+								pairs->shapes[0]->userData = test;
+								*((int*)pairs->shapes[0]->userData) = 0;
+							}
+							else
+							{
+								*((int*)pairs->shapes[0]->userData) += 1;
+							}
+						}
+					}
+					if (!(curContactPair.flags & PxContactPairFlag::eDELETED_SHAPE_1) && !(curContactPair.flags & PxContactPairFlag::eREMOVED_SHAPE_1))
+					{
+						if (pairs->shapes[1]->getGeometryType() == PxGeometryType::eBOX)
+						{
+							if ((int*)pairs->shapes[1]->userData == NULL)
+							{
+								int* test = (int*)malloc(sizeof(int));
+								pairs->shapes[1]->userData = test;
+								*((int*)pairs->shapes[1]->userData) = 0;
+							}
+							else
+							{
+								*((int*)pairs->shapes[1]->userData) += 1;
+							}
+						}
+					}
+
+
+				}
+			
+			}
 
 		}
+		else if (curContactPair.events & PxPairFlag::eNOTIFY_TOUCH_LOST)
+		{
+			if (!(curContactPair.flags & PxContactPairFlag::eDELETED_SHAPE_0) && !(curContactPair.flags & PxContactPairFlag::eREMOVED_SHAPE_0) &&
+				!(curContactPair.flags & PxContactPairFlag::eDELETED_SHAPE_1) && !(curContactPair.flags & PxContactPairFlag::eREMOVED_SHAPE_1))
+			{
+
+
+				PxFilterData filterData_1 = curContactPair.shapes[0]->getSimulationFilterData();
+				PxFilterData filterData_2 = curContactPair.shapes[1]->getSimulationFilterData();
+				if (filterData_1.word0 == FilterGroup::eBox && filterData_2.word0 == FilterGroup::eFinger ||
+					filterData_1.word0 == FilterGroup::eFinger && filterData_2.word0 == FilterGroup::eBox)
+				{
+
+
+					if (curContactPair.flags & PxContactPairFlag::eACTOR_PAIR_LOST_TOUCH)
+					{
+							if (pairs->shapes[0]->getGeometryType() == PxGeometryType::eBOX)
+							{
+								if ((int*)pairs->shapes[0]->userData == NULL)
+								{
+									int* test = (int*)malloc(sizeof(int));
+									pairs->shapes[0]->userData = test;
+									*((int*)pairs->shapes[0]->userData) = 0;
+								}
+								else
+								{
+									*((int*)pairs->shapes[0]->userData) -=1;
+								}
+							}
+						
+							if (pairs->shapes[1]->getGeometryType() == PxGeometryType::eBOX)
+							{
+								if ((int*)pairs->shapes[1]->userData == NULL)
+								{
+									int* test = (int*)malloc(sizeof(int));
+									pairs->shapes[1]->userData = test;
+									*((int*)pairs->shapes[1]->userData) = 0;
+								}
+								else
+								{
+									*((int*)pairs->shapes[1]->userData) -= 1;
+								}
+							}
+						
+
+					}
+				}
+			}
+
+		}
+
 	}
 }
 void PhysxClass::moveFrontWall(float z)
 {
-	moveAbleFrontWall->setGlobalPose(PxTransform(PxVec3(0.0f, 0.0f, z), PxQuat(-PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f))));
+//	moveAbleFrontWall->setGlobalPose(PxTransform(PxVec3(0.0f, 0.0f, z), PxQuat(-PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f))));
 }
 
 bool PhysxClass::ReadFromObj(char* filename, int& vertexCount, int& faceCount)

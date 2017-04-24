@@ -266,6 +266,35 @@ bool InputClass::IsPPressed()
 	return false;
 }
 
+bool InputClass::IsMPressed()
+{
+	// Do a bitwise and on the keyboard state to check if the escape key is currently being pressed.
+	if ((!(m_keyboardState[DIK_M] & 0x80)) && (DIK_M == pressKey))
+	{
+		pressKey = 0;
+		return true;
+	}
+	if (m_keyboardState[DIK_M] & 0x80)
+		pressKey = DIK_M;
+
+	return false;
+}
+
+bool InputClass::IsLessPressed()
+{
+	// Do a bitwise and on the keyboard state to check if the escape key is currently being pressed.
+	if ((!(m_keyboardState[DIK_COMMA] & 0x80)) && (DIK_COMMA == pressKey))
+	{
+		pressKey = 0;
+		return true;
+	}
+	if (m_keyboardState[DIK_COMMA] & 0x80)
+		pressKey = DIK_COMMA;
+
+	return false;
+}
+
+
 bool InputClass::IsIPressed()
 {
 	// Do a bitwise and on the keyboard state to check if the escape key is currently being pressed.

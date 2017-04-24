@@ -65,7 +65,7 @@ const int SHADOWMAP_WIDTH = 1024;
 const int SHADOWMAP_HEIGHT = 1024;
 
 const PxVec3 BOX_SIZE(0.25, 0.25, 0.25);
-const PxReal SPHERE_RAD = 0.25;
+const PxReal SPHERE_RAD = 0.35;
 const PxVec3 BROAD_SIZE(1.0, 0.2, 0.75);
 const PxVec3 TARGET_SIZE(0.4, 0.001, 0.4);
 const PxVec3 BARRIER_SIZE_X(0.5, 0.2, 0.05);
@@ -74,7 +74,7 @@ const PxVec3 BARRIER_SIZE_Z(0.05, 0.2, 0.5);
 const XMFLOAT4 TARGETCOLORHIT(0, 1.0f, 0.0, 1.0f);
 const XMFLOAT4 TARGETCOLOR(0, 1.0f, 0.5, 1.0f);
 
-const XMFLOAT4 HANDCOLORHIT(0, 1.0f, 0.0f, 1.0f);
+const XMFLOAT4 HANDCOLORHIT(0, 1.0f, 0.0f, 0.5f);
 const XMFLOAT4 HANDCOLOR(0, 1.0, 0.5, 1.0f);
 const XMFLOAT3 LEFT(-3.0, 0.0, 0.0);
 const XMFLOAT3 RIGHT(3.0, 0.0, 0.0);
@@ -102,10 +102,12 @@ public:
 	void ChangeZvalue(float);
 	void ChangeFOV(float);
 	void ChangeSize(float);
+	void ChangeMirrorHand();
 	void CreateBox();
 	void CreateSphere();
 	void CreateCylinder();
 	bool m_RenderHand;
+	bool m_RenderMirrorHand;
 
 
 private:
@@ -150,6 +152,7 @@ private:
 	PxVec3 unpts3[NUM_POINT];
 	bool calibrateMode;
 	int gameMode;
+	int handMode; 
 	int lastGameMode;
 
 	D3DClass* m_Direct3D;
@@ -197,7 +200,8 @@ private:
 	std::unique_ptr<DirectX::SpriteFont> m_font;
 	std::unique_ptr<DirectX::SpriteFont> m_font_bold;
 
-	vector<handActor> mHandlist;
+	vector<handActor*> mHandlist;
+	vector<handActor*> mMirrorHandlist;
 
 	int captureIndex;
 	int m_screenHeight;
@@ -219,6 +223,8 @@ private:
 	std::chrono::steady_clock::time_point end;
 	std::chrono::steady_clock::time_point smallStart;
 	std::chrono::steady_clock::time_point smallNow;
+	std::chrono::steady_clock::time_point switchZoneStart;
+	std::chrono::steady_clock::time_point switchZoneNow;
 
 
 	DirectX::SimpleMath::Matrix m_world;

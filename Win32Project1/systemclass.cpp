@@ -154,7 +154,10 @@ bool SystemClass::Frame()
 	{
 		m_Graphics->StartGameMode(1);
 	}
-
+	if (m_Input->IsLessPressed() == true)
+	{
+		m_Graphics->m_RenderMirrorHand = !m_Graphics->m_RenderMirrorHand;
+	}
 	if (m_Input->IsTwoPressed() == true)
 	{
 		m_Graphics->StartGameMode(2);
@@ -184,6 +187,10 @@ bool SystemClass::Frame()
 	if (m_Input->IsCPressed() == true)
 	{
 		m_Graphics->m_RenderHand = !m_Graphics->m_RenderHand;
+	}
+	if (m_Input->IsMPressed() == true)
+	{
+		m_Graphics->ChangeMirrorHand();
 	}
 
 
@@ -288,8 +295,8 @@ void SystemClass::InitializeWindows(int& screenWidth, int& screenHeight)
 	else
 	{
 		// If windowed then set it to 800x600 resolution.
-		screenWidth = 1280;
-		screenHeight = 720;
+		screenWidth = 1600;
+		screenHeight = 900;
 
 		// Place the window in the middle of the screen.
 		posX = (GetSystemMetrics(SM_CXSCREEN) - screenWidth) / 2;

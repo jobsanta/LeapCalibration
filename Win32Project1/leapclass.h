@@ -35,6 +35,18 @@ using namespace Eigen;
 //static const float particleRadius = 0.075f;
 #ifndef HA
 #define HA
+struct HandMode
+{
+	enum Enum
+	{
+		Normal = 0,
+		Mirror = 1,
+		Transit = 2
+
+	};
+};
+
+
 struct handActor
 {
 	int id;
@@ -97,11 +109,10 @@ public:
 
 	void setProjectionMatrix(PxMat44);
 	void setViewMatrix(PxMat44);
-	handActor* createRefHand(PxVec3);
 	void clearHand();
 	std::map<int, PxVec3> computeForce(std::map<int, PxRigidDynamic*> activeContact);
 	PxVec3 getWristPosition(int id);
-	PxVec3 leapToWorld(Leap::Vector bone_center);
+	PxVec3 leapToWorld(Leap::Vector bone_center, HandMode::Enum handmode);
 	PxVec3 leapToMirrorWorld(Leap::Vector bone_center);
 	void switchMirrorHand(int mode);
 	std::vector<PxRigidActor*> getBoxes();
@@ -130,9 +141,9 @@ private:
 	PxRigidDynamic* CreateSphere(const PxVec3& pos, const PxReal radius, const PxReal density);
 	PxRigidDynamic* CreateBox(PxVec3 dimension, PxVec3 pose, PxQuat quat);
 	//void createJoint(Leap::Vector bone);
-	void createHand(Hand hand, bool goinUp, bool isInTransit,float factor);
+	void createHand(Hand hand, bool goinUp, bool isInTransit,float factor, HandMode::Enum handMode);
 
-	void updateHand(Hand hand, handActor* actor);
+	void updateHand(Hand hand, handActor* actor, HandMode::Enum handmode);
 	void deleteHand(handActor* actor);
 
 	void createMirrorHand(Hand hand, bool goinUp, bool isInTransit, float factor);

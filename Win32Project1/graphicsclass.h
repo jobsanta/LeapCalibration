@@ -54,7 +54,7 @@
 
 using namespace Eigen;
 
-const bool FULL_SCREEN = true;
+const bool FULL_SCREEN = false;
 const bool VSYNC_ENABLED = false;
 const bool SHADOW_ENABLED = false;
 const bool CORRECT_PERPECTIVE = true;

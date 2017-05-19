@@ -168,7 +168,7 @@ bool PhysxClass::Initialize()
 	gScene->setVisualizationParameter(PxVisualizationParameter::eJOINT_LIMITS, 1.0f);
 
 	mMaterial = gPhysicsSDK->createMaterial(1.0,1.0,0.5);
-
+	mGlass = gPhysicsSDK->createMaterial(0.0, 0.0, 0.0);
 	//Create actors 
 	//1) Create ground plane
 	PxReal d = 0.0f;
@@ -188,6 +188,7 @@ bool PhysxClass::Initialize()
 
 	setupFiltering(moveAbleFloor, FilterGroup::eWall, FilterGroup::eBox | FilterGroup::eTarget);
 	gScene->addActor(*moveAbleFloor);
+
 
 
 	pose = PxTransform(PxVec3(-2.5f, FLOOR_LEVEL, 0.0f), PxQuat(0.0, PxVec3(0.0f, 1.0f, 0.0f)));

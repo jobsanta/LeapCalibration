@@ -88,6 +88,7 @@ private:
 	PxCooking*				  gCooking = NULL;
 	PxReal                    myTimestep = 1.0f / 30.0f;
 	PxMaterial* mMaterial;
+	PxMaterial* mGlass;
 	PxRigidStatic* moveAbleWall;
 	PxRigidStatic* moveAbleFrontWall;
 	PxRigidStatic* moveAbleFloor;

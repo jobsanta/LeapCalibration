@@ -240,6 +240,8 @@ private:
 	 XMMATRIX floor_trans;
 	 XMMATRIX floor_scale;
 
+	 void checkObjectPos(PxRigidActor* actor);
+
 };
 
 #endif

@@ -739,30 +739,22 @@ void GraphicsClass::RenderActor(int mode)
 {
 	for (int i = 0; i < boxes.size(); i++)
 	{
+		checkObjectPos(boxes[i]);
 		RenderTextureBox(mode,boxes[i],m_boxes->GetTexture(),BOX_SIZE.x, BOX_SIZE.y, BOX_SIZE.z);
 	}
 	for (int i = 0; i < spheres.size(); i++)
 	{
-		RenderSphere(mode, spheres[i], SPHERE_RAD);
-	}
-
-	for (int i = 0; i < spheres.size(); i++)
-	{
+		checkObjectPos(spheres[i]);
 		RenderSphere(mode, spheres[i], SPHERE_RAD);
 	}
 
 	for (int i = 0; i < cylinders.size(); i++)
 	{
+		checkObjectPos(cylinders[i]);
 		RenderCylinder(mode, cylinders[i],XMFLOAT4(0,0.5,1.0,1.0), SPHERE_RAD*4, SPHERE_RAD*2);
 	}
 
 
-	std::vector<PxRigidActor*> v;
-	v = m_Leap->getBoxes();
-	for (int i = 0; i < v.size(); i++)
-	{
-		RenderTextureBox(mode, v[i], m_boxes->GetTexture(), BOX_SIZE.x, BOX_SIZE.y, BOX_SIZE.z);
-	}
 
 	for (int i = 0; i < folders.size(); i++)
 	{
@@ -2492,4 +2484,22 @@ void GraphicsClass::ReadFile()
 	
 
 
+}
+
+void GraphicsClass::checkObjectPos(PxRigidActor* actor)
+{
+	if (((PxRigidDynamic*)actor)->isSleeping())
+	{
+		PxTransform t = actor->getGlobalPose();
+		if (t.p.z > -1 && t.p.z <= 0)
+		{
+			((PxRigidDynamic*)actor)->setLinearVelocity(PxVec3(0,2,-3));
+		}
+		else if (t.p.z < 1 && t.p.z > 0)
+		{
+
+			((PxRigidDynamic*)actor)->setLinearVelocity(PxVec3(0, 2, 3));
+		}
+
+	}
 }

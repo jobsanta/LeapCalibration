@@ -28,7 +28,7 @@ using namespace Eigen;
 
 
 #define SWITCHTIME 1.0f
-#define SWITCHRANGE 1.5f
+#define SWITCHRANGE 2.0f
 
 
 //static const float particleSize = 0.075f;
@@ -66,6 +66,7 @@ struct handActor
 	double previousTime;
 	bool isInMirror;
 	bool isInTransit;
+	bool transitComplete;
 	bool toBeDelete;
 	bool goingUp;
 	double startTransitTime;
@@ -113,7 +114,6 @@ public:
 	std::map<int, PxVec3> computeForce(std::map<int, PxRigidDynamic*> activeContact);
 	PxVec3 getWristPosition(int id);
 	PxVec3 leapToWorld(Leap::Vector bone_center, HandMode::Enum handmode);
-	PxVec3 leapToMirrorWorld(Leap::Vector bone_center);
 	void switchMirrorHand(int mode);
 	std::vector<PxRigidActor*> getBoxes();
 	std::vector<PxRigidActor*> deleteBoxes;
@@ -145,9 +145,6 @@ private:
 
 	void updateHand(Hand hand, handActor* actor, HandMode::Enum handmode);
 	void deleteHand(handActor* actor);
-
-	void createMirrorHand(Hand hand, bool goinUp, bool isInTransit, float factor);
-	void updateMirrorHand(Hand hand, handActor* actor);
 
 	void updateHands(Hand hand, handActor* actor);
 	void createHands(Hand hand);

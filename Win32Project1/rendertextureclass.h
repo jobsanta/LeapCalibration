@@ -42,6 +42,7 @@ private:
 	XMMATRIX m_projectionMatrix;
 	XMMATRIX m_orthoMatrix;
 
+
 };
 
 #endif

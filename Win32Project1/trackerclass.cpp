@@ -12,10 +12,13 @@ TrackerClass::TrackerClass()
 	depthToColor_points = new ColorSpacePoint[cDepthHeight*cDepthWidth];
 	colorToDepth_points = new DepthSpacePoint[cColorWidth*cColorHeight];
 
+
+
 	previousPoints = Point3f(0, 0, 0);
 
 	aff_ltok = cv::Mat::eye(3, 4,  CV_64F);
 	aff_ktol = cv::Mat::eye(3, 4, CV_64F);
+	wp = Mat(4, 1, CV_64F);
 	affine_set = false;
 
 }
@@ -24,6 +27,50 @@ TrackerClass::~TrackerClass()
 {
 
 }
+
+void TrackerClass::getPointCloudData(float* dest)
+{
+	Point3f point;
+
+	float* fdest = (float*)dest;
+	for (int i = 0; i < nDepthHeight*nDepthWidth; i++) {
+
+		if (affine_set)
+			point = applyAffineTransform_KtoL(cameraToWorldSpace(depthToCamera_points[i]));
+		else
+			point = cameraToWorldSpace(depthToCamera_points[i]);
+
+		*fdest++ = point.x;
+		*fdest++ = point.y;
+		*fdest++ = -point.z;
+	}
+
+
+}
+
+void TrackerClass::getColorPointCloudData(float* dest)
+{
+	// Write color array for vertices
+	float* fdest = (float*)dest;
+	for (int i = 0; i < nDepthWidth*nDepthHeight; i++) {
+		ColorSpacePoint p = depthToColor_points[i];
+		// Check if color pixel coordinates are in bounds
+		if (p.X < 0 || p.Y < 0 || p.X > nColorWidth || p.Y > nColorHeight) {
+			*fdest++ = 0;
+			*fdest++ = 0;
+			*fdest++ = 0;
+			*fdest++ = 1;
+		}
+		else {
+			int idx = (int)p.X + nColorWidth*(int)p.Y;
+			*fdest++ = pColorBuffer[idx].rgbRed / 255.0;
+			*fdest++ = pColorBuffer[idx].rgbGreen / 255.0;
+			*fdest++ = pColorBuffer[idx].rgbBlue / 255.0;
+			*fdest++ = 1.0;
+		}
+	}
+}
+
 
 HRESULT TrackerClass::Process(int depthWidth, int depthHeight, int colorWidth, int colorHeight,
 	USHORT minDistance, USHORT maxDistance, UINT16* depthBuffer, RGBQUAD* colorBuffer, ICoordinateMapper* coodinateMapper)
@@ -114,7 +161,7 @@ float TrackerClass::handMeasurement(PxVec3 wristPosition)
 
 	Mat debugImg(nDepthHeight, nDepthWidth, CV_8UC1);
 	handMap.convertTo(debugImg, CV_8UC1, 255.0 / (nMaxDistance - nMinDistance));
-	circle(debugImg, Point(wristDepthPos.X, wristDepthPos.Y), 2, Scalar(255));
+	circle(debugImg, Point(static_cast<int>(wristDepthPos.X), static_cast<int>(wristDepthPos.Y)), 2, Scalar(255));
 	imshow("Debug", debugImg);
 
 	return handsize-15;
@@ -380,7 +427,16 @@ void TrackerClass::estimateAffineTransform()
 		//}
 
 		affine_set = true;
+		for (int i = 0; i < 3; i++)
+		{
+			for (int j = 0; j < 4; j++)
+			{
+				affktol[i][j] = aff_ktol.at<double>(i, j);
+			}
+		}
 	}
+
+
 
 	leapPoints.clear();
 	kinectPoints.clear();
@@ -444,17 +500,21 @@ CameraSpacePoint TrackerClass::worldToCameraSpace(Point3f worldPoint)
 
 Point3f TrackerClass::applyAffineTransform_KtoL(Point3f worldPoint)
 {
-	Mat wp = Mat(4, 1, CV_64F);
-	wp.at<double>(0, 0) = worldPoint.x;
-	wp.at<double>(1, 0) = worldPoint.y;
-	wp.at<double>(2, 0) = worldPoint.z;
-	wp.at<double>(3, 0) = 1;
-	Mat kp = aff_ktol*wp;
+	//wp.at<double>(0, 0) = worldPoint.x;
+	//wp.at<double>(1, 0) = worldPoint.y;
+	//wp.at<double>(2, 0) = worldPoint.z;
+	//wp.at<double>(3, 0) = 1;
+	//wp.data[0] = worldPoint.x;
+	//wp.data[1] = worldPoint.y;
+	//wp.data[2] = worldPoint.z;
+	//wp.data[3] = 1;
+	//Mat kp = aff_ktol*wp;
 
 	Point3f result;
-	result.x = (float)kp.at<double>(0, 0);
-	result.y = (float)kp.at<double>(1, 0);
-	result.z = (float)kp.at<double>(2, 0);
+	result.x = affktol[0][0]*worldPoint.x+ affktol[0][1] * worldPoint.y+ affktol[0][2] * worldPoint.z+ affktol[0][3];
+	result.y = affktol[1][0] * worldPoint.x + affktol[1][1] * worldPoint.y + affktol[1][2] * worldPoint.z + affktol[1][3];
+	result.z = affktol[2][0] * worldPoint.x + affktol[2][1] * worldPoint.y + affktol[2][2] * worldPoint.z + affktol[2][3];
+
 
 	return result;
 }
@@ -557,6 +617,15 @@ void TrackerClass::setAffineLtoK(Mat transform)
 void TrackerClass::setAffineKtoL(Mat transform)
 {
 	aff_ktol = transform;
+	for (int i = 0; i < 3; i++)
+	{
+		for (int j = 0; j < 4; j++)
+		{
+			affktol[i][j] = aff_ktol.at<double>(i, j);
+		}
+	}
+
+
 	affine_set = true;
 }
 

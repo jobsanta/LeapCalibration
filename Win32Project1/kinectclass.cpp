@@ -191,22 +191,27 @@ int KinectClass::getDepthWidth()
 {
 	return m_pDepthWidth;
 }
+
 int KinectClass::getDepthHeight()
 {
 	return m_pDepthHeight;
 }
+
 int KinectClass::getColorWidth()
 {
 	return m_pColorWidth;
 }
+
 int KinectClass::getColorHeight()
 {
 	return m_pColorHeight;
 }
+
 UINT16* KinectClass::getDepthBuffer()
 {
 	return m_pDepthBuffer;
 }
+
 RGBQUAD* KinectClass::getColorBuffer()
 {
 	return m_pColorRGBX;
@@ -216,6 +221,7 @@ USHORT KinectClass::getMinDistance()
 {
 	return m_pMinDistance;
 }
+
 USHORT KinectClass::getMaxDistance()
 {
 	return m_pMaxDistance;
@@ -225,7 +231,6 @@ ICoordinateMapper* KinectClass::getCoordinateMapper()
 {
 	return m_pCoordinateMapper;
 }
-
 
 void KinectClass::Shutdown()
 {
@@ -242,7 +247,6 @@ void KinectClass::Shutdown()
 
 
 }
-
 
 void KinectClass::ProcessFrame(INT64 nTime,
 	UINT16* pDepthBuffer, int nDepthWidth, int nDepthHeight,

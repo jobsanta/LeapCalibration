@@ -31,7 +31,7 @@ bool VerticalBlurShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 
 
 	// Initialize the vertex and pixel shaders.
-	result = InitializeShader(device, hwnd, L"../Win32Project1/verticalblur.vs", L"../Win32Project1/verticalblur.ps");
+	result = InitializeShader(device, hwnd, L"../Win32Project1/verticalblur.fx", L"../Win32Project1/verticalblur.fx");
 	if(!result)
 	{
 		return false;

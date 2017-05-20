@@ -30,7 +30,7 @@ bool GroundShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 
 
 	// Initialize the vertex and pixel shaders.
-	result = InitializeShader(device, hwnd, L"../Win32Project1/ground.vs", L"../Win32Project1/ground.ps");
+	result = InitializeShader(device, hwnd, L"../Win32Project1/ground.fx", L"../Win32Project1/ground.fx");
 	if (!result)
 	{
 		return false;

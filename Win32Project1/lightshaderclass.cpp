@@ -45,7 +45,7 @@ bool LightShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 
 
 	// Initialize the shader that will be used to draw the triangle.
-	result = InitializeShader(device, hwnd, L"../Win32Project1/light.vs", L"../Win32Project1/light.ps");
+	result = InitializeShader(device, hwnd, L"../Win32Project1/light.fx", L"../Win32Project1/light.fx");
 	if(!result)
 	{
 		return false;

@@ -36,6 +36,9 @@ public:
 	Mat getAffineTransformLtoK();
 	Mat getAffineTransformKtoL();
 
+	void getPointCloudData(float*);
+	void getColorPointCloudData(float*);
+
 
 private:
 	bool dataRecived;
@@ -50,6 +53,9 @@ private:
 
 	USHORT nMinDistance;
 	USHORT nMaxDistance;
+
+	FLOAT* depthDest;
+	FLOAT* rgbDest;
 
 
 	CameraSpacePoint* depthToCamera_points;
@@ -78,6 +84,9 @@ private:
 
 	cv::Mat aff_ltok;
 	cv::Mat aff_ktol;
+	cv::Mat wp;
+
+	float affktol[3][4];
 	//cv::Mat icp_t;
 
 };

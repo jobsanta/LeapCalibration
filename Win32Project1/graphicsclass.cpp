@@ -41,12 +41,15 @@ GraphicsClass::GraphicsClass()
 	m_HorizontalBlurShader = 0;
 	m_VerticalBlurTexture = 0;
 	m_VerticalBlurShader = 0;
+	m_PointCloudShader = 0;
 	m_UpSampleTexure = 0;
 	m_FullScreenWindow = 0;
 
 	handlength = 150;
 	handMode = 0;
 
+	rgbDest = new FLOAT[512*424 * 4];
+	depthDest = new FLOAT[512*424* 3];
 
 }
 
@@ -338,7 +341,6 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		return false;
 	}
 
-
 	// Create the model object.
 	m_boxes = new ModelClass;
 	if (!m_boxes)
@@ -457,6 +459,13 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		MessageBox(hwnd, L"Could not initialize the texture shader object.", L"Error", MB_OK);
 		return false;
 	}
+
+
+
+
+
+
+
 	m_Terrain = new TerrainClass;
 	if (!m_Terrain)
 	{
@@ -524,6 +533,21 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 
 	floor_trans = XMMatrixTranslation(0, m_physx->FLOOR_LEVEL - 0.26, -0.0f);
 	floor_scale = XMMatrixScaling(6, 0.5, 8);
+
+	m_PointCloudShader = new PointCloudShaderClass;
+	if (!m_PointCloudShader)
+	{
+		return false;
+	}
+
+	result = m_PointCloudShader->Initialize(m_Direct3D->GetDevice(), hwnd, 512, 424);
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize point cloud object.", L"Error", MB_OK);
+		return false;
+	}
+
+
 	return true;
 }
 
@@ -1467,6 +1491,13 @@ void GraphicsClass::Shutdown()
 		m_TextureShader = 0;
 	}
 
+	if (m_PointCloudShader)
+	{
+		m_PointCloudShader->Shutdown();
+		delete m_PointCloudShader;
+		m_PointCloudShader = 0;
+	}
+
 	// Release the small ortho window object.
 	if (m_SmallWindow)
 	{
@@ -1629,6 +1660,183 @@ bool GraphicsClass::Frame()
 	return true;
 }
 
+void GraphicsClass::GameFrame()
+{
+	if (gameMode == 1)
+	{
+		end = std::chrono::steady_clock::now();
+		long long mils = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+		if (mils>1000)
+		{
+			start = end;
+			countDownTimer--;
+		}
+		if (countDownTimer >= 0)
+		{
+			return;
+		}
+
+
+
+		for (int i = 0; i < spheres.size(); i++)
+		{
+			if (((PxRigidDynamic*)spheres[i])->getGlobalPose().p.y < m_physx->FLOOR_LEVEL || targetHit)
+			{
+				m_physx->removeActor(spheres[i]);
+				spheres.clear();
+				smallStart = std::chrono::steady_clock::now();
+				if (targetHit)
+				{
+					m_physx->clearContact();
+					score++;
+				}
+
+			}
+
+		}
+
+		if (spheres.size() == 0)
+		{
+			smallNow = std::chrono::steady_clock::now();
+			long long mi = std::chrono::duration_cast<std::chrono::milliseconds>(smallNow - smallStart).count();
+			if (mi > 500)
+			{
+				targetHit = false;
+				XMFLOAT3 pos = m_Camera->GetPosition();
+				PxVec3 cameraPosition = PxVec3(pos.x, pos.y, pos.z);
+				cameraPosition.y += 2 * rand() / RAND_MAX + 2;
+				cameraPosition.x += 2 * rand() / RAND_MAX;
+				cameraPosition.z /= 2;
+
+				PxRigidDynamic* sphere = m_physx->createSphere(SPHERE_RAD, PxVec3(0, 1.6, 2), PxQuat::createIdentity());
+
+				sphere->setLinearVelocity(cameraPosition);
+
+
+				spheres.push_back(sphere);
+				count++;
+			}
+		}
+
+		if (count > 30)
+		{
+			count--;
+			StopCalibrate(false);
+		}
+	}
+	else if (gameMode == 2)
+	{
+		end = std::chrono::steady_clock::now();
+		long long mils = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+		if (mils>1000)
+		{
+			start = end;
+			countDownTimer--;
+		}
+		if (countDownTimer == 0)
+		{
+			for (int i = 0; i<targets.size(); i++)
+				m_physx->removeActor(targets[i]);
+
+			for (int i = 0; i<boxes.size(); i++)
+				m_physx->removeActor(boxes[i]);
+
+			for (int i = 0; i<obstacles.size(); i++)
+				m_physx->removeActor(obstacles[i]);
+
+			boxes.clear();
+			targets.clear();
+			obstacles.clear();
+			m_physx->clearTargetStatus();
+
+			StopCalibrate(false);
+		}
+
+		if (m_physx->getTargetStatus())
+		{
+			smallStart = std::chrono::steady_clock::now();
+			targetHit = true;
+			m_physx->clearTargetStatus();
+
+		}
+
+		if (targetHit)
+		{
+			smallNow = std::chrono::steady_clock::now();
+			long long mi = std::chrono::duration_cast<std::chrono::milliseconds>(smallNow - smallStart).count();
+			if (mi >500)
+			{
+				for (int i = 0; i<targets.size(); i++)
+					m_physx->removeActor(targets[i]);
+
+				for (int i = 0; i<boxes.size(); i++)
+					m_physx->removeActor(boxes[i]);
+
+				for (int i = 0; i<obstacles.size(); i++)
+					m_physx->removeActor(obstacles[i]);
+
+				score++;
+				boxes.clear();
+				targets.clear();
+				obstacles.clear();
+
+				targetHit = false;
+			}
+
+		}
+
+
+		if (boxes.size() == 0 && targets.size() == 0)
+		{
+
+			PxVec3 boxPosition;
+			PxVec3 targetPostion;
+			boxPosition.y = m_physx->FLOOR_LEVEL + 0.25;
+			boxPosition.x = 3 * rand() / RAND_MAX - 1.5;
+			boxPosition.z = -3 * rand() / RAND_MAX;
+			float distance;
+			do
+			{
+				targetPostion.y = m_physx->FLOOR_LEVEL + 0.05;
+				targetPostion.x = 2 * rand() / RAND_MAX - 1;
+				targetPostion.z = -2 * rand() / RAND_MAX - 1;
+				distance = (targetPostion.x - boxPosition.x)*(targetPostion.x - boxPosition.x) + (targetPostion.z - boxPosition.z)*(targetPostion.z - boxPosition.z);
+			} while (distance < 2);
+
+			PxRigidDynamic* box = m_physx->createBox(BOX_SIZE, boxPosition, PxQuat::createIdentity());
+			PxRigidActor* target = m_physx->createTarget(TARGET_SIZE, targetPostion, PxQuat::createIdentity());
+
+			PxRigidActor* obs1 = m_physx->createBarrier(BARRIER_SIZE_X, PxVec3(targetPostion.x, targetPostion.y + BARRIER_SIZE_X.y, targetPostion.z + TARGET_SIZE.z + BARRIER_SIZE_X.z), PxQuat::createIdentity());
+			PxRigidActor* obs3 = m_physx->createBarrier(BARRIER_SIZE_X, PxVec3(targetPostion.x, targetPostion.y + BARRIER_SIZE_X.y, targetPostion.z - TARGET_SIZE.z - BARRIER_SIZE_X.z), PxQuat::createIdentity());
+			PxRigidActor* obs2 = m_physx->createBarrier(BARRIER_SIZE_Z, PxVec3(targetPostion.x + TARGET_SIZE.x + BARRIER_SIZE_Z.x, targetPostion.y + BARRIER_SIZE_X.y, targetPostion.z), PxQuat::createIdentity());
+			PxRigidActor* obs4 = m_physx->createBarrier(BARRIER_SIZE_Z, PxVec3(targetPostion.x - TARGET_SIZE.x - BARRIER_SIZE_Z.x, targetPostion.y + BARRIER_SIZE_X.y, targetPostion.z), PxQuat::createIdentity());
+
+			obstacles.push_back(obs1);
+			obstacles.push_back(obs2);
+			obstacles.push_back(obs3);
+			obstacles.push_back(obs4);
+			boxes.push_back(box);
+			targets.push_back(target);
+		}
+
+
+	}
+	else if (gameMode == 3)
+	{
+		end = std::chrono::steady_clock::now();
+		long long mils = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+		if (mils>1000)
+		{
+			start = end;
+			countDownTimer--;
+		}
+		if (countDownTimer == 0)
+		{
+			StopCalibrate(false);
+		}
+	}
+}
+
 bool GraphicsClass::Render()
 {
 	XMMATRIX worldMatrix, viewMatrix, projectionMatrix, othoMatrix;
@@ -1638,10 +1846,7 @@ bool GraphicsClass::Render()
 	HRESULT hr;
 	Point3f* head_pos = NULL;
 	bool Head_Error = false;
-
-	
-
-	
+		
 	hr = m_Kinect->Process();
 	if (SUCCEEDED(hr))
 	{
@@ -1651,6 +1856,10 @@ bool GraphicsClass::Render()
 		if (SUCCEEDED(hr))
 		{
 			head_pos = m_Tracker->goggleDetection();
+			m_Tracker->getPointCloudData(depthDest);
+			m_Tracker->getColorPointCloudData(rgbDest);
+		
+			m_PointCloudShader->UpdateSubResource(m_Direct3D->GetDeviceContext(), depthDest, rgbDest);
 			if (calibrateMode)
 			{
 				mHandlist = m_Leap->getHandActor();
@@ -1819,206 +2028,44 @@ bool GraphicsClass::Render()
 			}
 		}
 	}
+	
 	RenderTerrian(gameMode);
+
 
 	RenderActor(2);
 
 	m_Direct3D->TurnOnAlphaBlending();
 
 	RenderHand(2);
+	
 
 
 
 	m_Direct3D->TurnOffAlphaBlending();
+
 
 	RenderText(Head_Error,head_pos);
 
 //	m_model->Draw(m_Direct3D->GetDeviceContext(), *m_states, m_world, m_view, m_proj);
 
 
-
+	RenderPointCloud();
 	// Present the rendered scene to the screen.
 	m_Direct3D->EndScene();
 
 	return true;
 }
 
-void GraphicsClass::GameFrame()
+void GraphicsClass::RenderPointCloud()
 {
-	if (gameMode == 1)
-	{
-		end = std::chrono::steady_clock::now();
-		long long mils = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-		if (mils>1000)
-		{
-			start = end;
-			countDownTimer--;
-		}
-		if (countDownTimer >= 0)
-		{
-			return;
-		}
+	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
+	m_Direct3D->GetWorldMatrix(worldMatrix);
+	m_Camera->GetViewMatrix(viewMatrix);
+	m_Direct3D->GetProjectionMatrix(projectionMatrix);
 
-
-
-		for (int i = 0; i < spheres.size(); i++)
-		{
-			if (((PxRigidDynamic*)spheres[i])->getGlobalPose().p.y < m_physx->FLOOR_LEVEL || targetHit)
-			{
-				m_physx->removeActor(spheres[i]);
-				spheres.clear();
-				smallStart = std::chrono::steady_clock::now();
-				if (targetHit)
-				{
-					m_physx->clearContact();
-					score++;
-				}
-				
-			}
-
-		}
-
-		if (spheres.size() == 0)
-		{
-			smallNow = std::chrono::steady_clock::now();
-			long long mi = std::chrono::duration_cast<std::chrono::milliseconds>(smallNow - smallStart).count();
-			if (mi > 500)
-			{			
-				targetHit = false;
-				XMFLOAT3 pos = m_Camera->GetPosition();
-				PxVec3 cameraPosition = PxVec3(pos.x, pos.y, pos.z);
-				cameraPosition.y += 2 * rand() / RAND_MAX + 2;
-				cameraPosition.x += 2 * rand() / RAND_MAX;
-				cameraPosition.z /= 2;
-
-				PxRigidDynamic* sphere = m_physx->createSphere(SPHERE_RAD, PxVec3(0, 1.6, 2), PxQuat::createIdentity());
-
-				sphere->setLinearVelocity(cameraPosition);
-
-
-				spheres.push_back(sphere);
-				count++;
-			}
-		}
-
-		if (count > 30)
-		{
-			count--;
-			StopCalibrate(false);
-		}
-	}
-	else if (gameMode == 2)
-	{
-		end = std::chrono::steady_clock::now();
-		long long mils = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-		if (mils>1000)
-		{
-			start = end;
-			countDownTimer--;
-		}
-		if (countDownTimer == 0)
-		{
-			for (int i = 0; i<targets.size(); i++)
-				m_physx->removeActor(targets[i]);
-
-			for (int i = 0; i<boxes.size(); i++)
-				m_physx->removeActor(boxes[i]);
-
-			for (int i = 0; i<obstacles.size(); i++)
-				m_physx->removeActor(obstacles[i]);
-
-			boxes.clear();
-			targets.clear();
-			obstacles.clear();
-			m_physx->clearTargetStatus();
-
-			StopCalibrate(false);
-		}
-
-		if (m_physx->getTargetStatus())
-		{
-			smallStart = std::chrono::steady_clock::now();
-			targetHit = true;
-			m_physx->clearTargetStatus();
-
-		}
-		
-		if (targetHit)
-		{
-			smallNow = std::chrono::steady_clock::now();
-			long long mi = std::chrono::duration_cast<std::chrono::milliseconds>(smallNow - smallStart).count();
-			if(mi >500)
-			{
-				for (int i = 0; i<targets.size(); i++)
-					m_physx->removeActor(targets[i]);
-
-				for (int i = 0; i<boxes.size(); i++)
-					m_physx->removeActor(boxes[i]);
-
-				for (int i = 0; i<obstacles.size(); i++)
-					m_physx->removeActor(obstacles[i]);
-
-				score++;
-				boxes.clear();
-				targets.clear();
-				obstacles.clear();
-
-				targetHit = false;
-			}
-
-		}
-
-
-		if (boxes.size() == 0 && targets.size() == 0)
-		{
-
-			PxVec3 boxPosition;
-			PxVec3 targetPostion;
-			boxPosition.y = m_physx->FLOOR_LEVEL+0.25;
-			boxPosition.x = 3 * rand() / RAND_MAX - 1.5;
-			boxPosition.z = -3* rand() / RAND_MAX;
-			float distance;
-			do
-			{
-				targetPostion.y = m_physx->FLOOR_LEVEL+0.05;
-				targetPostion.x = 2 * rand() / RAND_MAX - 1;
-				targetPostion.z = -2 * rand() / RAND_MAX -1;
-				distance = (targetPostion.x - boxPosition.x)*(targetPostion.x - boxPosition.x) + (targetPostion.z - boxPosition.z)*(targetPostion.z - boxPosition.z);
-			} while (distance < 2);
-
-			PxRigidDynamic* box = m_physx->createBox(BOX_SIZE, boxPosition, PxQuat::createIdentity());
-			PxRigidActor* target = m_physx->createTarget(TARGET_SIZE, targetPostion, PxQuat::createIdentity());
-
-			PxRigidActor* obs1 = m_physx->createBarrier(BARRIER_SIZE_X, PxVec3(targetPostion.x, targetPostion.y+BARRIER_SIZE_X.y, targetPostion.z+TARGET_SIZE.z+BARRIER_SIZE_X.z), PxQuat::createIdentity());
-			PxRigidActor* obs3 = m_physx->createBarrier(BARRIER_SIZE_X, PxVec3(targetPostion.x, targetPostion.y + BARRIER_SIZE_X.y, targetPostion.z - TARGET_SIZE.z- BARRIER_SIZE_X.z), PxQuat::createIdentity());
-			PxRigidActor* obs2 = m_physx->createBarrier(BARRIER_SIZE_Z, PxVec3(targetPostion.x + TARGET_SIZE.x + BARRIER_SIZE_Z.x, targetPostion.y + BARRIER_SIZE_X.y, targetPostion.z ), PxQuat::createIdentity());
-			PxRigidActor* obs4 = m_physx->createBarrier(BARRIER_SIZE_Z, PxVec3(targetPostion.x - TARGET_SIZE.x - BARRIER_SIZE_Z.x, targetPostion.y + BARRIER_SIZE_X.y, targetPostion.z ), PxQuat::createIdentity());
-
-			obstacles.push_back(obs1);
-			obstacles.push_back(obs2);
-			obstacles.push_back(obs3);
-			obstacles.push_back(obs4);
-			boxes.push_back(box);
-			targets.push_back(target);
-		}
-
-
-	}
-	else if (gameMode == 3)
-	{
-		end = std::chrono::steady_clock::now();
-		long long mils = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-		if (mils>1000)
-		{
-			start = end;
-			countDownTimer--;
-		}
-		if (countDownTimer == 0)
-		{
-			StopCalibrate(false);
-		}
-	}
+	m_PointCloudShader->Render(m_Direct3D->GetDeviceContext(), worldMatrix, viewMatrix, projectionMatrix);
 }
+
 
 void GraphicsClass::RenderText(bool Head_Error, Point3f* head_pos)
 {

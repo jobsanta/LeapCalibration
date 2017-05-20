@@ -24,6 +24,7 @@
 #include "bitmapclass.h"
 #include "textureshaderclass.h"
 #include "shapeclass.h"
+#include "pointcloudshaderclass.h"
 
 #include "kinectclass.h"
 #include "trackerclass.h"
@@ -125,6 +126,7 @@ private:
 	void RenderDebugSphere(int mode, PxVec3, float radius, XMFLOAT4 color);
 	void RenderColorSphere(int mode, PxRigidActor* sphere, float radius, XMFLOAT4 color);
 	void RenderTerrian(int mode);
+	void RenderPointCloud();
 	//void RenderPillar(PxVec3 endPoint);
 	XMMATRIX PxtoXMMatrix(PxTransform input);
 	bool RenderSceneToTexture();
@@ -183,6 +185,7 @@ private:
 	OrthoWindowClass *m_SmallWindow, *m_FullScreenWindow;
 	HorizontalBlurShaderClass* m_HorizontalBlurShader;
 	VerticalBlurShaderClass* m_VerticalBlurShader;
+	PointCloudShaderClass* m_PointCloudShader;
 	
 
 	XMMATRIX zoffset_matrix;
@@ -239,6 +242,9 @@ private:
 	 XMFLOAT4 handColor;
 	 XMMATRIX floor_trans;
 	 XMMATRIX floor_scale;
+
+	 FLOAT* rgbDest;
+	 FLOAT* depthDest;
 
 	 void checkObjectPos(PxRigidActor* actor);
 

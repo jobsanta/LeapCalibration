@@ -49,7 +49,6 @@ private:
 	UINT16* m_pDepthBuffer;
 
 
-
 	// to prevent drawing until we have data for both streams
 	bool m_bDepthReceived;
 	bool m_bColorReceived;

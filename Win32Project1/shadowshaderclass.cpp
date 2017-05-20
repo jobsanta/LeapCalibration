@@ -31,7 +31,7 @@ bool ShadowShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 
 
 	// Initialize the vertex and pixel shaders.
-	result = InitializeShader(device, hwnd, L"../Win32Project1/shadow.vs", L"../Win32Project1/shadow.ps");
+	result = InitializeShader(device, hwnd, L"../Win32Project1/shadow.fx", L"../Win32Project1/shadow.fx");
 	if(!result)
 	{
 		return false;

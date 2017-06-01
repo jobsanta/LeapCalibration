@@ -5,6 +5,7 @@
 #include "opencv2/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
 
+#include <fstream>
 //#include <pcl/io/pcd_io.h>
 //#include <pcl/point_types.h>
 //#include <pcl/registration/icp.h>
@@ -28,7 +29,7 @@ public:
 	int fingerTipDetection(PxVec3 fingertipPosition[5]);
 
 	float handMeasurement(PxVec3);
-	void handVisualize(vector<handActor> hand);
+	void handVisualize(vector<handActor*> hand);
 
 	void estimateAffineTransform();
 	void setAffineLtoK(Mat affine);
@@ -36,8 +37,10 @@ public:
 	Mat getAffineTransformLtoK();
 	Mat getAffineTransformKtoL();
 
-	void getPointCloudData(float*);
+	void getPointCloudData(float*,bool mirror);
 	void getColorPointCloudData(float*);
+
+	void clear();
 
 
 private:

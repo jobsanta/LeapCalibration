@@ -7,7 +7,6 @@ using namespace DirectX;
 struct Vertex
 {
 	XMFLOAT3 Pos;
-	XMFLOAT4 Color;
 	XMFLOAT3 Normal;
 };
 
@@ -20,12 +19,19 @@ public:
 	void Shutdown();
 	void Render(ID3D11Device*);
 
-	int GetCylinderIndexCount();
-	int GetBoxIndexCount();
-	int GetCylinderIndexOffset();
+
 	int GetBoxIndexOffset();
 	int GetBoxVertexOffset();
+	int GetBoxIndexCount();
+	int GetCylinderIndexCount();
+	int GetCylinderIndexOffset();
 	int GetCylinderVertexOffset();
+	int GetSphereIndexCount();
+	int GetSphereIndexOffset();
+	int GetSphereVertexOffset();
+	int GetGridIndexCount();
+	int GetGridVertexOffset();
+	int GetGridIndexOffset();
 
 private:
 	void ShutdownBuffers();
@@ -38,11 +44,16 @@ private:
 
 	int mBoxVertexOffset;
 	int mCylinderVertexOffset;
+	int mSphereVertexOffset;
+	int mGridVertexOffset;
 
 	UINT mBoxIndexOffset;
 	UINT mCylinderIndexOffset;
+	UINT mSphereIndexOffset;
+	UINT mGridIndexOffset;
 
 	UINT mBoxIndexCount;
 	UINT mCylinderIndexCount;
-
+	UINT mSphereIndexCount;
+	UINT mGridIndexCount;
 };

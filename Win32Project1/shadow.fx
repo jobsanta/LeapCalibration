@@ -8,6 +8,7 @@
 /////////////
 
 Texture2D depthMapTexture : register(t0);
+Texture2D depthMapTexture2 : register(t1);
 SamplerState SampleTypeClamp : register(s0);
 
 cbuffer MatrixBuffer
@@ -17,6 +18,9 @@ cbuffer MatrixBuffer
 	matrix projectionMatrix;
 	matrix lightViewMatrix;
 	matrix lightProjectionMatrix;
+	matrix lightViewMatrix2;
+	matrix lightProjectionMatrix2;
+
 };
 
 
@@ -36,17 +40,17 @@ cbuffer LightBuffer2
 struct VertexInputType
 {
 	float4 position : POSITION;
-	float2 tex : TEXCOORD0;
 	float3 normal : NORMAL;
 };
 
 struct PixelInputType
 {
 	float4 position : SV_POSITION;
-	float2 tex : TEXCOORD0;
 	float3 normal : NORMAL;
 	float4 lightViewPosition : TEXCOORD1;
 	float3 lightPos : TEXCOORD2;
+	float4 lightViewPosition2 : TEXCOORD3;
+	float3 lightPos2 : TEXCOORD4;
 };
 
 
@@ -57,7 +61,7 @@ PixelInputType ShadowVertexShader(VertexInputType input)
 {
 	PixelInputType output;
 	float4 worldPosition;
-
+	float3 lightPosition2;
 
 	// Change the position vector to be 4 units for proper matrix calculations.
 	input.position.w = 1.0f;
@@ -72,8 +76,13 @@ PixelInputType ShadowVertexShader(VertexInputType input)
 	output.lightViewPosition = mul(output.lightViewPosition, lightViewMatrix);
 	output.lightViewPosition = mul(output.lightViewPosition, lightProjectionMatrix);
 
+	// Calculate the position of the vertice as viewed by the second light source.
+	output.lightViewPosition2 = mul(input.position, worldMatrix);
+	output.lightViewPosition2 = mul(output.lightViewPosition2, lightViewMatrix2);
+	output.lightViewPosition2 = mul(output.lightViewPosition2, lightProjectionMatrix2);
+
 	// Store the texture coordinates for the pixel shader.
-	output.tex = input.tex;
+
 
 	// Calculate the normal vector against the world matrix only.
 	output.normal = mul(input.normal, (float3x3)worldMatrix);
@@ -89,6 +98,13 @@ PixelInputType ShadowVertexShader(VertexInputType input)
 
 	// Normalize the light position vector.
 	output.lightPos = normalize(output.lightPos);
+	lightPosition2 = lightPosition;
+	lightPosition2.z = -lightPosition.z;
+	// Determine the second light position based on the position of the light and the position of the vertex in the world.
+	output.lightPos2 = lightPosition2.xyz - worldPosition.xyz;
+
+	// Normalize the second light position vector.
+	output.lightPos2 = normalize(output.lightPos2);
 
 	return output;
 }
@@ -138,10 +154,31 @@ if ((saturate(projectTexCoord.x) == projectTexCoord.x) && (saturate(projectTexCo
 		// If this pixel is illuminated then set it to pure white (non-shadow).
 		if (lightIntensity > 0.0f)
 		{
-			color = float4(1.0f, 1.0f, 1.0f, 1.0f);
+			color += float4(1.0f, 1.0f, 1.0f, 1.0f)*lightIntensity;
 		}
 	}
 }
 
+// Second light.
+projectTexCoord.x = input.lightViewPosition2.x / input.lightViewPosition2.w / 2.0f + 0.5f;
+projectTexCoord.y = -input.lightViewPosition2.y / input.lightViewPosition2.w / 2.0f + 0.5f;
+
+if ((saturate(projectTexCoord.x) == projectTexCoord.x) && (saturate(projectTexCoord.y) == projectTexCoord.y))
+{
+	depthValue = depthMapTexture2.Sample(SampleTypeClamp, projectTexCoord).r;
+
+	lightDepthValue = input.lightViewPosition2.z / input.lightViewPosition2.w;
+	lightDepthValue = lightDepthValue - bias;
+
+	if (lightDepthValue < depthValue)
+	{
+		lightIntensity = saturate(dot(input.normal, input.lightPos2));
+		if (lightIntensity > 0.0f)
+		{
+			color += float4(1.0f, 1.0f, 1.0f, 1.0f)*lightIntensity;
+		}
+	}
+}
+color = saturate(color);
 return color;
 }

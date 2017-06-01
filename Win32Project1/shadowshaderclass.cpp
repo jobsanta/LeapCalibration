@@ -52,14 +52,15 @@ void ShadowShaderClass::Shutdown()
 
 bool ShadowShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount,int indexOffset,int vertexOffset, XMMATRIX worldMatrix, XMMATRIX viewMatrix, 
 							   XMMATRIX projectionMatrix, XMMATRIX lightViewMatrix, XMMATRIX lightProjectionMatrix, 
-							   ID3D11ShaderResourceView* depthMapTexture, XMFLOAT3 lightPosition)
+							   ID3D11ShaderResourceView* depthMapTexture, XMFLOAT3 lightPosition, XMMATRIX lightViewMatrix2, XMMATRIX lightProjectionMatrix2,
+	ID3D11ShaderResourceView* depthMapTexture2)
 {
 	bool result;
 
 
 	// Set the shader parameters that it will use for rendering.
 	result = SetShaderParameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix,  depthMapTexture, 
-								 lightPosition);
+								 lightPosition,lightViewMatrix2,lightProjectionMatrix2,depthMapTexture2);
 	if(!result)
 	{
 		return false;
@@ -78,7 +79,7 @@ bool ShadowShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR*
 	ID3D10Blob* errorMessage;
 	ID3D10Blob* vertexShaderBuffer;
 	ID3D10Blob* pixelShaderBuffer;
-	D3D11_INPUT_ELEMENT_DESC polygonLayout[3];
+	D3D11_INPUT_ELEMENT_DESC polygonLayout[2];
 	unsigned int numElements;
     D3D11_SAMPLER_DESC samplerDesc;
 	D3D11_BUFFER_DESC matrixBufferDesc;
@@ -151,21 +152,21 @@ bool ShadowShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR*
 	polygonLayout[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	polygonLayout[0].InstanceDataStepRate = 0;
 
-	polygonLayout[1].SemanticName = "TEXCOORD";
+	//polygonLayout[1].SemanticName = "TEXCOORD";
+	//polygonLayout[1].SemanticIndex = 0;
+	//polygonLayout[1].Format = DXGI_FORMAT_R32G32_FLOAT;
+	//polygonLayout[1].InputSlot = 0;
+	//polygonLayout[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	//polygonLayout[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	//polygonLayout[1].InstanceDataStepRate = 0;
+
+	polygonLayout[1].SemanticName = "NORMAL";
 	polygonLayout[1].SemanticIndex = 0;
-	polygonLayout[1].Format = DXGI_FORMAT_R32G32_FLOAT;
+	polygonLayout[1].Format = DXGI_FORMAT_R32G32B32_FLOAT;
 	polygonLayout[1].InputSlot = 0;
 	polygonLayout[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
 	polygonLayout[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	polygonLayout[1].InstanceDataStepRate = 0;
-
-	polygonLayout[2].SemanticName = "NORMAL";
-	polygonLayout[2].SemanticIndex = 0;
-	polygonLayout[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-	polygonLayout[2].InputSlot = 0;
-	polygonLayout[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	polygonLayout[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	polygonLayout[2].InstanceDataStepRate = 0;
 
 	// Get a count of the elements in the layout.
     numElements = sizeof(polygonLayout) / sizeof(polygonLayout[0]);
@@ -327,14 +328,15 @@ void ShadowShaderClass::OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND 
 
 bool ShadowShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, XMMATRIX worldMatrix, XMMATRIX viewMatrix, 
 											XMMATRIX projectionMatrix, XMMATRIX lightViewMatrix, XMMATRIX lightProjectionMatrix, 
-											ID3D11ShaderResourceView* depthMapTexture, XMFLOAT3 lightPosition)
+											ID3D11ShaderResourceView* depthMapTexture, XMFLOAT3 lightPosition, XMMATRIX lightViewMatrix2, XMMATRIX lightProjectionMatrix2,
+	ID3D11ShaderResourceView* depthMapTexture2)
 {
 	HRESULT result;
     D3D11_MAPPED_SUBRESOURCE mappedResource;
 	unsigned int bufferNumber;
 	MatrixBufferType* dataPtr;
 	LightBufferType2* dataPtr3;
-	XMMATRIX world, view, proj, lightView, lightProj;
+	XMMATRIX world, view, proj, lightView, lightProj,lightView2, lightProj2;
 
 	// Transpose the matrices to prepare them for the shader.
 	world = XMMatrixTranspose(worldMatrix);
@@ -342,6 +344,10 @@ bool ShadowShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, 
 	proj = XMMatrixTranspose(projectionMatrix);
 	lightView = XMMatrixTranspose(lightViewMatrix);
 	lightProj = XMMatrixTranspose(lightProjectionMatrix);
+	lightView2 = XMMatrixTranspose(lightViewMatrix2);
+	lightProj2 = XMMatrixTranspose(lightProjectionMatrix2);
+
+
 
 	// Lock the constant buffer so it can be written to.
 	result = deviceContext->Map(m_matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
@@ -359,6 +365,8 @@ bool ShadowShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, 
 	dataPtr->projection = proj;
 	dataPtr->lightView = lightView;
 	dataPtr->lightProjection = lightProj;
+	dataPtr->lightView2 = lightView2;
+	dataPtr->lightProjection2 = lightProj2;
 
 	// Unlock the constant buffer.
     deviceContext->Unmap(m_matrixBuffer, 0);
@@ -371,6 +379,7 @@ bool ShadowShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, 
 
 	// Set shader texture resource in the pixel shader.
 	deviceContext->PSSetShaderResources(0, 1, &depthMapTexture);
+	deviceContext->PSSetShaderResources(1, 1, &depthMapTexture2);
 
 	// Lock the second light constant buffer so it can be written to.
 	result = deviceContext->Map(m_lightBuffer2, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);

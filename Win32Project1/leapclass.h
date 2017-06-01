@@ -35,13 +35,16 @@ using namespace Eigen;
 //static const float particleRadius = 0.075f;
 #ifndef HA
 #define HA
+const bool OFFAXIS = false;
+
 struct HandMode
 {
 	enum Enum
 	{
 		Normal = 0,
 		Mirror = 1,
-		Transit = 2
+		Transit = 2,
+		Gogo = 3
 
 	};
 };
@@ -118,6 +121,8 @@ public:
 	std::vector<PxRigidActor*> getBoxes();
 	std::vector<PxRigidActor*> deleteBoxes;
 	void clearBoxes();
+	bool getRightHandMirror();
+	void setHandMode();
 
 private:
 	Controller controller;
@@ -178,6 +183,9 @@ private:
 
 	PxRigidDynamic*  queryScene(PxTransform t);
 	vector<PxRigidActor*> boxes;
+
+	HandMode::Enum globalHandMode;
+	
 
 
 };

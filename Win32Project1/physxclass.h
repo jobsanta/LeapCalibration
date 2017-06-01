@@ -23,7 +23,7 @@ using namespace std;
 class PhysxClass : public PxSimulationEventCallback
 {
 public:
-	const PxReal FLOOR_LEVEL = 1.0f;
+	const PxReal FLOOR_LEVEL = 0.5f;
 public:
 
 	PhysxClass();

@@ -49,11 +49,11 @@ void PointCloudShaderClass::Shutdown()
 }
 
 bool PointCloudShaderClass::Render(ID3D11DeviceContext* deviceContext, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
-	XMMATRIX projectionMatrix)
+	XMMATRIX projectionMatrix,XMFLOAT3 camera)
 {
 	bool result;
 
-	SetShaderParameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix);
+	SetShaderParameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix,camera);
 
 
 	// Now render the prepared buffers with the shader.
@@ -286,7 +286,7 @@ void PointCloudShaderClass::OutputShaderErrorMessage(ID3D10Blob* errorMessage, H
 }
 
 bool PointCloudShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
-	XMMATRIX projectionMatrix)
+	XMMATRIX projectionMatrix,XMFLOAT3 camera)
 {
 	HRESULT result;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
@@ -300,6 +300,7 @@ bool PointCloudShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceConte
 	cb.View = XMMatrixTranspose(viewMatrix);
 	cb.Projection = XMMatrixTranspose(projectionMatrix);
 	cb.XYScale = XMFLOAT4(m_xyScale, -m_xyScale, 0.f, 0.f);
+	cb.camera = camera;
 	deviceContext->UpdateSubresource(m_pCBChangesEveryFrame, 0, NULL, &cb, 0, 0);
 
 	return true;

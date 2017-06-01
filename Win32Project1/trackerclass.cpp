@@ -1,9 +1,11 @@
 #include "trackerclass.h"
 
-static const float height = 0.90f; // 70 cm
-static const float degree = 57.0f;
-static const float sin_deg = 0.819152044f;
-static const float cos_deg = 0.573576436f;
+static const float height = 0.62f; // 70 cm
+static const float degree = 22.8;
+static const float sin_deg = 0.469471;
+static const float cos_deg = 0.882947;
+static const float depthOffset = 0.25;
+
 
 TrackerClass::TrackerClass()
 {
@@ -28,7 +30,7 @@ TrackerClass::~TrackerClass()
 
 }
 
-void TrackerClass::getPointCloudData(float* dest)
+void TrackerClass::getPointCloudData(float* dest, bool mirror)
 {
 	Point3f point;
 
@@ -40,9 +42,23 @@ void TrackerClass::getPointCloudData(float* dest)
 		else
 			point = cameraToWorldSpace(depthToCamera_points[i]);
 
-		*fdest++ = point.x;
-		*fdest++ = point.y;
-		*fdest++ = -point.z;
+		if (point.z <-10)
+		{
+			*fdest++ = 0;
+			*fdest++ = 0;
+			*fdest++ = -10;
+		}
+		else
+		{
+			*fdest++ = point.x;
+			*fdest++ = point.y;
+			if(mirror)
+			*fdest++ = -point.z;
+			else
+			*fdest++ = point.z;
+		}
+
+
 	}
 
 
@@ -69,6 +85,12 @@ void TrackerClass::getColorPointCloudData(float* dest)
 			*fdest++ = 1.0;
 		}
 	}
+}
+
+void TrackerClass::clear()
+{
+	leapPoints.clear();
+	kinectPoints.clear();
 }
 
 
@@ -162,7 +184,7 @@ float TrackerClass::handMeasurement(PxVec3 wristPosition)
 	Mat debugImg(nDepthHeight, nDepthWidth, CV_8UC1);
 	handMap.convertTo(debugImg, CV_8UC1, 255.0 / (nMaxDistance - nMinDistance));
 	circle(debugImg, Point(static_cast<int>(wristDepthPos.X), static_cast<int>(wristDepthPos.Y)), 2, Scalar(255));
-	imshow("Debug", debugImg);
+	//imshow("Debug", debugImg);
 
 	return handsize-15;
 
@@ -315,7 +337,7 @@ int TrackerClass::fingerTipDetection(PxVec3 fingertipPosition[5])
 	vector<vector<Point> > contours_poly(contours.size());
 	vector<RotatedRect> boundRect(contours.size());
 	Point3f cam_point[5];
-
+	bool corrupt = false;
 	if (contours.size() == 5)
 	{
 		for (size_t i = 0; i < contours.size(); ++i) 
@@ -342,35 +364,63 @@ int TrackerClass::fingerTipDetection(PxVec3 fingertipPosition[5])
 					int colorY = static_cast<int>(cen_point.y + 0.5f);
 					long colorIndex = (long)(colorY*cColorWidth + colorX);
 					cam_point[i] = cameraToWorldSpace( colorToCamera_points[colorIndex]);
+					if (cam_point[i].z >= -2 || cam_point[i].z < -8  || cam_point[i].y < 0.5 ||cam_point[i].y > 5 || cam_point[i].x >=5 || cam_point[i].x <-5)
+					{
+						corrupt = true;
+						i = contours.size();
+					}
+
+
 				}
 			
 			}
 		}
-
-
-		double distance = 0;
-		if (leapPoints.size() > 0)
+		
+		if (!corrupt)
 		{
-			for (int i = 0; i < 5; i++)
+			int d;
+			for (int c = 1; c <= 4; c++) {
+				d = c;
+
+				while (d > 0 && cam_point[d].x < cam_point[d - 1].x) {
+					Point3f t = Point3f(cam_point[d].x, cam_point[d].y, cam_point[d].z);
+					cam_point[d].x = cam_point[d - 1].x;
+					cam_point[d].y = cam_point[d - 1].y;
+					cam_point[d].z = cam_point[d - 1].z;
+					cam_point[d - 1].x = t.x;
+					cam_point[d - 1].y = t.y;
+					cam_point[d - 1].z = t.z;
+
+					d--;
+				}
+			}
+
+
+			double distance = 0;
+			if (leapPoints.size() > 0)
 			{
-				Point3f lpos = leapPoints[leapPoints.size() - 5 + i];
-				Point3f fpos = Point3f(fingertipPosition[i].x / 100.0f, fingertipPosition[i].y / 100.0f - 1.0f, -fingertipPosition[i].z / 100.0f - 2.6f);
-				Point3f d = fpos - lpos;
-				distance += sqrt(d.dot(d));
+				for (int i = 0; i < 5; i++)
+				{
+					Point3f lpos = leapPoints[leapPoints.size() - 5 + i];
+					Point3f fpos = Point3f(fingertipPosition[i].x / 100.0f, fingertipPosition[i].y / 100.0f - 1.0f, -fingertipPosition[i].z / 100.0f - 2.9f);
+					Point3f d = fpos - lpos;
+					distance += sqrt(d.dot(d));
+				}
+			}
+			else
+				distance = 2;
+
+			if (distance >= 2)
+			{
+				for (int i = 0; i < 5; i++)
+				{
+					kinectPoints.push_back(cam_point[i]);
+					leapPoints.push_back(Point3f(fingertipPosition[i].x / 100.0f, fingertipPosition[i].y / 100.0f - 1.0f, -fingertipPosition[i].z / 100.0f - 2.9f));
+					//	Point3f(fingertipPosition[i].x/1000, fingertipPosition[i].y/1000, -fingertipPosition[i].z/1000));
+				}
 			}
 		}
-		else
-			distance = 2;
-
-		if (distance >= 2)
-		{
-			for (int i = 0; i < 5; i++)
-			{
-				kinectPoints.push_back(cam_point[i]);
-				leapPoints.push_back(Point3f(fingertipPosition[i].x / 100.0f, fingertipPosition[i].y / 100.0f - 1.0f, -fingertipPosition[i].z / 100.0f - 2.6f));
-			//	Point3f(fingertipPosition[i].x/1000, fingertipPosition[i].y/1000, -fingertipPosition[i].z/1000));
-			}
-		}
+	
 	}
 
 
@@ -383,10 +433,24 @@ int TrackerClass::fingerTipDetection(PxVec3 fingertipPosition[5])
 void TrackerClass::estimateAffineTransform()
 {
 	std::vector<uchar> inliers;
-	if (leapPoints.size() > 100)
+	if (leapPoints.size() > 50)
 	{
-		int ret = cv::estimateAffine3D(leapPoints, kinectPoints, aff_ltok, inliers);
-		ret = cv::estimateAffine3D(kinectPoints, leapPoints, aff_ktol, inliers);
+		ifstream fin;
+		fin.open("depth_data.txt");
+		if (fin.is_open())
+		{
+			float lx, ly, lz, kx, ky, kz;
+			while (fin >> lx >> ly >> lz >> kx >> ky >> kz)
+			{
+				leapPoints.push_back(Point3f(lx, ly, lz));
+				kinectPoints.push_back(Point3f(kx, ky, kz));
+			}
+			fin.close();
+
+		}
+
+		int ret = cv::estimateAffine3D(leapPoints, kinectPoints, aff_ltok, inliers,0.1);
+		ret = cv::estimateAffine3D(kinectPoints, leapPoints, aff_ktol, inliers,0.1);
 		//pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in(new pcl::PointCloud<pcl::PointXYZ>);
 		//pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out(new pcl::PointCloud<pcl::PointXYZ>);
 
@@ -407,6 +471,21 @@ void TrackerClass::estimateAffineTransform()
 		//	cloud_out->points[i].x = kinectPoints[i].x;
 		//	cloud_out->points[i].y = kinectPoints[i].y;
 		//	cloud_out->points[i].z = kinectPoints[i].z;
+
+		ofstream fout;
+		fout.open("depth_data.txt");
+		if (fout.is_open())
+		{
+			for (int i = 0; i < leapPoints.size(); i++)
+			{
+
+				fout << leapPoints[i].x << " " << leapPoints[i].y <<" " << leapPoints[i].z <<
+					" "<< kinectPoints[i].x << " " << kinectPoints[i].y << " " << kinectPoints[i].z << endl;
+			}
+			fout.close();
+		}
+		
+	
 
 		//}
 
@@ -442,6 +521,7 @@ void TrackerClass::estimateAffineTransform()
 	kinectPoints.clear();
 }
 
+
 HRESULT TrackerClass::coordinateMapping(UINT16* pDepthBuffer)
 {
 	if (depthToCamera_points == NULL)
@@ -474,9 +554,9 @@ Point3f TrackerClass::cameraToWorldSpace(CameraSpacePoint camPoint)
 {
 	Point3f result;
 	// convert from camera space - > world space
-	result.x = camPoint.Y;
-	result.y = -cos_deg*camPoint.X - sin_deg*camPoint.Z + height;
-	result.z = sin_deg*camPoint.X - cos_deg*camPoint.Z;
+	result.x = camPoint.X;
+	result.y = cos_deg*camPoint.Y - sin_deg*camPoint.Z + height;
+	result.z = -sin_deg*camPoint.Y - cos_deg*camPoint.Z + depthOffset;
 
 
 	result.z -= 0.1f;
@@ -492,9 +572,9 @@ CameraSpacePoint TrackerClass::worldToCameraSpace(Point3f worldPoint)
 	worldPoint.z += 0.1f;
 
 
-	camPoint.X = -cos_deg*(worldPoint.y - height) + sin_deg*worldPoint.z;
-	camPoint.Y = worldPoint.x;
-	camPoint.Z = -sin_deg*(worldPoint.y - height) - cos_deg*worldPoint.z;
+	camPoint.X = worldPoint.x; 
+	camPoint.Y = cos_deg*(worldPoint.y - height) - sin_deg*(worldPoint.z-depthOffset);
+	 camPoint.Z = -sin_deg*(worldPoint.y - height) - cos_deg*(worldPoint.z-depthOffset);
 	return camPoint;
 }
 
@@ -552,7 +632,7 @@ Point3f* TrackerClass::smoothPoint(Point3f* currentPoint)
 
 }
 
-void TrackerClass::handVisualize(vector<handActor> hand)
+void TrackerClass::handVisualize(vector<handActor*> hand)
 {
 	if (!SUCCEEDED(status))
 		return;
@@ -563,11 +643,11 @@ void TrackerClass::handVisualize(vector<handActor> hand)
 	
 	for (int i = 0; i < hand.size(); i++)
 	{
-		if (hand[i].leapJointPosition != nullptr)
-			drawFinger(hand[i].leapJointPosition, depthImg);
+		if (hand[i]->leapJointPosition != nullptr)
+			drawFinger(hand[i]->leapJointPosition, depthImg);
 	}
 
-	imshow("Debug Depth", depthImg);
+//	imshow("Debug Depth", depthImg);
 }
 
 void TrackerClass::drawFinger(PxVec3* leapJointPosition, Mat depthImg)
@@ -612,6 +692,7 @@ void TrackerClass::setAffineLtoK(Mat transform)
 {
 	aff_ltok = transform;
 	affine_set = true;
+//	affine_set = true;
 }
 
 void TrackerClass::setAffineKtoL(Mat transform)

@@ -252,6 +252,21 @@ bool InputClass::IsCPressed()
 }
 
 
+bool InputClass::IsGPressed()
+{
+	// Do a bitwise and on the keyboard state to check if the escape key is currently being pressed.
+	if ((!(m_keyboardState[DIK_G] & 0x80)) && (DIK_G == pressKey))
+	{
+		pressKey = 0;
+		return true;
+	}
+	if (m_keyboardState[DIK_G] & 0x80)
+		pressKey = DIK_G;
+
+	return false;
+}
+
+
 bool InputClass::IsPPressed()
 {
 	// Do a bitwise and on the keyboard state to check if the escape key is currently being pressed.

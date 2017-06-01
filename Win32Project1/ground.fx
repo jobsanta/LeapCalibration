@@ -38,7 +38,6 @@ cbuffer LightBuffer2
 struct VertexInputType
 {
 	float4 position : POSITION;
-	float4 color : COLOR;
 	float3 normal : NORMAL;
 };
 
@@ -72,7 +71,7 @@ PixelInputType ColorVertexShader(VertexInputType input)
 	output.viewPosition = output.position;
 
 	// Store the texture coordinates for the pixel shader.
-	output.color = input.color;
+	output.color = float4(1.0,1.0,1.0,1.0);
 
 	// Calculate the normal vector against the world matrix only.
 	output.normal = mul(input.normal, (float3x3)worldMatrix);

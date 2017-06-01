@@ -44,12 +44,41 @@ GraphicsClass::GraphicsClass()
 	m_PointCloudShader = 0;
 	m_UpSampleTexure = 0;
 	m_FullScreenWindow = 0;
+	m_RenderTexture2 = 0;
 
 	handlength = 150;
 	handMode = 0;
 
-	rgbDest = new FLOAT[512*424 * 4];
-	depthDest = new FLOAT[512*424* 3];
+	rgbDest = new FLOAT[512 * 424 * 4];
+	depthDest = new FLOAT[512 * 424 * 3];
+
+	mhandMaterial.Ambient = XMFLOAT4(0.0f, 0.7, 0.3, 1.0);
+	mhandMaterial.Diffuse = XMFLOAT4(0.0f, 0.7, 0.3, 1.0);
+	mhandMaterial.Specular = XMFLOAT4(0.5, 0.5, 0.5, 16.0);
+
+	mboxMaterial.Ambient = XMFLOAT4(0.137f, 0.42f, 0.556f, 1.0f);
+	mboxMaterial.Diffuse = XMFLOAT4(0.137f, 0.42f, 0.556f, 1.0f);
+	mboxMaterial.Specular = XMFLOAT4(1.0f, 1.0f, 1.0f, 96.0f);
+
+	msphereMaterial.Ambient = XMFLOAT4(0.7, 0.4, 0.46f, 1.0f);
+	msphereMaterial.Diffuse = XMFLOAT4(0.7, 0.4, 0.46f, 1.0f);
+	msphereMaterial.Specular = XMFLOAT4(0.8f, 0.8f, 0.8f, 96.0f);
+
+	mfloorMaterial.Ambient = XMFLOAT4(0.8, 0.8, 0.8, 1.0f);
+	mfloorMaterial.Diffuse = XMFLOAT4(0.8, 0.8, 0.8, 0.5);
+	mfloorMaterial.Specular = XMFLOAT4(1.0,1.0,1.0, 96.0f);
+
+	medgeMaterial.Ambient = XMFLOAT4(0.5, 0.25, 0.25, 1.0f);
+	medgeMaterial.Diffuse = XMFLOAT4(0.5, 0.25, 0.25, 1.0f);
+	medgeMaterial.Specular = XMFLOAT4(1.0, 1.0, 1.0, 96.0f);
+
+	attenuate = XMFLOAT3(0, 0.1, 0);
+	lightRange = 40;
+
+	gogoMode = false;
+
+
+
 
 }
 
@@ -153,8 +182,9 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		return false;
 	}
 	m_Light->SetPosition(0.0f, 0.0f, 1.0f);
-	m_Light->SetDiffuseColor(1.0f,1.0f,1.0f,1.0f);
-	m_Light->SetAmbientColor(0.15,0.15,0.15f, 1.0f);
+	m_Light->SetDiffuseColor(0.7f, 0.7f, 0.7f, 1.0f);
+	m_Light->SetSpecularColor(0.7f, 0.7f, 0.7f, 1.0f);
+	m_Light->SetAmbientColor(0.15, 0.15, 0.15f, 1.0f);
 	m_Light->SetLookAt(0.0f, 1.0f, 0.0f);
 	m_Light->GenerateProjectionMatrix(SCREEN_DEPTH, SCREEN_NEAR);
 
@@ -167,6 +197,20 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 
 	// Initialize the render to texture object.
 	result = m_RenderTexture->Initialize(m_Direct3D->GetDevice(), SHADOWMAP_WIDTH, SHADOWMAP_HEIGHT, SCREEN_DEPTH, SCREEN_NEAR);
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the render to texture object.", L"Error", MB_OK);
+		return false;
+	}
+
+	m_RenderTexture2 = new RenderTextureClass;
+	if (!m_RenderTexture2)
+	{
+		return false;
+	}
+
+	// Initialize the render to texture object.
+	result = m_RenderTexture2->Initialize(m_Direct3D->GetDevice(), SHADOWMAP_WIDTH, SHADOWMAP_HEIGHT, SCREEN_DEPTH, SCREEN_NEAR);
 	if (!result)
 	{
 		MessageBox(hwnd, L"Could not initialize the render to texture object.", L"Error", MB_OK);
@@ -349,7 +393,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	}
 
 	// Initialize the model object.
-	result = m_boxes->Initialize(m_Direct3D->GetDevice(),"../Win32Project1/data/cube.txt", L"../Win32Project1/data/WoodCrate01.dds");
+	result = m_boxes->Initialize(m_Direct3D->GetDevice(), "../Win32Project1/data/cube.txt", L"../Win32Project1/data/WoodCrate01.dds");
 	if (!result)
 	{
 		MessageBox(hwnd, L"Could not initialize the boxes model object.", L"Error", MB_OK);
@@ -404,7 +448,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		return false;
 	}
 	result = m_Shape->Initialize(m_Direct3D->GetDevice());
-	if(!result)
+	if (!result)
 	{
 		MessageBox(hwnd, L"Could not initialize the shape object.", L"Error", MB_OK);
 		return false;
@@ -460,13 +504,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		return false;
 	}
 
-
-
-
-
-
-
-	m_Terrain = new TerrainClass;
+		m_Terrain = new TerrainClass;
 	if (!m_Terrain)
 	{
 		return false;
@@ -479,13 +517,13 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	}
 
 	m_Text = new TextClass;
-	if(!m_Text)
+	if (!m_Text)
 	{
 		return false;
 	}
 	XMMATRIX baseView;
 	m_Camera->SetPosition(0.0f, 0.0f, -1.0f);
-	m_Camera->Render(XMFLOAT3(0.0f,0.0f,0.0f));
+	m_Camera->Render(XMFLOAT3(0.0f, 0.0f, 0.0f));
 	m_Camera->GetViewMatrix(baseView);
 	result = m_Text->Initialize(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), hwnd, m_screenWidth, m_screenHeight, baseView);
 	if (!result)
@@ -531,8 +569,8 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	ReadFile();
 	StopCalibrate(false);
 
-	floor_trans = XMMatrixTranslation(0, m_physx->FLOOR_LEVEL - 0.26, -0.0f);
-	floor_scale = XMMatrixScaling(6, 0.5, 8);
+	floor_trans = XMMatrixTranslation(0, m_physx->FLOOR_LEVEL, -0.0f);
+	floor_scale = XMMatrixScaling(10, 2, 10);
 
 	m_PointCloudShader = new PointCloudShaderClass;
 	if (!m_PointCloudShader)
@@ -598,9 +636,13 @@ void GraphicsClass::StopCalibrate(bool writeMode)
 	//PxRigidActor* folder = m_physx->createBox(BROAD_SIZE, PxVec3(0.0f, 1.0f, -1.5f), PxQuat::createIdentity());
 	//folders.push_back(folder);
 
-	if (fingertipDetected > 100)
+	if (fingertipDetected > 50)
 	{
 		m_Tracker->estimateAffineTransform();
+		fingertipDetected = 0;
+	}
+	else
+	{
 		fingertipDetected = 0;
 	}
 
@@ -746,7 +788,7 @@ void GraphicsClass::ChangeSize(float value)
 
 				m_Direct3D->TurnOffAlphaBlending();
 				m_Direct3D->TurnZBufferOn();
-				
+
 			}
 		}
 	}
@@ -764,18 +806,20 @@ void GraphicsClass::RenderActor(int mode)
 	for (int i = 0; i < boxes.size(); i++)
 	{
 		checkObjectPos(boxes[i]);
-		RenderTextureBox(mode,boxes[i],m_boxes->GetTexture(),BOX_SIZE.x, BOX_SIZE.y, BOX_SIZE.z);
+		//RenderTextureBox(mode, boxes[i], m_boxes->GetTexture(), BOX_SIZE.x, BOX_SIZE.y, BOX_SIZE.z);
+		RenderColorBox(mode, boxes[i], XMFLOAT4(0, 1.0, 1.0, 1.0), BOX_SIZE.x, BOX_SIZE.y, BOX_SIZE.z);
 	}
 	for (int i = 0; i < spheres.size(); i++)
 	{
 		checkObjectPos(spheres[i]);
-		RenderSphere(mode, spheres[i], SPHERE_RAD);
+		//RenderSphere(mode, spheres[i], SPHERE_RAD);
+		RenderColorSphere(mode, spheres[i],SPHERE_RAD, XMFLOAT4(0, 1.0, 1.0, 1.0));
 	}
 
 	for (int i = 0; i < cylinders.size(); i++)
 	{
 		checkObjectPos(cylinders[i]);
-		RenderCylinder(mode, cylinders[i],XMFLOAT4(0,0.5,1.0,1.0), SPHERE_RAD*4, SPHERE_RAD*2);
+		RenderCylinder(mode, cylinders[i], 1.0f, SPHERE_RAD * 4, SPHERE_RAD * 2);
 	}
 
 
@@ -787,13 +831,13 @@ void GraphicsClass::RenderActor(int mode)
 
 	for (int i = 0; i < targets.size(); i++)
 	{
-		RenderTextureBox(mode, targets[i], m_Target_Texture->GetTexture(), TARGET_SIZE.x, TARGET_SIZE.y, TARGET_SIZE.z );
+		RenderTextureBox(mode, targets[i], m_Target_Texture->GetTexture(), TARGET_SIZE.x, TARGET_SIZE.y, TARGET_SIZE.z);
 	}
 
-	for (int i = 0; i < obstacles.size(); i+=2)
+	for (int i = 0; i < obstacles.size(); i += 2)
 	{
 		RenderColorBox(mode, obstacles[i], targetColor, BARRIER_SIZE_X.x, BARRIER_SIZE_X.y, BARRIER_SIZE_X.z);
-		RenderColorBox(mode, obstacles[i+1], targetColor, BARRIER_SIZE_Z.x, BARRIER_SIZE_Z.y, BARRIER_SIZE_Z.z);
+		RenderColorBox(mode, obstacles[i + 1], targetColor, BARRIER_SIZE_Z.x, BARRIER_SIZE_Z.y, BARRIER_SIZE_Z.z);
 	}
 }
 
@@ -803,7 +847,7 @@ void GraphicsClass::RenderHand(int mode)
 	mMirrorHandlist = m_Leap->getMirrorHandActor();
 	//if(mHandlist.size() != 0.0 && !FULL_SCREEN )
 	//m_Tracker->handVisualize(mHandlist);
-	
+
 	for (int i = 0; i< mHandlist.size(); i++)
 	{
 		if (mHandlist[i]->isInMirror)
@@ -828,16 +872,16 @@ void GraphicsClass::RenderHand(int mode)
 				if (j == 0)
 				{
 					for (int k = 2; k < 4; k++)
-						RenderCylinder(mode, mHandlist[i]->finger_actor[j][k], XMFLOAT4(handColor.x, handColor.y, handColor.z, mHandlist[i]->alphaValue), mHandlist[i]->halfHeight[j][k] * 2.0, mHandlist[i]->fingerWidth[j][k]);
+						RenderCylinder(mode, mHandlist[i]->finger_actor[j][k], mHandlist[i]->alphaValue, mHandlist[i]->halfHeight[j][k] * 2.0, mHandlist[i]->fingerWidth[j][k]);
 
-					RenderPalm(mode, mHandlist[i]->finger_actor[j][1], XMFLOAT4(handColor.x, handColor.y, handColor.z, mHandlist[i]->alphaValue), mHandlist[i]->halfHeight[j][1] * 2.0, mHandlist[i]->fingerWidth[j][1], mHandlist[i]->fingerWidth[j][1] / 2);
+					RenderPalm(mode, mHandlist[i]->finger_actor[j][1], mHandlist[i]->alphaValue, mHandlist[i]->halfHeight[j][1] * 2.0, mHandlist[i]->fingerWidth[j][1], mHandlist[i]->fingerWidth[j][1] / 2);
 				}
 				else
 				{
 					for (int k = 1; k < 4; k++)
-						RenderCylinder(mode, mHandlist[i]->finger_actor[j][k], XMFLOAT4(handColor.x, handColor.y, handColor.z, mHandlist[i]->alphaValue), mHandlist[i]->halfHeight[j][k] * 2.0, mHandlist[i]->fingerWidth[j][k]);
+						RenderCylinder(mode, mHandlist[i]->finger_actor[j][k], mHandlist[i]->alphaValue, mHandlist[i]->halfHeight[j][k] * 2.0, mHandlist[i]->fingerWidth[j][k]);
 
-					RenderPalm(mode, mHandlist[i]->finger_actor[j][0], XMFLOAT4(handColor.x, handColor.y, handColor.z, mHandlist[i]->alphaValue), mHandlist[i]->halfHeight[j][0] * 2.0, mHandlist[i]->fingerWidth[j][0], mHandlist[i]->fingerWidth[j][0] / 2);
+					RenderPalm(mode, mHandlist[i]->finger_actor[j][0], mHandlist[i]->alphaValue, mHandlist[i]->halfHeight[j][0] * 2.0, mHandlist[i]->fingerWidth[j][0], mHandlist[i]->fingerWidth[j][0] / 2);
 
 				}
 			}
@@ -868,16 +912,16 @@ void GraphicsClass::RenderHand(int mode)
 				if (j == 0)
 				{
 					for (int k = 2; k < 4; k++)
-						RenderCylinder(mode, mHandlist[i]->finger_actor[j][k], XMFLOAT4(handColor.x, handColor.y, handColor.z, mHandlist[i]->alphaValue), mHandlist[i]->halfHeight[j][k] * 2.0, mHandlist[i]->fingerWidth[j][k]);
+						RenderCylinder(mode, mHandlist[i]->finger_actor[j][k], mHandlist[i]->alphaValue, mHandlist[i]->halfHeight[j][k] * 2.0, mHandlist[i]->fingerWidth[j][k]);
 
-					RenderPalm(mode, mHandlist[i]->finger_actor[j][1], XMFLOAT4(handColor.x, handColor.y, handColor.z, mHandlist[i]->alphaValue), mHandlist[i]->halfHeight[j][1] * 2.0, mHandlist[i]->fingerWidth[j][1], mHandlist[i]->fingerWidth[j][1] / 2);
+					RenderPalm(mode, mHandlist[i]->finger_actor[j][1], mHandlist[i]->alphaValue, mHandlist[i]->halfHeight[j][1] * 2.0, mHandlist[i]->fingerWidth[j][1], mHandlist[i]->fingerWidth[j][1] / 2);
 				}
 				else
 				{
 					for (int k = 1; k < 4; k++)
-						RenderCylinder(mode, mHandlist[i]->finger_actor[j][k], XMFLOAT4(handColor.x, handColor.y, handColor.z, mHandlist[i]->alphaValue), mHandlist[i]->halfHeight[j][k] * 2.0, mHandlist[i]->fingerWidth[j][k]);
+						RenderCylinder(mode, mHandlist[i]->finger_actor[j][k],  mHandlist[i]->alphaValue, mHandlist[i]->halfHeight[j][k] * 2.0, mHandlist[i]->fingerWidth[j][k]);
 
-					RenderPalm(mode, mHandlist[i]->finger_actor[j][0], XMFLOAT4(handColor.x, handColor.y, handColor.z, mHandlist[i]->alphaValue), mHandlist[i]->halfHeight[j][0] * 2.0, mHandlist[i]->fingerWidth[j][0], mHandlist[i]->fingerWidth[j][0] / 2);
+					RenderPalm(mode, mHandlist[i]->finger_actor[j][0], mHandlist[i]->alphaValue, mHandlist[i]->halfHeight[j][0] * 2.0, mHandlist[i]->fingerWidth[j][0], mHandlist[i]->fingerWidth[j][0] / 2);
 
 				}
 			}
@@ -889,15 +933,15 @@ void GraphicsClass::RenderHand(int mode)
 
 }
 
-void GraphicsClass::RenderTextureBox(int mode,PxRigidActor* box,
+void GraphicsClass::RenderTextureBox(int mode, PxRigidActor* box,
 	ID3D11ShaderResourceView* texture, float width, float height, float depth)
 {
 	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
 	XMMATRIX lightViewMatrix, lightProjectionMatrix;
-	PxU32 nShapes = box->getNbShapes();
-	PxShape** shapes = new PxShape*[nShapes];
+		//PxU32 nShapes = box->getNbShapes();
+		//PxShape** shapes = new PxShape*[nShapes];
 
-	box->getShapes(shapes, nShapes);
+		//box->getShapes(shapes, nShapes);
 	m_Direct3D->GetWorldMatrix(worldMatrix);
 	m_Camera->GetViewMatrix(viewMatrix);
 	m_Direct3D->GetProjectionMatrix(projectionMatrix);
@@ -905,62 +949,68 @@ void GraphicsClass::RenderTextureBox(int mode,PxRigidActor* box,
 	m_Light->GetProjectionMatrix(lightProjectionMatrix);
 
 
-	while (nShapes--)
-	{
+	//while (nShapes--)
+	//{
 
-		PxTransform pT = PxShapeExt::getGlobalPose(*shapes[nShapes], *box);
-		XMMATRIX mat = PxtoXMMatrix(pT);
-		XMMATRIX s = XMMatrixScaling(width, height, depth);
-		mat = s*mat;
+	//	PxTransform pT = PxShapeExt::getGlobalPose(*shapes[nShapes], *box);
+	//	XMMATRIX mat = PxtoXMMatrix(pT);
+	//	XMMATRIX s = XMMatrixScaling(width, height, depth);
+	//	mat = s*mat;
 
-		// Put the model vertex and index buffers on the graphics pipeline to prepare them for drawing.
-		m_boxes->Render(m_Direct3D->GetDevice());
+	//	// Put the model vertex and index buffers on the graphics pipeline to prepare them for drawing.
+	//	m_boxes->Render(m_Direct3D->GetDevice());
 
-		if (mode ==0)
-		{
-			m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_boxes->GetIndexCount(),0,0, mat, lightViewMatrix, lightProjectionMatrix, m_Camera->GetPosition());
+	//	if (mode == 0)
+	//	{
+	//		m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_boxes->GetIndexCount(), 0, 0, mat, lightViewMatrix, lightProjectionMatrix, m_Camera->GetPosition());
 
-		}
-		else if (mode == 1)
-		{
+	//	}
+	//	else if (mode == 1)
+	//	{
 
-			m_ShadowShader->Render(m_Direct3D->GetDeviceContext(), m_boxes->GetIndexCount(), 0,
-				0, mat, viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_RenderTexture->GetShaderResourceView(), m_Light->GetPositions());
+	//		m_ShadowShader->Render(m_Direct3D->GetDeviceContext(), m_boxes->GetIndexCount(), 0,
+	//			0, mat, viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_RenderTexture->GetShaderResourceView(), m_Light->GetPositions());
 
-		}
-		else
-		{
-			
-			if (((PxRigidDynamic*)box)->isSleeping())
-				*(int*)shapes[nShapes]->userData = 0;
+	//	}
+	//	else
+	//	{
 
-			int test = *(int*)shapes[nShapes]->userData;
-			if (test > 0)
-			{
-				m_LightShader->Render(m_Direct3D->GetDeviceContext(), m_boxes->GetIndexCount(), mat, viewMatrix, projectionMatrix, m_boxes->GetTexture(),
-					m_UpSampleTexure->GetShaderResourceView(), m_Light->GetPositions(), m_Light->GetAmbientColor(), XMFLOAT4(1, 0, 0, 1), m_Camera->GetPosition(), globalZ);
-			}
-			else
-			{
-				m_LightShader->Render(m_Direct3D->GetDeviceContext(), m_boxes->GetIndexCount(), mat, viewMatrix, projectionMatrix, m_boxes->GetTexture(),
-					m_UpSampleTexure->GetShaderResourceView(), m_Light->GetPositions(), m_Light->GetAmbientColor(), m_Light->GetDiffuseColor(), m_Camera->GetPosition(), globalZ);
+	//		if (((PxRigidDynamic*)box)->isSleeping())
+	//			*(int*)shapes[nShapes]->userData = 0;
 
-			}
-			
-		}
+	//		int test = *(int*)shapes[nShapes]->userData;
+	//		if (test > 0)
+	//		{
+	//			m_LightShader->Render(m_Direct3D->GetDeviceContext(), m_boxes->GetIndexCount(), mat, viewMatrix, projectionMatrix, m_boxes->GetTexture(),
+	//				m_UpSampleTexure->GetShaderResourceView(), m_Light->GetPositions(), m_Light->GetAmbientColor(), XMFLOAT4(1, 0, 0, 1), m_Camera->GetPosition(), globalZ);
+	//		}
+	//		else
+	//		{
+	//			m_LightShader->Render(m_Direct3D->GetDeviceContext(), m_boxes->GetIndexCount(), mat, viewMatrix, projectionMatrix, m_RenderTexture->GetShaderResourceView(),
+	//				m_UpSampleTexure->GetShaderResourceView(), m_Light->GetPositions(), m_Light->GetAmbientColor(), m_Light->GetDiffuseColor(), m_Camera->GetPosition(), globalZ);
 
-		// Render the model using the color shader.
+	//		}
 
-	}
+	//	}
 
-	delete[] shapes;
+	//	// Render the model using the color shader.
+
+	//	
+	//}
+	//delete[] shapes;
+	//if(mode == 3)
+	m_boxes->Render(m_Direct3D->GetDevice());
+	XMMATRIX s = XMMatrixScaling(width, height, depth);
+	m_LightShader->Render(m_Direct3D->GetDeviceContext(), m_boxes->GetIndexCount(), s, viewMatrix, projectionMatrix, m_RenderTexture->GetShaderResourceView(),
+						m_BlackWhiteRenderTexture->GetShaderResourceView(), m_Light->GetPositions(), m_Light->GetAmbientColor(), m_Light->GetDiffuseColor(), m_Camera->GetPosition(), globalZ);
+
 }
 
-void GraphicsClass::RenderColorBox(int mode,PxRigidActor* box,
+void GraphicsClass::RenderColorBox(int mode, PxRigidActor* box,
 	XMFLOAT4 color, float width, float height, float depth)
 {
 	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
-	XMMATRIX lightViewMatrix, lightProjectionMatrix;
+	XMMATRIX lightViewMatrix, lightViewMatrix2, lightProjectionMatrix;
 	PxU32 nShapes = box->getNbShapes();
 	PxShape** shapes = new PxShape*[nShapes];
 
@@ -970,6 +1020,7 @@ void GraphicsClass::RenderColorBox(int mode,PxRigidActor* box,
 	m_Direct3D->GetProjectionMatrix(projectionMatrix);
 	m_Light->GetViewMatrix(lightViewMatrix);
 	m_Light->GetProjectionMatrix(lightProjectionMatrix);
+	m_Light->GetMirrorMatrix(lightViewMatrix2);
 
 
 
@@ -978,27 +1029,38 @@ void GraphicsClass::RenderColorBox(int mode,PxRigidActor* box,
 
 		PxTransform pT = PxShapeExt::getGlobalPose(*shapes[nShapes], *box);
 		XMMATRIX mat = PxtoXMMatrix(pT);
-		XMMATRIX s = XMMatrixScaling(width*2, height*2, depth*2);
+		XMMATRIX s = XMMatrixScaling(width * 2, height * 2, depth * 2);
 		mat = s*mat;
 
 		m_Shape->Render(m_Direct3D->GetDevice());
 
-		if (mode ==0)
+		if (mode == 0)
 		{
 			m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(),
 				m_Shape->GetBoxVertexOffset(), mat, lightViewMatrix, lightProjectionMatrix, m_Camera->GetPosition());
 
 		}
-		else if (mode == 1)
+		if (mode == 1)
+		{
+			m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(),
+				m_Shape->GetBoxVertexOffset(), mat, lightViewMatrix2, lightProjectionMatrix, m_Camera->GetPosition());
+
+		}
+		else if (mode == 2)
 		{
 			m_ShadowShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(),
-				m_Shape->GetBoxVertexOffset(), mat, viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_RenderTexture->GetShaderResourceView(), m_Light->GetPositions());
+				m_Shape->GetBoxVertexOffset(), mat, viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_RenderTexture->GetShaderResourceView(), m_Light->GetPositions(),lightViewMatrix2,lightProjectionMatrix
+			, m_RenderTexture2->GetShaderResourceView());
 		}
 		else
 		{
+
+
+
+			m_ColorShader->SetShaderPerObject(m_Direct3D->GetDeviceContext(), mat, viewMatrix, projectionMatrix, mboxMaterial, m_Camera->GetPosition());
+
 			m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(),
-				m_Shape->GetBoxVertexOffset(), mat, viewMatrix, projectionMatrix, m_UpSampleTexure->GetShaderResourceView(), m_Light->GetPositions(), m_Light->GetAmbientColor()
-				, color, m_Camera->GetPosition(),globalZ);
+				m_Shape->GetBoxVertexOffset());
 		}
 
 
@@ -1008,10 +1070,10 @@ void GraphicsClass::RenderColorBox(int mode,PxRigidActor* box,
 	delete[] shapes;
 }
 
-void GraphicsClass::RenderPalm(int mode,PxRigidActor* box, XMFLOAT4 color, float width, float height, float depth)
+void GraphicsClass::RenderPalm(int mode, PxRigidActor* box, float alpha, float width, float height, float depth)
 {
 	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
-	XMMATRIX lightViewMatrix, lightProjectionMatrix;
+	XMMATRIX lightViewMatrix, lightViewMatrix2, lightProjectionMatrix;
 	PxU32 nShapes = box->getNbShapes();
 	PxShape** shapes = new PxShape*[nShapes];
 
@@ -1021,6 +1083,8 @@ void GraphicsClass::RenderPalm(int mode,PxRigidActor* box, XMFLOAT4 color, float
 	m_Direct3D->GetProjectionMatrix(projectionMatrix);
 	m_Light->GetViewMatrix(lightViewMatrix);
 	m_Light->GetProjectionMatrix(lightProjectionMatrix);
+	m_Light->GetMirrorMatrix(lightViewMatrix2);
+	mhandMaterial.Diffuse.w = alpha;
 
 
 	while (nShapes--)
@@ -1035,7 +1099,7 @@ void GraphicsClass::RenderPalm(int mode,PxRigidActor* box, XMFLOAT4 color, float
 		// Put the model vertex and index buffers on the graphics pipeline to prepare them for drawing.
 
 		m_Shape->Render(m_Direct3D->GetDevice());
-	
+
 		if (mode == 0)
 		{
 			m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(),
@@ -1044,25 +1108,36 @@ void GraphicsClass::RenderPalm(int mode,PxRigidActor* box, XMFLOAT4 color, float
 		}
 		else if (mode == 1)
 		{
+			m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(),
+				m_Shape->GetBoxVertexOffset(), mat, lightViewMatrix2, lightProjectionMatrix, m_Camera->GetPosition());
+
+		}
+		else if (mode == 2)
+		{
 			m_ShadowShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(),
-				m_Shape->GetBoxVertexOffset(), mat, viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_RenderTexture->GetShaderResourceView(), m_Light->GetPositions());
+				m_Shape->GetBoxVertexOffset(), mat, viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_RenderTexture->GetShaderResourceView(), m_Light->GetPositions(), lightViewMatrix2, lightProjectionMatrix
+				, m_RenderTexture2->GetShaderResourceView());
 
 		}
 		else
 		{
+			//m_ColorShader->SetShaderPerFrame(m_Direct3D->GetDeviceContext(), m_UpSampleTexure->GetShaderResourceView(), m_Light->GetPositions(), m_Light->GetAmbientColor(), m_Light->GetDiffuseColor(), m_Light->GetSpecularColor(), lightRange, attenuate);
+
+			m_ColorShader->SetShaderPerObject(m_Direct3D->GetDeviceContext(), mat, viewMatrix, projectionMatrix, mhandMaterial, m_Camera->GetPosition());
+
 			m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(),
-				m_Shape->GetBoxVertexOffset(), mat, viewMatrix, projectionMatrix, m_UpSampleTexure->GetShaderResourceView(), m_Light->GetPositions(), m_Light->GetAmbientColor()
-				, color, m_Camera->GetPosition(),globalZ);
+				m_Shape->GetBoxVertexOffset());
+
 		}
 	}
 
 	delete[] shapes;
 }
 
-void GraphicsClass::RenderSphere(int mode,PxRigidActor* sphere, float radius)
+void GraphicsClass::RenderSphere(int mode, PxRigidActor* sphere, float radius)
 {
 	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
-	XMMATRIX lightViewMatrix, lightProjectionMatrix;
+	XMMATRIX lightViewMatrix, lightViewMatrix2, lightProjectionMatrix;
 	PxU32 nShapes = sphere->getNbShapes();
 	PxShape** shapes = new PxShape*[nShapes];
 
@@ -1072,7 +1147,7 @@ void GraphicsClass::RenderSphere(int mode,PxRigidActor* sphere, float radius)
 	m_Direct3D->GetProjectionMatrix(projectionMatrix);
 	m_Light->GetViewMatrix(lightViewMatrix);
 	m_Light->GetProjectionMatrix(lightProjectionMatrix);
-
+	m_Light->GetMirrorMatrix(lightViewMatrix2);
 
 
 	while (nShapes--)
@@ -1089,21 +1164,32 @@ void GraphicsClass::RenderSphere(int mode,PxRigidActor* sphere, float radius)
 		// Render the model using the color shader.
 		if (mode == 0)
 		{
-			m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_spheres->GetIndexCount(),0,
+			m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_spheres->GetIndexCount(), 0,
 				0, mat, lightViewMatrix, lightProjectionMatrix, m_Camera->GetPosition());
 
 		}
 		else if (mode == 1)
 		{
+			m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_spheres->GetIndexCount(), 0,
+				0, mat, lightViewMatrix2, lightProjectionMatrix, m_Camera->GetPosition());
+
+		}
+		else if (mode == 2)
+		{
 			m_ShadowShader->Render(m_Direct3D->GetDeviceContext(), m_spheres->GetIndexCount(), 0,
-				0, mat, viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_RenderTexture->GetShaderResourceView(), m_Light->GetPositions());
+				0, mat, viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_RenderTexture->GetShaderResourceView(), m_Light->GetPositions(),
+				 lightViewMatrix2, lightProjectionMatrix
+				, m_RenderTexture2->GetShaderResourceView());
 
 		}
 		else
 		{
+
+
+
 			m_LightShader->Render(m_Direct3D->GetDeviceContext(), m_spheres->GetIndexCount(),
-				 mat, viewMatrix, projectionMatrix,  m_spheres->GetTexture(), m_UpSampleTexure->GetShaderResourceView(), m_Light->GetPositions(), m_Light->GetAmbientColor(),
-				m_Light->GetDiffuseColor() , m_Camera->GetPosition(),globalZ);
+				mat, viewMatrix, projectionMatrix, m_spheres->GetTexture(), m_UpSampleTexure->GetShaderResourceView(), m_Light->GetPositions(), m_Light->GetAmbientColor(),
+				m_Light->GetDiffuseColor(), m_Camera->GetPosition(), globalZ);
 		}
 	}
 
@@ -1113,44 +1199,53 @@ void GraphicsClass::RenderSphere(int mode,PxRigidActor* sphere, float radius)
 void GraphicsClass::RenderDebugSphere(int mode, PxVec3 pos, float radius, XMFLOAT4 color)
 {
 	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
-	XMMATRIX lightViewMatrix, lightProjectionMatrix;
+	XMMATRIX lightViewMatrix, lightViewMatrix2, lightProjectionMatrix;
 
 	m_Direct3D->GetWorldMatrix(worldMatrix);
 	m_Camera->GetViewMatrix(viewMatrix);
 	m_Direct3D->GetProjectionMatrix(projectionMatrix);
 	m_Light->GetViewMatrix(lightViewMatrix);
 	m_Light->GetProjectionMatrix(lightProjectionMatrix);
+	m_Light->GetMirrorMatrix(lightViewMatrix2);
 
 
 
-		XMMATRIX mat = XMMatrixTranslation(pos.x, pos.y, pos.z);
-		XMMATRIX s = XMMatrixScaling(radius, radius, radius);
-		mat = s*mat;
+	XMMATRIX mat = XMMatrixTranslation(pos.x, pos.y, pos.z);
+	XMMATRIX s = XMMatrixScaling(radius, radius, radius);
+	mat = s*mat;
 
-		// Put the model vertex and index buffers on the graphics pipeline to prepare them for drawing.
-		m_spheres->Render(m_Direct3D->GetDevice());
+	// Put the model vertex and index buffers on the graphics pipeline to prepare them for drawing.
+	m_spheres->Render(m_Direct3D->GetDevice());
 
-		if (mode == 0)
-		{
-			m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_spheres->GetIndexCount(), 0,
-				0, mat, lightViewMatrix, lightProjectionMatrix, m_Camera->GetPosition());
+	if (mode == 0)
+	{
+		m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_spheres->GetIndexCount(), 0,
+			0, mat, lightViewMatrix, lightProjectionMatrix, m_Camera->GetPosition());
 
-		}
-		else if (mode == 1)
-		{
-			m_ShadowShader->Render(m_Direct3D->GetDeviceContext(), m_spheres->GetIndexCount(), 0,
-				0, mat, viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_RenderTexture->GetShaderResourceView(), m_Light->GetPositions());
+	}
+	else if (mode == 0)
+	{
+		m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_spheres->GetIndexCount(), 0,
+			0, mat, lightViewMatrix2, lightProjectionMatrix, m_Camera->GetPosition());
 
-		}
-		else
-		{
+	}
+	else if (mode == 1)
+	{
+		m_ShadowShader->Render(m_Direct3D->GetDeviceContext(), m_spheres->GetIndexCount(), 0,
+			0, mat, viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_RenderTexture->GetShaderResourceView(), m_Light->GetPositions()
+			, lightViewMatrix2, lightProjectionMatrix
+			, m_RenderTexture2->GetShaderResourceView());
 
-			m_LightShader->Render(m_Direct3D->GetDeviceContext(), m_spheres->GetIndexCount(),
-				mat, viewMatrix, projectionMatrix, m_spheres->GetTexture(), m_UpSampleTexure->GetShaderResourceView(), m_Light->GetPositions(), m_Light->GetAmbientColor(),
-				m_Light->GetDiffuseColor(), m_Camera->GetPosition(), globalZ);
+	}
+	else
+	{
 
-		}
-	
+		m_LightShader->Render(m_Direct3D->GetDeviceContext(), m_spheres->GetIndexCount(),
+			mat, viewMatrix, projectionMatrix, m_spheres->GetTexture(), m_UpSampleTexure->GetShaderResourceView(), m_Light->GetPositions(), m_Light->GetAmbientColor(),
+			m_Light->GetDiffuseColor(), m_Camera->GetPosition(), globalZ);
+
+	}
+
 
 
 }
@@ -1158,7 +1253,7 @@ void GraphicsClass::RenderDebugSphere(int mode, PxVec3 pos, float radius, XMFLOA
 void GraphicsClass::RenderColorSphere(int mode, PxRigidActor* sphere, float radius, XMFLOAT4 color)
 {
 	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
-	XMMATRIX lightViewMatrix, lightProjectionMatrix;
+	XMMATRIX lightViewMatrix,lightViewMatrix2, lightProjectionMatrix;
 
 	PxU32 nShapes = sphere->getNbShapes();
 	PxShape** shapes = new PxShape*[nShapes];
@@ -1168,36 +1263,47 @@ void GraphicsClass::RenderColorSphere(int mode, PxRigidActor* sphere, float radi
 	m_Direct3D->GetProjectionMatrix(projectionMatrix);
 	m_Light->GetViewMatrix(lightViewMatrix);
 	m_Light->GetProjectionMatrix(lightProjectionMatrix);
+	m_Light->GetMirrorMatrix(lightViewMatrix2);
 
 	while (nShapes--)
 	{
 
 		PxTransform pT = PxShapeExt::getGlobalPose(*shapes[nShapes], *sphere);
 		XMMATRIX mat = PxtoXMMatrix(pT);
-		XMMATRIX s = XMMatrixScaling(radius, radius, radius);
+		XMMATRIX s = XMMatrixScaling(radius*2, radius*2, radius*2);
 		mat = s*mat;
 
 		// Put the model vertex and index buffers on the graphics pipeline to prepare them for drawing.
-		m_spheres->Render(m_Direct3D->GetDevice());
+		m_Shape->Render(m_Direct3D->GetDevice());
 
 		if (mode == 0)
 		{
-			m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_spheres->GetIndexCount(), 0,
-				0, mat, lightViewMatrix, lightProjectionMatrix, m_Camera->GetPosition());
+			m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetSphereIndexCount(), m_Shape->GetSphereIndexOffset(),
+				m_Shape->GetSphereVertexOffset(), mat, lightViewMatrix, lightProjectionMatrix, m_Camera->GetPosition());
 
 		}
 		else if (mode == 1)
 		{
-			m_ShadowShader->Render(m_Direct3D->GetDeviceContext(), m_spheres->GetIndexCount(), 0,
-				0, mat, viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_RenderTexture->GetShaderResourceView(), m_Light->GetPositions());
+			m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetSphereIndexCount(), m_Shape->GetSphereIndexOffset(),
+				m_Shape->GetSphereVertexOffset(), mat, lightViewMatrix2, lightProjectionMatrix, m_Camera->GetPosition());
+
+		}
+		else if (mode == 2)
+		{
+			m_ShadowShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetSphereIndexCount(), m_Shape->GetSphereIndexOffset(),
+				m_Shape->GetSphereVertexOffset(), mat, viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_RenderTexture->GetShaderResourceView(), m_Light->GetPositions(),
+				 lightViewMatrix2, lightProjectionMatrix
+				, m_RenderTexture2->GetShaderResourceView());
 
 		}
 		else
 		{
+				//m_ColorShader->SetShaderPerFrame(m_Direct3D->GetDeviceContext(), m_UpSampleTexure->GetShaderResourceView(), m_Light->GetPositions(), m_Light->GetAmbientColor(), m_Light->GetDiffuseColor(), m_Light->GetSpecularColor(), lightRange, attenuate);
 
-			m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_spheres->GetIndexCount(),0,0,
-				mat, viewMatrix, projectionMatrix, m_UpSampleTexure->GetShaderResourceView(), m_Light->GetPositions(), m_Light->GetAmbientColor(),
-				color, m_Camera->GetPosition(), globalZ);
+			m_ColorShader->SetShaderPerObject(m_Direct3D->GetDeviceContext(), mat, viewMatrix, projectionMatrix, msphereMaterial, m_Camera->GetPosition());
+
+			m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetSphereIndexCount(), m_Shape->GetSphereIndexOffset(),
+				m_Shape->GetSphereVertexOffset());
 
 		}
 	}
@@ -1250,15 +1356,15 @@ void GraphicsClass::CreateCylinder()
 	{
 		PxVec3 pose = mHandlist[0]->palm->getGlobalPose().p;
 		pose = PxVec3(pose.x, pose.y + 2, pose.z);
-		PxRigidActor* sphere = m_physx->createCapsule(SPHERE_RAD,SPHERE_RAD, pose, PxQuat::createIdentity());
+		PxRigidActor* sphere = m_physx->createCapsule(SPHERE_RAD, SPHERE_RAD, pose, PxQuat::createIdentity());
 		cylinders.push_back(sphere);
 	}
 }
 
-void GraphicsClass::RenderCylinder(int mode,PxRigidActor* cylinder, XMFLOAT4 color, float height, float radius)
+void GraphicsClass::RenderCylinder(int mode, PxRigidActor* cylinder, float alpha, float height, float radius)
 {
 	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
-	XMMATRIX lightViewMatrix, lightProjectionMatrix;
+	XMMATRIX lightViewMatrix, lightViewMatrix2, lightProjectionMatrix;
 	PxU32 nShapes = cylinder->getNbShapes();
 	PxShape** shapes = new PxShape*[nShapes];
 
@@ -1268,7 +1374,8 @@ void GraphicsClass::RenderCylinder(int mode,PxRigidActor* cylinder, XMFLOAT4 col
 	m_Direct3D->GetProjectionMatrix(projectionMatrix);
 	m_Light->GetViewMatrix(lightViewMatrix);
 	m_Light->GetProjectionMatrix(lightProjectionMatrix);
-
+	m_Light->GetMirrorMatrix(lightViewMatrix2);
+	mhandMaterial.Diffuse.w = alpha;
 
 	while (nShapes--)
 	{
@@ -1289,15 +1396,28 @@ void GraphicsClass::RenderCylinder(int mode,PxRigidActor* cylinder, XMFLOAT4 col
 		}
 		else if (mode == 1)
 		{
+			m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetCylinderIndexCount(), m_Shape->GetCylinderIndexOffset(),
+				m_Shape->GetCylinderVertexOffset(), mat, lightViewMatrix2, lightProjectionMatrix, m_Camera->GetPosition());
+
+		}
+		else if (mode == 2)
+		{
 			m_ShadowShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetCylinderIndexCount(), m_Shape->GetCylinderIndexOffset(),
-				m_Shape->GetCylinderVertexOffset(), mat, viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_RenderTexture->GetShaderResourceView(), m_Light->GetPositions());
+				m_Shape->GetCylinderVertexOffset(), mat, viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_RenderTexture->GetShaderResourceView(), m_Light->GetPositions(),
+				 lightViewMatrix2, lightProjectionMatrix
+				, m_RenderTexture2->GetShaderResourceView());
 
 		}
 		else
 		{
+
+
+		//	m_ColorShader->SetShaderPerFrame(m_Direct3D->GetDeviceContext(), m_UpSampleTexure->GetShaderResourceView(), m_Light->GetPositions(), m_Light->GetAmbientColor(), m_Light->GetDiffuseColor(), m_Light->GetSpecularColor(), lightRange, attenuate);
+
+			m_ColorShader->SetShaderPerObject(m_Direct3D->GetDeviceContext(), mat, viewMatrix, projectionMatrix, mhandMaterial, m_Camera->GetPosition());
+
 			m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetCylinderIndexCount(), m_Shape->GetCylinderIndexOffset(),
-				m_Shape->GetCylinderVertexOffset(), mat, viewMatrix, projectionMatrix, m_UpSampleTexure->GetShaderResourceView(), m_Light->GetPositions(), m_Light->GetAmbientColor()
-				, color, m_Camera->GetPosition(),globalZ);
+				m_Shape->GetCylinderVertexOffset());
 		}
 
 	}
@@ -1305,80 +1425,160 @@ void GraphicsClass::RenderCylinder(int mode,PxRigidActor* cylinder, XMFLOAT4 col
 	delete[] shapes;
 }
 
-void GraphicsClass::RenderTerrian(int mode =0)
+void GraphicsClass::RenderTerrian(int rendermode , int gamemode)
 {
 	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
-	XMMATRIX lightViewMatrix, lightProjectionMatrix;
+	XMMATRIX lightViewMatrix,lightViewMatrix2, lightProjectionMatrix;
 	m_Direct3D->GetWorldMatrix(worldMatrix);
 	m_Camera->GetViewMatrix(viewMatrix);
 	m_Direct3D->GetProjectionMatrix(projectionMatrix);
 	m_Light->GetViewMatrix(lightViewMatrix);
+	m_Light->GetMirrorMatrix(lightViewMatrix2);
 	m_Light->GetProjectionMatrix(lightProjectionMatrix);
 
 
-
+	XMMATRIX edge = XMMatrixScaling(0.1, 8, 0.05);
+	XMMATRIX edgeTrans = XMMatrixTranslation(-3, 0, 0);
+	XMMATRIX edgeTrans2 = XMMatrixTranslation(3, 0, 0);
+	XMMATRIX edgeTrans3 = XMMatrixTranslation(0, 1, 0);
+	XMMATRIX edge2 = XMMatrixScaling(6, 2*m_physx->FLOOR_LEVEL+0.1, 0.05);
 	XMMATRIX trans = XMMatrixTranslation(-3, m_physx->FLOOR_LEVEL, -4.0f);
 	XMMATRIX back = XMMatrixTranslation(-3, m_physx->FLOOR_LEVEL, -0.0);
 	XMMATRIX rotate = XMMatrixRotationX(-XM_PI / 2);
-	XMMATRIX slant = XMMatrixRotationX(187*XM_PI / 180);
+	XMMATRIX slant = XMMatrixRotationX(187 * XM_PI / 180);
 	//XMMATRIX mat = rotat
-	if (mode == 0 || mode == 2 || mode ==3)
+	if (rendermode == 0)
 	{
-		if (SHADOW_ENABLED)
-		{
-			m_Shape->Render(m_Direct3D->GetDevice());
+		m_Shape->Render(m_Direct3D->GetDevice());
+		m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetGridIndexCount(), m_Shape->GetGridIndexOffset(), m_Shape->GetGridVertexOffset(), 
+			floor_trans, lightViewMatrix, lightProjectionMatrix, m_Camera->GetPosition());
 
-			m_groundShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset(), floor_scale*floor_trans,
-				viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_UpSampleTexure->GetShaderResourceView(),
-				m_Light->GetPositions(), m_Light->GetAmbientColor(), m_Light->GetDiffuseColor());
-		}
+		m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset(),
+			edge*edgeTrans, lightViewMatrix, lightProjectionMatrix, m_Camera->GetPosition());
 
+		m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset(),
+			edge*edgeTrans2, lightViewMatrix, lightProjectionMatrix, m_Camera->GetPosition());
 
+		m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset(),
+			edge2, lightViewMatrix, lightProjectionMatrix, m_Camera->GetPosition());
+	}
+	else if (rendermode == 1)
+	{
+		m_Shape->Render(m_Direct3D->GetDevice());
+		m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetGridIndexCount(), m_Shape->GetGridIndexOffset(), m_Shape->GetGridVertexOffset(),
+			floor_trans, lightViewMatrix2, lightProjectionMatrix, m_Camera->GetPosition());
 
-		m_Terrain->Render(m_Direct3D->GetDeviceContext());
-	
+		m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset(),
+			edge*edgeTrans, lightViewMatrix2, lightProjectionMatrix, m_Camera->GetPosition());
 
-		m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Terrain->GetIndexCount(), 0, 0, rotate*back, viewMatrix, projectionMatrix, m_UpSampleTexure->GetShaderResourceView(), m_Light->GetPositions(), m_Light->GetDiffuseColor(), m_Light->GetAmbientColor(),
-			m_Camera->GetPosition(), globalZ);
+		m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset(),
+			edge*edgeTrans2, lightViewMatrix2, lightProjectionMatrix, m_Camera->GetPosition());
 
-		m_Terrain->Render(m_Direct3D->GetDeviceContext());
+		m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset(),
+			edge2, lightViewMatrix2, lightProjectionMatrix, m_Camera->GetPosition());
+	}
+	else if (rendermode == 2)
+	{
+		m_Shape->Render(m_Direct3D->GetDevice());
+		m_ShadowShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetGridIndexCount(), m_Shape->GetGridIndexOffset(), m_Shape->GetGridVertexOffset(), 
+		 floor_trans, viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_RenderTexture->GetShaderResourceView(), m_Light->GetPositions(),
+			lightViewMatrix2, lightProjectionMatrix
+			, m_RenderTexture2->GetShaderResourceView());
 
-		m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Terrain->GetIndexCount(), 0, 0, back, viewMatrix, projectionMatrix, m_UpSampleTexure->GetShaderResourceView(), m_Light->GetPositions(), m_Light->GetDiffuseColor(), m_Light->GetAmbientColor(),
-			m_Camera->GetPosition(),globalZ);
+		m_ShadowShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset(),
+			edge*edgeTrans, viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_RenderTexture->GetShaderResourceView(), m_Light->GetPositions(),
+			lightViewMatrix2, lightProjectionMatrix
+			, m_RenderTexture2->GetShaderResourceView());
 
-		m_Terrain->Render(m_Direct3D->GetDeviceContext());
+		m_ShadowShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset(),
+			edge*edgeTrans2, viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_RenderTexture->GetShaderResourceView(), m_Light->GetPositions(),
+			lightViewMatrix2, lightProjectionMatrix
+			, m_RenderTexture2->GetShaderResourceView());
 
-		m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Terrain->GetIndexCount(), 0, 0, trans, viewMatrix, projectionMatrix, m_UpSampleTexure->GetShaderResourceView(), m_Light->GetPositions(), m_Light->GetDiffuseColor(), m_Light->GetAmbientColor(),
-			m_Camera->GetPosition(),globalZ);
-
-
-
+		m_ShadowShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset(),
+			edge2, viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_RenderTexture->GetShaderResourceView(), m_Light->GetPositions(),
+			lightViewMatrix2, lightProjectionMatrix
+			, m_RenderTexture2->GetShaderResourceView());
 
 
 	}
-	else if (mode == 1)
+	else
 	{
-		trans = XMMatrixTranslation(-3, m_physx->FLOOR_LEVEL, -4.0f );
 
-		m_Terrain->Render(m_Direct3D->GetDeviceContext());
+		m_Shape->Render(m_Direct3D->GetDevice());
+		m_ColorShader->SetShaderPerObject(m_Direct3D->GetDeviceContext(), floor_trans, viewMatrix, projectionMatrix, mfloorMaterial, m_Camera->GetPosition());
+		m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetGridIndexCount(), m_Shape->GetGridIndexOffset(), m_Shape->GetGridVertexOffset());
 
-		m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Terrain->GetIndexCount(), 0, 0, rotate*back, viewMatrix, projectionMatrix, m_UpSampleTexure->GetShaderResourceView(), m_Light->GetPositions(), m_Light->GetDiffuseColor(), m_Light->GetAmbientColor(),
-			m_Camera->GetPosition(), globalZ);
+		m_ColorShader->SetShaderPerObject(m_Direct3D->GetDeviceContext(), edge*edgeTrans, viewMatrix, projectionMatrix, medgeMaterial, m_Camera->GetPosition());
+		m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset());
 
-		back = XMMatrixTranslation(-3, m_physx->FLOOR_LEVEL, -0.5 );
+		m_ColorShader->SetShaderPerObject(m_Direct3D->GetDeviceContext(), edge*edgeTrans2, viewMatrix, projectionMatrix, medgeMaterial, m_Camera->GetPosition());
+		m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset());
 
-		m_Terrain->Render(m_Direct3D->GetDeviceContext());
-
-		m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Terrain->GetIndexCount(), 0, 0, back, viewMatrix, projectionMatrix, m_UpSampleTexure->GetShaderResourceView(), m_Light->GetPositions(), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) , XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f),
-			m_Camera->GetPosition(), globalZ);
-
-		m_Terrain->Render(m_Direct3D->GetDeviceContext());
-
-		m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Terrain->GetIndexCount(), 0, 0, trans, viewMatrix, projectionMatrix, m_UpSampleTexure->GetShaderResourceView(), m_Light->GetPositions(), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f),
-			m_Camera->GetPosition(), globalZ);
-
+		m_ColorShader->SetShaderPerObject(m_Direct3D->GetDeviceContext(), edge2, viewMatrix, projectionMatrix, medgeMaterial, m_Camera->GetPosition());
+		m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset());
 	}
+
+		//m_groundShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset(), edge*edgeTrans,
+		//	viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_UpSampleTexure->GetShaderResourceView(),
+		//	m_Light->GetPositions(), m_Light->GetAmbientColor(), m_Light->GetDiffuseColor());
+
+		//m_groundShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset(), edge*edgeTrans2,
+		//	viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_UpSampleTexure->GetShaderResourceView(),
+		//	m_Light->GetPositions(), m_Light->GetAmbientColor(), m_Light->GetDiffuseColor());
+
+		//m_groundShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset(), edge2,
+		//	viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_UpSampleTexure->GetShaderResourceView(),
+		//	m_Light->GetPositions(), m_Light->GetAmbientColor(), m_Light->GetDiffuseColor());
+		
+
+
+
+
+		//m_Terrain->Render(m_Direct3D->GetDeviceContext());
+
+
+		//m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Terrain->GetIndexCount(), 0, 0, rotate*back, viewMatrix, projectionMatrix, m_UpSampleTexure->GetShaderResourceView(), m_Light->GetPositions(), m_Light->GetDiffuseColor(), m_Light->GetAmbientColor(),
+		//	m_Camera->GetPosition(), globalZ);
+
+		//m_Terrain->Render(m_Direct3D->GetDeviceContext());
+
+		//m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Terrain->GetIndexCount(), 0, 0, back, viewMatrix, projectionMatrix, m_UpSampleTexure->GetShaderResourceView(), m_Light->GetPositions(), m_Light->GetDiffuseColor(), m_Light->GetAmbientColor(),
+		//	m_Camera->GetPosition(), globalZ);
+
+		//m_Terrain->Render(m_Direct3D->GetDeviceContext());
+
+		//m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Terrain->GetIndexCount(), 0, 0, trans, viewMatrix, projectionMatrix, m_UpSampleTexure->GetShaderResourceView(), m_Light->GetPositions(), m_Light->GetDiffuseColor(), m_Light->GetAmbientColor(),
+		//	m_Camera->GetPosition(), globalZ);
+
+
+
+
+
 	
+	//else if (mode == 1)
+	//{
+	//	//trans = XMMatrixTranslation(-3, m_physx->FLOOR_LEVEL, -4.0f);
+
+	//	//m_Terrain->Render(m_Direct3D->GetDeviceContext());
+
+	//	//m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Terrain->GetIndexCount(), 0, 0, rotate*back, viewMatrix, projectionMatrix, m_UpSampleTexure->GetShaderResourceView(), m_Light->GetPositions(), m_Light->GetDiffuseColor(), m_Light->GetAmbientColor(),
+	//	//	m_Camera->GetPosition(), globalZ);
+
+	//	//back = XMMatrixTranslation(-3, m_physx->FLOOR_LEVEL, -0.5);
+
+	//	//m_Terrain->Render(m_Direct3D->GetDeviceContext());
+
+	//	//m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Terrain->GetIndexCount(), 0, 0, back, viewMatrix, projectionMatrix, m_UpSampleTexure->GetShaderResourceView(), m_Light->GetPositions(), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f),
+	//	//	m_Camera->GetPosition(), globalZ);
+
+	//	//m_Terrain->Render(m_Direct3D->GetDeviceContext());
+
+	//	//m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Terrain->GetIndexCount(), 0, 0, trans, viewMatrix, projectionMatrix, m_UpSampleTexure->GetShaderResourceView(), m_Light->GetPositions(), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f),
+	//	//	m_Camera->GetPosition(), globalZ);
+
+	//}
+
 }
 
 XMMATRIX GraphicsClass::PxtoXMMatrix(PxTransform input)
@@ -1426,6 +1626,12 @@ void GraphicsClass::Shutdown()
 		m_Text->Shutdown();
 		delete m_Text;
 		m_Text = 0;
+	}
+	if (m_RenderTexture2)
+	{
+		m_RenderTexture2->Shutdown();
+		delete m_RenderTexture2;
+		m_RenderTexture2 = 0;
 	}
 
 	if (m_groundShader)
@@ -1648,7 +1854,7 @@ bool GraphicsClass::Frame()
 	bool result;
 
 	// Update the position of the light.
-	m_Light->SetPosition(0, 5.0f, -5.0f);
+	m_Light->SetPosition(0, 7.0f, -8);
 	// Update the position of the light.
 	// Render the graphics scene.
 	result = Render();
@@ -1846,7 +2052,7 @@ bool GraphicsClass::Render()
 	HRESULT hr;
 	Point3f* head_pos = NULL;
 	bool Head_Error = false;
-		
+
 	hr = m_Kinect->Process();
 	if (SUCCEEDED(hr))
 	{
@@ -1856,10 +2062,14 @@ bool GraphicsClass::Render()
 		if (SUCCEEDED(hr))
 		{
 			head_pos = m_Tracker->goggleDetection();
-			m_Tracker->getPointCloudData(depthDest);
-			m_Tracker->getColorPointCloudData(rgbDest);
-		
-			m_PointCloudShader->UpdateSubResource(m_Direct3D->GetDeviceContext(), depthDest, rgbDest);
+			if (POINT_CLOUD_ENABLED)
+			{
+				m_Tracker->getPointCloudData(depthDest, !gogoMode);
+				m_Tracker->getColorPointCloudData(rgbDest);
+
+				m_PointCloudShader->UpdateSubResource(m_Direct3D->GetDeviceContext(), depthDest, rgbDest);
+			}
+
 			if (calibrateMode)
 			{
 				mHandlist = m_Leap->getHandActor();
@@ -1891,14 +2101,100 @@ bool GraphicsClass::Render()
 				m_Direct3D->ChangeHeadPosition(XMFLOAT3(0, 0, 0), left, right, top, SCREEN_NEAR, SCREEN_DEPTH);
 			}
 
-			if (gameMode == 0|| gameMode ==1)
-			m_physx->moveFrontWall(head_pos->z);
+			if (gameMode == 0 || gameMode == 1)
+				m_physx->moveFrontWall(head_pos->z);
+		}
+	}
+
+	float cameraDistance = m_Camera->GetPosition().x*m_Camera->GetPosition().x + (m_Camera->GetPosition().y - 1.7)*(m_Camera->GetPosition().y - 1.7) +
+		(m_Camera->GetPosition().z)*(m_Camera->GetPosition().z);
+	cameraDistance = sqrt(cameraDistance);
+
+	m_3dvision->Render(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), cameraDistance);
+
+	// Generate the view matrix based on the camera's position.
+	if (CORRECT_PERPECTIVE)
+		m_Camera->Render(XMFLOAT3(m_Camera->GetPosition().x, m_Camera->GetPosition().y, -m_Camera->GetPosition().z));
+	else
+		m_Camera->Render(XMFLOAT3(0, 1.5, 0));
+
+	// Get the world, view, and projection matrices from the camera and d3d objects.
+	m_Direct3D->GetWorldMatrix(worldMatrix);
+	m_Camera->GetViewMatrix(viewMatrix);
+	m_Direct3D->GetProjectionMatrix(projectionMatrix);
+	m_Direct3D->GetOrthoMatrix(othoMatrix);
+
+	XMStoreFloat4x4(&proj, projectionMatrix);
+	XMStoreFloat4x4(&view, viewMatrix);
+
+
+	m_Leap->processFrame(m_Camera->GetPosition().x, m_Camera->GetPosition().y, m_Camera->GetPosition().z, 0, view, proj, handlength);
+	//std::vector<int> tobedeleted;
+	//for (int i = 0; i < m_Leap->deleteBoxes.size(); i++)
+	//{
+	//	for (int j = 0; j < boxes.size(); j++)
+	//	{
+	//		if (m_Leap->deleteBoxes[i] == boxes[j])
+	//			tobedeleted.push_back(j);
+	//	}
+	//}
+	//int size = tobedeleted.size();
+	//for (int i = 0; i < size; i++)
+	//{
+	//	m_physx->removeActor(boxes[i]);
+	//	boxes.erase(boxes.begin() + (int)tobedeleted.back());
+	//	tobedeleted.pop_back();
+	//}
+	//tobedeleted.clear();
+
+	//m_physx->setHandActor(m_Leap->getHandActor());
+
+	map<int, PxRigidDynamic*> contacts = m_physx->getActiveContact();
+	if (contacts.size() > 0)
+	{
+		map<int, PxVec3> forces = m_Leap->computeForce(contacts);
+		m_physx->applyForce(forces);
+		if (gameMode == 1)
+			targetHit = true;
+	}
+
+
+	m_physx->Render();
+
+	if (gameMode)
+	{
+		GameFrame();
+		if (targetHit)
+		{
+			if (gameMode == 1)
+			{
+				handColor = HANDCOLORHIT;
+			}
+			else if (gameMode == 2)
+			{
+				targetColor = TARGETCOLORHIT;
+			}
+		}
+		else
+		{
+			if (gameMode == 1)
+			{
+				handColor = HANDCOLOR;
+			}
+			else if (gameMode == 2)
+			{
+				targetColor = TARGETCOLOR;
+			}
 		}
 	}
 
 
-
 	result = RenderSceneToTexture();
+	if (!result)
+	{
+		return false;
+	}
+	result = RenderSceneToTexture2();
 	if (!result)
 	{
 		return false;
@@ -1942,113 +2238,38 @@ bool GraphicsClass::Render()
 		return false;
 	}
 
+	if (CORRECT_PERPECTIVE)
+		m_Camera->Render(XMFLOAT3(m_Camera->GetPosition().x, m_Camera->GetPosition().y, -m_Camera->GetPosition().z));
+	else
+		m_Camera->Render(XMFLOAT3(0, 1.5, 0));
 
 
 	// Clear the buffers to begin the scene.
-	m_Direct3D->BeginScene(0.5,0.5,0.5, 1.0f);
-	
-	float cameraDistance = m_Camera->GetPosition().x*m_Camera->GetPosition().x + (m_Camera->GetPosition().y-1.7)*(m_Camera->GetPosition().y-1.7) +
-		(m_Camera->GetPosition().z)*(m_Camera->GetPosition().z);
-	cameraDistance = sqrt(cameraDistance);
-
-	m_3dvision->Render(m_Direct3D->GetDevice(), m_Direct3D->GetDeviceContext(), cameraDistance);
-
-	// Generate the view matrix based on the camera's position.
-	if(CORRECT_PERPECTIVE)
-	m_Camera->Render(XMFLOAT3(m_Camera->GetPosition().x, m_Camera->GetPosition().y, -m_Camera->GetPosition().z));
-	else
-	m_Camera->Render(XMFLOAT3(0,1.5,0));
-
-	// Get the world, view, and projection matrices from the camera and d3d objects.
-	m_Direct3D->GetWorldMatrix(worldMatrix);
-	m_Camera->GetViewMatrix(viewMatrix);
-	m_Direct3D->GetProjectionMatrix(projectionMatrix);
-	m_Direct3D->GetOrthoMatrix(othoMatrix);
-
-	XMStoreFloat4x4(&proj, projectionMatrix);
-	XMStoreFloat4x4(&view, viewMatrix);
+	m_Direct3D->BeginScene(0.5, 0.5, 0.5, 1.0f);
 
 
-	m_Leap->processFrame(m_Camera->GetPosition().x, m_Camera->GetPosition().y, m_Camera->GetPosition().z, 0, view, proj , handlength );
-	//std::vector<int> tobedeleted;
-	//for (int i = 0; i < m_Leap->deleteBoxes.size(); i++)
-	//{
-	//	for (int j = 0; j < boxes.size(); j++)
-	//	{
-	//		if (m_Leap->deleteBoxes[i] == boxes[j])
-	//			tobedeleted.push_back(j);
-	//	}
-	//}
-	//int size = tobedeleted.size();
-	//for (int i = 0; i < size; i++)
-	//{
-	//	m_physx->removeActor(boxes[i]);
-	//	boxes.erase(boxes.begin() + (int)tobedeleted.back());
-	//	tobedeleted.pop_back();
-	//}
-	//tobedeleted.clear();
-
-	//m_physx->setHandActor(m_Leap->getHandActor());
-
-	map<int, PxRigidDynamic*> contacts = m_physx->getActiveContact();
-	if (contacts.size() > 0)
-	{
-		map<int, PxVec3> forces = m_Leap->computeForce(contacts);
-		m_physx->applyForce(forces);
-		if(gameMode ==1)
-		targetHit = true;
-	}
-
-
-	m_physx->Render();
-	
-	if (gameMode)
-	{
-		GameFrame();
-		if (targetHit)
-		{
-			if (gameMode == 1)
-			{
-				handColor = HANDCOLORHIT;
-			}
-			else if(gameMode ==2)
-			{
-				targetColor = TARGETCOLORHIT;
-			}
-		}
-		else
-		{
-			if (gameMode == 1)
-			{
-				handColor = HANDCOLOR;
-			}
-			else if (gameMode == 2)
-			{
-				targetColor = TARGETCOLOR;
-			}
-		}
-	}
-	
-	RenderTerrian(gameMode);
-
-
-	RenderActor(2);
 
 	m_Direct3D->TurnOnAlphaBlending();
-
-	RenderHand(2);
 	
+	m_ColorShader->SetShaderPerFrame(m_Direct3D->GetDeviceContext(), m_UpSampleTexure->GetShaderResourceView(),
+		m_Light->GetPositions(), m_Light->GetAmbientColor(), m_Light->GetDiffuseColor(), m_Light->GetSpecularColor(),
+		lightRange, attenuate);
+	
+	
+	RenderActor(3);
+	RenderHand(3);
+	RenderTerrian(3);
 
 
 
 	m_Direct3D->TurnOffAlphaBlending();
 
+	RenderText(Head_Error, head_pos);
 
-	RenderText(Head_Error,head_pos);
+	//RenderTextureBox(0, 0, 0, 1, 1, 1);
+	//	m_model->Draw(m_Direct3D->GetDeviceContext(), *m_states, m_world, m_view, m_proj);
 
-//	m_model->Draw(m_Direct3D->GetDeviceContext(), *m_states, m_world, m_view, m_proj);
-
-
+	if(POINT_CLOUD_ENABLED)
 	RenderPointCloud();
 	// Present the rendered scene to the screen.
 	m_Direct3D->EndScene();
@@ -2063,9 +2284,8 @@ void GraphicsClass::RenderPointCloud()
 	m_Camera->GetViewMatrix(viewMatrix);
 	m_Direct3D->GetProjectionMatrix(projectionMatrix);
 
-	m_PointCloudShader->Render(m_Direct3D->GetDeviceContext(), worldMatrix, viewMatrix, projectionMatrix);
+	m_PointCloudShader->Render(m_Direct3D->GetDeviceContext(), worldMatrix, viewMatrix, projectionMatrix,m_Camera->GetPosition());
 }
-
 
 void GraphicsClass::RenderText(bool Head_Error, Point3f* head_pos)
 {
@@ -2076,7 +2296,7 @@ void GraphicsClass::RenderText(bool Head_Error, Point3f* head_pos)
 	{
 		m_font->DrawString(spriteBatch.get(), L"Multiple Red Detected!", XMFLOAT2(100, 100), Colors::Red);
 	}
-	if(head_pos !=nullptr)
+	if (head_pos != nullptr)
 	{
 		std::wstring s = L"X: " + std::to_wstring(head_pos->x) + L"Y: " + std::to_wstring(head_pos->y) + L"Z: " + std::to_wstring(head_pos->z);
 		m_font->DrawString(spriteBatch.get(), s.c_str(), XMFLOAT2(100, 100), Colors::Red);
@@ -2085,14 +2305,14 @@ void GraphicsClass::RenderText(bool Head_Error, Point3f* head_pos)
 	{
 		if (handactor.size() > 0)
 		{
-			if (handactor[0]->isExtended[0] && handactor[0]->isExtended[1] && handactor[0]->isExtended[2] && handactor[0]->isExtended[3] && handactor[0]->isExtended[4] && !FULL_SCREEN)
+			if (handactor[0]->isExtended[1] && handactor[0]->isExtended[2] && handactor[0]->isExtended[3] && handactor[0]->isExtended[4] && handactor[0]->isExtended[0] && !FULL_SCREEN)
 			{
 				fingertipDetected = m_Tracker->fingerTipDetection(handactor[0]->fingerTipPosition);
 			}
 
 			std::wstring s = L"hand size: " + std::to_wstring(handlength) /*+ L"T:" + std::to_wstring((int)handactor[0]->isExtended[0])
-				+ L"I:" + std::to_wstring((int)handactor[0]->isExtended[1]) + L"M:" + std::to_wstring((int)handactor[0]->isExtended[2])
-				+ L"R:" + std::to_wstring((int)handactor[0]->isExtended[3]) + L"P:" + std::to_wstring((int)handactor[0]->isExtended[4]) */
+																		  + L"I:" + std::to_wstring((int)handactor[0]->isExtended[1]) + L"M:" + std::to_wstring((int)handactor[0]->isExtended[2])
+																		  + L"R:" + std::to_wstring((int)handactor[0]->isExtended[3]) + L"P:" + std::to_wstring((int)handactor[0]->isExtended[4]) */
 				+ L"FingerTip Detected:" + std::to_wstring(fingertipDetected);
 			m_font->DrawString(spriteBatch.get(), s.c_str(), XMFLOAT2(100, 200), Colors::Red);
 		}
@@ -2175,16 +2395,14 @@ void GraphicsClass::RenderText(bool Head_Error, Point3f* head_pos)
 
 bool GraphicsClass::RenderSceneToTexture()
 {
-	XMMATRIX worldMatrix, lightViewMatrix, lightProjectionMatrix, translateMatrix;
-	float posX, posY, posZ;
 	bool result;
-	
+
 
 	// Set the render target to be the render to texture.
 	m_RenderTexture->SetRenderTarget(m_Direct3D->GetDeviceContext());
 
 	// Clear the render to texture.
-	if(SHADOW_ENABLED)
+	if (SHADOW_ENABLED)
 		m_RenderTexture->ClearRenderTarget(m_Direct3D->GetDeviceContext(), 0.0f, 0.0f, 0.0f, 1.0f);
 	else
 		m_RenderTexture->ClearRenderTarget(m_Direct3D->GetDeviceContext(), 1.0f, 1.0f, 1.0f, 1.0f);
@@ -2196,27 +2414,49 @@ bool GraphicsClass::RenderSceneToTexture()
 		// Generate the light view matrix based on the light's position.
 		m_Light->GenerateViewMatrix();
 
-		// Get the world matrix from the d3d object.
-		m_Direct3D->GetWorldMatrix(worldMatrix);
-
-		// Get the view and orthographic matrices from the light object.
-		m_Light->GetViewMatrix(lightViewMatrix);
-		m_Light->GetProjectionMatrix(lightProjectionMatrix);
-		//Render all the objects in the scene using the depth shader and the light view and projection matrices.
-
-		m_Shape->Render(m_Direct3D->GetDevice());
-
-		m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(),
-			m_Shape->GetBoxVertexOffset(), floor_scale*floor_trans, lightViewMatrix, lightProjectionMatrix, m_Camera->GetPosition());
+		RenderTerrian(0);
 
 		RenderHand(0);
 
 		RenderActor(0);
 	}
+	
+	// Reset the render target back to the original back buffer and not the render to texture anymore.
+	m_Direct3D->SetBackBufferRenderTarget();
+
+	// Reset the viewport back to the original.
+	m_Direct3D->ResetViewport();
+
+	return true;
+}
+
+bool GraphicsClass::RenderSceneToTexture2()
+{
+	bool result;
 
 
+	// Set the render target to be the render to texture.
+	m_RenderTexture2->SetRenderTarget(m_Direct3D->GetDeviceContext());
+
+	// Clear the render to texture.
+	if (SHADOW_ENABLED)
+		m_RenderTexture2->ClearRenderTarget(m_Direct3D->GetDeviceContext(), 0.0f, 0.0f, 0.0f, 1.0f);
+	else
+		m_RenderTexture2->ClearRenderTarget(m_Direct3D->GetDeviceContext(), 1.0f, 1.0f, 1.0f, 1.0f);
+	//Generate the view matrix of the light.
 
 
+	if (SHADOW_ENABLED)
+	{
+		// Generate the light view matrix based on the light's position.
+		m_Light->GenerateMirrorMatrix();
+
+		RenderTerrian(1);
+
+		RenderHand(1);
+
+		RenderActor(1);
+	}
 
 	// Reset the render target back to the original back buffer and not the render to texture anymore.
 	m_Direct3D->SetBackBufferRenderTarget();
@@ -2239,7 +2479,7 @@ bool GraphicsClass::RenderBlackAndWhiteShadows()
 	m_BlackWhiteRenderTexture->SetRenderTarget(m_Direct3D->GetDeviceContext());
 
 	// Clear the render to texture.
-	if(SHADOW_ENABLED)
+	if (SHADOW_ENABLED)
 	{
 		m_BlackWhiteRenderTexture->ClearRenderTarget(m_Direct3D->GetDeviceContext(), 0.0f, 0.0f, 0.0f, 1.0f);
 		// Generate the light view matrix based on the light's position.
@@ -2254,19 +2494,15 @@ bool GraphicsClass::RenderBlackAndWhiteShadows()
 		m_Light->GetViewMatrix(lightViewMatrix);
 		m_Light->GetProjectionMatrix(lightProjectionMatrix);
 
+	
+		RenderTerrian(2);
 
+		RenderHand(2);
 
-		m_Shape->Render(m_Direct3D->GetDevice());
-
-		m_ShadowShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(),
-			m_Shape->GetBoxVertexOffset(), floor_scale*floor_trans, viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_RenderTexture->GetShaderResourceView(), m_Light->GetPositions());
-
-		RenderHand(1);
-
-		RenderActor(1);
+		RenderActor(2);
 	}
 	else
-	m_BlackWhiteRenderTexture->ClearRenderTarget(m_Direct3D->GetDeviceContext(), 1.0f, 1.0f, 1.0f, 1.0f);
+		m_BlackWhiteRenderTexture->ClearRenderTarget(m_Direct3D->GetDeviceContext(), 1.0f, 1.0f, 1.0f, 1.0f);
 
 	// Generate the view matrix based on the camera's position.
 	//m_Camera->Render();
@@ -2399,7 +2635,7 @@ bool GraphicsClass::RenderVerticalBlurToTexture()
 	m_VerticalBlurTexture->ClearRenderTarget(m_Direct3D->GetDeviceContext(), 0.0f, 0.0f, 0.0f, 1.0f);
 
 	// Generate the view matrix based on the camera's position.
-	m_Camera->Render(XMFLOAT3(0,0,0));
+	m_Camera->Render(XMFLOAT3(0, 0, 0));
 
 	// Get the world and view matrices from the camera and d3d objects.
 	m_Camera->GetBaseViewMatrix(baseViewMatrix);
@@ -2464,11 +2700,11 @@ bool GraphicsClass::UpSampleTexture()
 	m_FullScreenWindow->Render(m_Direct3D->GetDeviceContext());
 
 	// Render the full screen ortho window using the texture shader and the small sized final blurred render to texture resource.
-	if(SHADOW_ENABLED)
-	result = m_TextureShader->Render(m_Direct3D->GetDeviceContext(), m_FullScreenWindow->GetIndexCount(), worldMatrix, baseViewMatrix, orthoMatrix,
-		m_VerticalBlurTexture->GetShaderResourceView());
+	if (SHADOW_ENABLED)
+		result = m_TextureShader->Render(m_Direct3D->GetDeviceContext(), m_FullScreenWindow->GetIndexCount(), worldMatrix, baseViewMatrix, orthoMatrix,
+			m_VerticalBlurTexture->GetShaderResourceView());
 	else
-	result = m_TextureShader->Render(m_Direct3D->GetDeviceContext(), m_FullScreenWindow->GetIndexCount(), worldMatrix, baseViewMatrix, orthoMatrix,
+		result = m_TextureShader->Render(m_Direct3D->GetDeviceContext(), m_FullScreenWindow->GetIndexCount(), worldMatrix, baseViewMatrix, orthoMatrix,
 			m_RenderTexture->GetShaderResourceView());
 	if (!result)
 	{
@@ -2502,7 +2738,7 @@ void GraphicsClass::WriteFile()
 		Mat affktol = m_Tracker->getAffineTransformKtoL();
 		for (int i = 0; i < 3; i++)
 			fout << affktol.at<double>(i, 0) << " " << affktol.at<double>(i, 1) << " " << affktol.at<double>(i, 2) << " " << affktol.at<double>(i, 3) << endl;
-		
+
 		fout.close();
 	}
 
@@ -2528,9 +2764,15 @@ void GraphicsClass::ReadFile()
 		fin.close();
 	}
 
-	
 
 
+
+}
+
+void GraphicsClass::toggleGOGO()
+{
+	gogoMode = !gogoMode;
+	m_Leap->setHandMode();
 }
 
 void GraphicsClass::checkObjectPos(PxRigidActor* actor)
@@ -2540,7 +2782,7 @@ void GraphicsClass::checkObjectPos(PxRigidActor* actor)
 		PxTransform t = actor->getGlobalPose();
 		if (t.p.z > -1 && t.p.z <= 0)
 		{
-			((PxRigidDynamic*)actor)->setLinearVelocity(PxVec3(0,2,-3));
+			((PxRigidDynamic*)actor)->setLinearVelocity(PxVec3(0, 2, -3));
 		}
 		else if (t.p.z < 1 && t.p.z > 0)
 		{

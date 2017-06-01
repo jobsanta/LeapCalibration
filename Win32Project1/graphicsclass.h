@@ -57,7 +57,8 @@ using namespace Eigen;
 
 const bool FULL_SCREEN = false;
 const bool VSYNC_ENABLED = false;
-const bool SHADOW_ENABLED = false;
+const bool SHADOW_ENABLED = true;
+const bool POINT_CLOUD_ENABLED = true;
 const bool CORRECT_PERPECTIVE = true;
 const float SCREEN_DEPTH = 100.0f;
 const float SCREEN_NEAR = 1.0f;
@@ -111,6 +112,7 @@ public:
 	bool m_RenderMirrorHand;
 
 
+	void toggleGOGO();
 private:
 	bool Render();
 	void RenderActor(int mode);
@@ -120,16 +122,17 @@ private:
 		ID3D11ShaderResourceView* texture, float width, float height, float depth);
 	void RenderColorBox(int mode,PxRigidActor* box,
 		XMFLOAT4 color, float width, float height, float depth);
-	void RenderPalm(int mode,PxRigidActor* box, XMFLOAT4, float width, float height, float depth);
+	void RenderPalm(int mode,PxRigidActor* box, float alpha, float width, float height, float depth);
 	void RenderSphere(int mode,PxRigidActor* sphere, float radius);
-	void RenderCylinder(int mode,PxRigidActor* cylinder, XMFLOAT4,float height, float radius);
+	void RenderCylinder(int mode,PxRigidActor* cylinder, float alpha,float height, float radius);
 	void RenderDebugSphere(int mode, PxVec3, float radius, XMFLOAT4 color);
 	void RenderColorSphere(int mode, PxRigidActor* sphere, float radius, XMFLOAT4 color);
-	void RenderTerrian(int mode);
+	void RenderTerrian(int rendermode, int gamemode = 0);
 	void RenderPointCloud();
 	//void RenderPillar(PxVec3 endPoint);
 	XMMATRIX PxtoXMMatrix(PxTransform input);
 	bool RenderSceneToTexture();
+	bool RenderSceneToTexture2();
 	bool RenderBlackAndWhiteShadows();
 	bool DownSampleTexture();
 	bool RenderHorizontalBlurToTexture();
@@ -142,7 +145,6 @@ private:
 
 	void WriteFile();
 	void ReadFile();
-
 
 
 
@@ -176,7 +178,7 @@ private:
 	ShapeClass* m_Shape;
 	KinectClass* m_Kinect;
 	TrackerClass* m_Tracker;
-	RenderTextureClass* m_RenderTexture;
+	RenderTextureClass* m_RenderTexture,*m_RenderTexture2;
 	RenderTextureClass *m_BlackWhiteRenderTexture, *m_DownSampleTexure;
 	RenderTextureClass *m_HorizontalBlurTexture, *m_VerticalBlurTexture, *m_UpSampleTexure;
 	DepthShaderClass* m_DepthShader;
@@ -248,6 +250,16 @@ private:
 
 	 void checkObjectPos(PxRigidActor* actor);
 
+	 Material mhandMaterial;
+	 Material mboxMaterial;
+	 Material msphereMaterial;
+	 Material mfloorMaterial;
+	 Material medgeMaterial;
+
+
+	 XMFLOAT3 attenuate;
+	 float lightRange;
+	 bool gogoMode;
 };
 
 #endif

@@ -30,6 +30,8 @@ private:
 		XMMATRIX View;
 		XMMATRIX Projection;
 		XMFLOAT4 XYScale;
+		XMFLOAT3 camera;
+
 	};
 
 public:
@@ -39,7 +41,7 @@ public:
 
 	bool Initialize(ID3D11Device*, HWND,int,int);
 	void Shutdown();
-	bool Render(ID3D11DeviceContext*, XMMATRIX, XMMATRIX, XMMATRIX );
+	bool Render(ID3D11DeviceContext*, XMMATRIX, XMMATRIX, XMMATRIX,XMFLOAT3);
 	bool UpdateSubResource(ID3D11DeviceContext*, FLOAT*, FLOAT*);
 
 private:
@@ -47,7 +49,7 @@ private:
 	void ShutdownShader();
 	void OutputShaderErrorMessage(ID3D10Blob*, HWND, WCHAR*);
 
-	bool SetShaderParameters(ID3D11DeviceContext*, XMMATRIX, XMMATRIX, XMMATRIX);
+	bool SetShaderParameters(ID3D11DeviceContext*, XMMATRIX, XMMATRIX, XMMATRIX,XMFLOAT3);
 	void RenderShader(ID3D11DeviceContext*);
 
 private:

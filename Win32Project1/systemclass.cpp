@@ -150,6 +150,12 @@ bool SystemClass::Frame()
 		m_Graphics->StopCalibrate(true);
 	}
 
+	if (m_Input->IsGPressed() == true)
+	{
+		m_Graphics->toggleGOGO();
+	}
+
+
 	if (m_Input->IsOnePressed() == true)
 	{
 		m_Graphics->StartGameMode(1);

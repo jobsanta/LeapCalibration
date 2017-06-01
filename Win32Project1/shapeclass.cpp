@@ -30,30 +30,45 @@ bool ShapeClass::BuildGeometryBuffers(ID3D11Device* device)
 
 	GeometryGenerator::MeshData box;
 	GeometryGenerator::MeshData cylinder;
+	GeometryGenerator::MeshData sphere;
+	GeometryGenerator::MeshData grid;
 
 	GeometryGenerator geoGen;
 	geoGen.CreateBox(1.0f, 1.0f, 1.0f, box);
 	geoGen.CreateCylinder(0.5f,0.5f, 1.0f, 20, 20, cylinder);
+	geoGen.CreateGeosphere(0.5f, 40, sphere);
+	geoGen.CreateGrid(10, 10, 10, 10, grid);
 
 	// Cache the vertex offsets to each object in the concatenated vertex buffer.
 	mBoxVertexOffset = 0;
 	mCylinderVertexOffset = box.Vertices.size();
+	mSphereVertexOffset = mCylinderVertexOffset + cylinder.Vertices.size();
+	mGridVertexOffset = mSphereVertexOffset + sphere.Vertices.size();
 
 	// Cache the index count of each object.
 	mBoxIndexCount = box.Indices.size();
 	mCylinderIndexCount = cylinder.Indices.size();
+	mSphereIndexCount = sphere.Indices.size();
+	mGridIndexCount = grid.Indices.size();
 
 	// Cache the starting index for each object in the concatenated index buffer.
 	mBoxIndexOffset = 0;
 	mCylinderIndexOffset = mBoxIndexCount;
+	mSphereIndexOffset = mCylinderIndexCount+mBoxIndexCount;
+	mGridIndexOffset = mSphereIndexOffset + mSphereIndexCount;
 
 	UINT totalVertexCount =
 		box.Vertices.size() +
-		cylinder.Vertices.size();
+		cylinder.Vertices.size()+
+		sphere.Vertices.size()+
+		grid.Vertices.size();
+		
 
 	UINT totalIndexCount =
 		mBoxIndexCount +
-		mCylinderIndexCount;
+		mCylinderIndexCount+
+		mSphereIndexCount+
+		mGridIndexCount;
 
 	//
 	// Extract the vertex elements we are interested in and pack the
@@ -61,23 +76,30 @@ bool ShapeClass::BuildGeometryBuffers(ID3D11Device* device)
 	//
 
 	std::vector<Vertex> vertices(totalVertexCount);
-
-	XMFLOAT4 Green(0.0f, 1.0f, 0.0f, 1.0f);
-
 	UINT k = 0;
 	for (size_t i = 0; i < box.Vertices.size(); ++i, ++k)
 	{
 		vertices[k].Pos = box.Vertices[i].Position;
-		vertices[k].Color = Green;
 		vertices[k].Normal = box.Vertices[i].Normal;
 	}
 
 	for (size_t i = 0; i < cylinder.Vertices.size(); ++i, ++k)
 	{
 		vertices[k].Pos = cylinder.Vertices[i].Position;
-		vertices[k].Color = Green;
 		vertices[k].Normal = cylinder.Vertices[i].Normal;
 	}
+
+	for (size_t i = 0; i < sphere.Vertices.size(); ++i, ++k)
+	{
+		vertices[k].Pos = sphere.Vertices[i].Position;
+		vertices[k].Normal = sphere.Vertices[i].Normal;
+	}
+	for (size_t i = 0; i < grid.Vertices.size(); ++i, ++k)
+	{
+		vertices[k].Pos = grid.Vertices[i].Position;
+		vertices[k].Normal = grid.Vertices[i].Normal;
+	}
+
 
 	D3D11_BUFFER_DESC vbd;
 	vbd.Usage = D3D11_USAGE_DEFAULT;
@@ -100,6 +122,8 @@ bool ShapeClass::BuildGeometryBuffers(ID3D11Device* device)
 		std::vector<UINT> indices;
 	indices.insert(indices.end(), box.Indices.begin(), box.Indices.end());
 	indices.insert(indices.end(), cylinder.Indices.begin(), cylinder.Indices.end());
+	indices.insert(indices.end(), sphere.Indices.begin(), sphere.Indices.end());
+	indices.insert(indices.end(), grid.Indices.begin(), grid.Indices.end());
 
 	D3D11_BUFFER_DESC ibd;
 	ibd.Usage = D3D11_USAGE_DEFAULT;
@@ -200,4 +224,34 @@ int ShapeClass::GetBoxVertexOffset()
 int ShapeClass::GetCylinderVertexOffset()
 {
 	return mCylinderVertexOffset;
+}
+
+int ShapeClass::GetSphereIndexCount()
+{
+	return mSphereIndexCount;
+}
+
+int ShapeClass::GetSphereIndexOffset()
+{
+	return mSphereIndexOffset;
+}
+
+int ShapeClass::GetSphereVertexOffset()
+{
+	return mSphereVertexOffset;
+}
+
+int ShapeClass::GetGridIndexCount()
+{
+	return mGridIndexCount;
+}
+
+int ShapeClass::GetGridVertexOffset()
+{
+	return mGridVertexOffset;
+}
+
+int ShapeClass::GetGridIndexOffset()
+{
+	return mGridIndexOffset;
 }

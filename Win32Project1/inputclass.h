@@ -52,6 +52,7 @@ public:
 	bool IsIPressed();
 	bool IsMPressed();
 	bool IsLessPressed();
+	bool IsGPressed();
 
 	bool IsOnePressed();
 	bool IsTwoPressed();

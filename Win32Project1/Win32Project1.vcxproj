@@ -205,6 +205,7 @@
     <ClInclude Include="kinectclass.h" />
     <ClInclude Include="leapclass.h" />
     <ClInclude Include="lightclass.h" />
+    <ClInclude Include="LightHelper.h" />
     <ClInclude Include="lightshaderclass.h" />
     <ClInclude Include="MathHelper.h" />
     <ClInclude Include="modelclass.h" />

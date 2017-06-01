@@ -20,7 +20,7 @@ LightClass::~LightClass()
 
 void LightClass::SetAmbientColor(float red, float green, float blue, float alpha)
 {
-	m_ambientColor= XMFLOAT4(red, green, blue, alpha);
+	m_ambientColor = XMFLOAT4(red, green, blue, alpha);
 	return;
 }
 
@@ -30,6 +30,13 @@ void LightClass::SetDiffuseColor(float red, float green, float blue, float alpha
 	m_diffuseColor = XMFLOAT4(red, green, blue, alpha);
 	return;
 }
+
+void LightClass::SetSpecularColor(float red, float green, float blue, float alpha)
+{
+	m_specularColor = XMFLOAT4(red, green, blue, alpha);
+	return;
+}
+
 
 
 void LightClass::SetPosition(float x, float y, float z)
@@ -54,6 +61,11 @@ XMFLOAT4 LightClass::GetDiffuseColor()
 XMFLOAT4 LightClass::GetAmbientColor()
 {
 	return m_ambientColor;
+}
+
+XMFLOAT4 LightClass::GetSpecularColor()
+{
+	return m_specularColor;
 }
 
 
@@ -82,6 +94,29 @@ void LightClass::GenerateViewMatrix()
 	return;
 }
 
+void LightClass::GenerateMirrorMatrix()
+{
+	XMFLOAT3 up;
+	XMVECTOR upVector, positionVector, lookAtVector;
+
+	// Setup the vector that points upwards.
+	up.x = 0.0f;
+	up.y = 1.0f;
+	up.z = 0.0f;
+	XMFLOAT3 m_MirrorPosition = m_position;
+	m_MirrorPosition.z = -m_MirrorPosition.z;
+
+
+	upVector = XMLoadFloat3(&up);
+	positionVector = XMLoadFloat3(&m_MirrorPosition);
+	lookAtVector = XMLoadFloat3(&m_lookAt);
+
+	// Create the view matrix from the three vectors.
+	m_mirrorMatrix = XMMatrixLookAtLH(positionVector, lookAtVector, upVector);
+
+	return;
+}
+
 void LightClass::GenerateProjectionMatrix(float screenDepth, float screenNear)
 {
 	float fieldOfView, screenAspect;
@@ -102,6 +137,13 @@ void LightClass::GetViewMatrix(XMMATRIX& viewMatrix)
 	viewMatrix = m_viewMatrix;
 	return;
 }
+
+void LightClass::GetMirrorMatrix(XMMATRIX& viewMatrix)
+{
+	viewMatrix = m_mirrorMatrix;
+	return;
+}
+
 
 
 void LightClass::GetProjectionMatrix(XMMATRIX& projectionMatrix)

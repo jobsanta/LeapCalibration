@@ -16,6 +16,7 @@ cbuffer cbChangesEveryFrame : register(b0)
 	matrix  View;
 	matrix  Projection;
 	float4  XYScale;
+	float3 camera;
 };
 
 //--------------------------------------------------------------------------------------
@@ -94,6 +95,7 @@ void GS(point GS_INPUT particles[1], uint primID : SV_PrimitiveID, inout Triangl
 	WorldPos.xyz = pos;
 	WorldPos.w = 1.0;
 
+
 	// convert to camera space
 	float4 ViewPos = mul(WorldPos, View);
 
@@ -102,7 +104,7 @@ void GS(point GS_INPUT particles[1], uint primID : SV_PrimitiveID, inout Triangl
 
 	//// determine how large to make the point sprite - scale it up a little to fill in holes
 	//// also make it larger if it is further away to prevent aliasing artifacts
-	static const float4 PointSpriteScaleFactor = float4(1.0 / DepthWidth, 1.0 / DepthHeight, 0.0, 0.0) * 2.5;
+	static const float4 PointSpriteScaleFactor = float4(1.0 / DepthWidth, 1.0 / DepthHeight, 0.0, 0.0) * 2;
 	float4 quadOffsetScalingFactorInViewspace = PointSpriteScaleFactor * pos.z;
 
 	[unroll]
@@ -113,6 +115,11 @@ void GS(point GS_INPUT particles[1], uint primID : SV_PrimitiveID, inout Triangl
 
 		// then project it
 		output.Pos = mul(ViewPosExpanded, Projection);
+
+		if (output.Pos.w != 0.0f)
+		{
+			output.Pos = output.Pos*((length(WorldPos.xyz - camera)) / output.Pos.w);
+		}
 
 		// sample the color texture for the corner we're at
 		output.Col = txColor.SampleLevel(samColor, colorTextureCoords + texOffsets4Samples[c], 0);

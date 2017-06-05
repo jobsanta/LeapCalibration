@@ -23,7 +23,6 @@ D3DClass::D3DClass(const D3DClass& other)
 {
 }
 
-
 D3DClass::~D3DClass()
 {
 }
@@ -49,7 +48,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 	D3D11_DEPTH_STENCIL_DESC depthDisabledStencilDesc;
 	D3D11_BLEND_DESC blendStateDescription;
 	D3D11_RASTERIZER_DESC rasterDesc;
-	
+
 	float fieldOfView, screenAspect;
 
 	// Store the vsync setting.
@@ -225,7 +224,6 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 	backBufferPtr->Release();
 	backBufferPtr = 0;
 
-
 	// Initialize the description of the depth buffer.
 	ZeroMemory(&depthBufferDesc, sizeof(depthBufferDesc));
 
@@ -335,7 +333,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 	m_deviceContext->RSSetViewports(1, &m_viewport);
 
 	// Setup the projection matrix.
-	fieldOfView = 26.6/180.0 *XM_PI;
+	fieldOfView = 26.6 / 180.0 *XM_PI;
 	screenAspect = (float)screenWidth / (float)screenHeight;
 
 	// Create the projection matrix for 3D rendering.
@@ -347,11 +345,10 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 	// Create an orthographic projection matrix for 2D rendering.
 	m_orthoMatrix = XMMatrixOrthographicLH((float)screenWidth, (float)screenHeight, screenNear, screenDepth);
 
-
 	// Clear the second depth stencil state before setting the parameters.
 	ZeroMemory(&depthDisabledStencilDesc, sizeof(depthDisabledStencilDesc));
 
-	// Now create a second depth stencil state which turns off the Z buffer for 2D rendering.  The only difference is 
+	// Now create a second depth stencil state which turns off the Z buffer for 2D rendering.  The only difference is
 	// that DepthEnable is set to false, all other parameters are the same as the other depth stencil state.
 	depthDisabledStencilDesc.DepthEnable = false;
 	depthDisabledStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
@@ -403,7 +400,6 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 		return false;
 	}
 
-
 	return true;
 }
 
@@ -426,7 +422,6 @@ void D3DClass::Shutdown()
 		m_alphaDisableBlendingState->Release();
 		m_alphaDisableBlendingState = 0;
 	}
-
 
 	if (m_depthDisabledStencilState)
 	{
@@ -489,7 +484,6 @@ void D3DClass::BeginScene(float red, float green, float blue, float alpha)
 {
 	float color[4];
 
-
 	// Setup the color to clear the buffer to.
 	color[0] = red;
 	color[1] = green;
@@ -539,8 +533,6 @@ void D3DClass::TurnZBufferOff()
 	return;
 }
 
-
-
 ID3D11DeviceContext* D3DClass::GetDeviceContext()
 {
 	return m_deviceContext;
@@ -552,13 +544,11 @@ void D3DClass::GetProjectionMatrix(XMMATRIX& projectionMatrix)
 	return;
 }
 
-
 void D3DClass::GetWorldMatrix(XMMATRIX& worldMatrix)
 {
 	worldMatrix = m_worldMatrix;
 	return;
 }
-
 
 void D3DClass::GetOrthoMatrix(XMMATRIX& orthoMatrix)
 {
@@ -577,7 +567,6 @@ void D3DClass::TurnOnAlphaBlending()
 {
 	float blendFactor[4];
 
-
 	// Setup the blend factor.
 	blendFactor[0] = 0.0f;
 	blendFactor[1] = 0.0f;
@@ -593,7 +582,6 @@ void D3DClass::TurnOnAlphaBlending()
 void D3DClass::TurnOffAlphaBlending()
 {
 	float blendFactor[4];
-
 
 	// Setup the blend factor.
 	blendFactor[0] = 0.0f;
@@ -634,9 +622,7 @@ float D3DClass::CalculateFOV(float x, float y, float z)
 	float b = (buttom_y - y)*(buttom_y - y) + (lookat_z - z)*(lookat_z - z);
 
 	float fovy = acosf((a + b - c*c) / (2 * sqrt(a)*sqrt(b)));
-	return fovy*180/XM_PI;
-
-
+	return fovy * 180 / XM_PI;
 }
 
 void D3DClass::SetBackBufferRenderTarget()
@@ -646,7 +632,6 @@ void D3DClass::SetBackBufferRenderTarget()
 
 	return;
 }
-
 
 void D3DClass::ResetViewport()
 {
@@ -680,7 +665,6 @@ XMMATRIX D3DClass::GeneralizedPerspectiveProjection(XMFLOAT3 pointa, XMFLOAT3 po
 	vu = XMVector3Normalize(vu);
 	vn = XMVector3Cross(vr, vu);
 	vn = XMVector3Normalize(vn);
-	
 
 	//Calculate the vector from eye (pe) to screen corners (pa, pb, pc)
 	va = pa - pe;
@@ -689,7 +673,7 @@ XMMATRIX D3DClass::GeneralizedPerspectiveProjection(XMFLOAT3 pointa, XMFLOAT3 po
 
 	//Get the distance;; from the eye to the screen plane
 
-	eyedistance = (MvectorDot(va,vn));
+	eyedistance = (MvectorDot(va, vn));
 
 	//Get the varaibles for the off center projection
 	left = (MvectorDot(vr, va)*fn) / eyedistance;
@@ -706,7 +690,6 @@ XMMATRIX D3DClass::GeneralizedPerspectiveProjection(XMFLOAT3 pointa, XMFLOAT3 po
 	XMStoreFloat3(&v_u, vu);
 	XMStoreFloat3(&v_n, vn);
 
-	
 	transformMatrix.m[0][0] = v_r.x;
 	transformMatrix.m[0][1] = v_r.y;
 	transformMatrix.m[0][2] = v_r.z;
@@ -723,7 +706,6 @@ XMMATRIX D3DClass::GeneralizedPerspectiveProjection(XMFLOAT3 pointa, XMFLOAT3 po
 	transformMatrix.m[3][1] = 0;
 	transformMatrix.m[3][2] = 0;
 	transformMatrix.m[3][3] = 1;
-
 
 	//Now for the eye transform
 	eyeTranslateM.m[0][0] = 1;
@@ -747,7 +729,6 @@ XMMATRIX D3DClass::GeneralizedPerspectiveProjection(XMFLOAT3 pointa, XMFLOAT3 po
 	XMMATRIX tm, em;
 	tm = XMLoadFloat4x4(&transformMatrix);
 	em = XMLoadFloat4x4(&eyeTranslateM);
-
 
 	finalProjection = projectionM*tm;
 

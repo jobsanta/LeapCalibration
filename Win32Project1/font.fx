@@ -2,12 +2,9 @@
 // Filename: font.fx
 ////////////////////////////////////////////////////////////////////////////////
 
-
 /////////////
 // GLOBALS //
 /////////////.
-
-
 
 Texture2D shaderTexture;
 SamplerState SampleType;
@@ -19,13 +16,10 @@ cbuffer PerFrameBuffer
 	matrix projectionMatrix;
 };
 
-
 cbuffer PixelBuffer
 {
 	float4 pixelColor;
 };
-
-
 
 //////////////
 // TYPEDEFS //
@@ -42,14 +36,12 @@ struct PixelInputType
 	float2 tex : TEXCOORD0;
 };
 
-
 ////////////////////////////////////////////////////////////////////////////////
 // Vertex Shader
 ////////////////////////////////////////////////////////////////////////////////
 PixelInputType FontVertexShader(VertexInputType input)
 {
 	PixelInputType output;
-
 
 	// Change the position vector to be 4 units for proper matrix calculations.
 	input.position.w = 1.0f;
@@ -71,7 +63,6 @@ PixelInputType FontVertexShader(VertexInputType input)
 float4 FontPixelShader(PixelInputType input) : SV_TARGET
 {
 	float4 color;
-
 
 // Sample the texture pixel at this location.
 color = shaderTexture.Sample(SampleType, input.tex);

@@ -26,10 +26,8 @@ using namespace physx;
 using namespace DirectX;
 using namespace Eigen;
 
-
 #define SWITCHTIME 1.0f
-#define SWITCHRANGE 2.0f
-
+#define SWITCHRANGE 1.8f
 
 //static const float particleSize = 0.075f;
 //static const float particleRadius = 0.075f;
@@ -45,10 +43,8 @@ struct HandMode
 		Mirror = 1,
 		Transit = 2,
 		Gogo = 3
-
 	};
 };
-
 
 struct handActor
 {
@@ -74,20 +70,20 @@ struct handActor
 	bool goingUp;
 	double startTransitTime;
 	double alphaValue;
+	float* pinchStrength;
 
 	PxVec3 palmDimension;
 	PxAggregate* aggregate;
+
+	PxRigidDynamic* grabActor;
+	PxTransform grabActorStartPos;
+	PxTransform grabHandStartPos;
 
 	PxVec3* leapJointPosition;
 	PxVec3* leapJointPosition2;
 	PxVec3* fingerTipPosition;
 	bool* isExtended;
-
-	
-
-
-} ;
-
+};
 
 class LeapClass {
 public:
@@ -107,7 +103,6 @@ public:
 	std::vector<handActor*> getMirrorHandActor();
 	bool captureFingerTip(float * x, float *y, float*z);
 	bool capturePalm(float* z);
-
 
 	void setMatrix(PxMat44 mat);
 
@@ -140,13 +135,12 @@ private:
 	float x_head, y_head, z_head;
 
 	std::vector<handActor*> mHandList;
-//	std::vector<handActor> mMirrorHandList;
-
+	//	std::vector<handActor> mMirrorHandList;
 
 	PxRigidDynamic* CreateSphere(const PxVec3& pos, const PxReal radius, const PxReal density);
 	PxRigidDynamic* CreateBox(PxVec3 dimension, PxVec3 pose, PxQuat quat);
 	//void createJoint(Leap::Vector bone);
-	void createHand(Hand hand, bool goinUp, bool isInTransit,float factor, HandMode::Enum handMode);
+	void createHand(Hand hand, bool goinUp, bool isInTransit, float factor, HandMode::Enum handMode, PxRigidDynamic* grabActor);
 
 	void updateHand(Hand hand, handActor* actor, HandMode::Enum handmode);
 	void deleteHand(handActor* actor);
@@ -155,12 +149,13 @@ private:
 	void createHands(Hand hand);
 
 	PxRigidDynamic* createJoint(Leap::Vector bone, PxRigidDynamic* finger_joint, PxVec3 attachPosition);
-	PxRigidDynamic* createCylinder(PxReal radius, PxReal halfHeight, PxVec3 pos,PxQuat quat, PxAggregate* aggregate);
+	PxRigidDynamic* createCylinder(PxReal radius, PxReal halfHeight, PxVec3 pos, PxQuat quat, PxAggregate* aggregate);
 	void setupFiltering(PxRigidActor* actor, PxU32 filterGroup, PxU32 filterMask);
 	float z_offset;
 
 	Leap::Vector PxVec3toLeapVec(PxVec3 pos);
 	PxVec3 LeapVectoPxVec3(Leap::Vector pos);
+	PxRigidDynamic * queryScene(PxTransform transform, PxGeometry geometry);
 	//float x_scale;
 	//float y_scale;
 
@@ -181,13 +176,9 @@ private:
 	bool leftHandMirrored;
 	bool rightHandMirrored;
 
-	PxRigidDynamic*  queryScene(PxTransform t);
 	vector<PxRigidActor*> boxes;
 
 	HandMode::Enum globalHandMode;
-	
-
-
 };
 
 #endif

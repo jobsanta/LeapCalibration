@@ -4,7 +4,6 @@
 #ifndef _HORIZONTALBLURSHADERCLASS_H_
 #define _HORIZONTALBLURSHADERCLASS_H_
 
-
 //////////////
 // INCLUDES //
 //////////////
@@ -14,7 +13,6 @@
 #include <fstream>
 using namespace DirectX;
 using namespace std;
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class name: HorizontalBlurShaderClass

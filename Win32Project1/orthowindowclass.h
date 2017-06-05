@@ -4,7 +4,6 @@
 #ifndef _ORTHOWINDOWCLASS_H_
 #define _ORTHOWINDOWCLASS_H_
 
-
 //////////////
 // INCLUDES //
 //////////////

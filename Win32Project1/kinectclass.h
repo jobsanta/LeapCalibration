@@ -4,9 +4,6 @@
 #ifndef _KINECTCLASS_H_
 #define _KINECTCLASS_H_
 
-
-
-
 class KinectClass
 {
 public:
@@ -15,7 +12,6 @@ public:
 	static const int        cDepthHeight = 424;
 	static const int        cColorWidth = 1920;
 	static const int        cColorHeight = 1080;
-	
 
 	KinectClass();
 	~KinectClass();
@@ -48,7 +44,6 @@ private:
 	RGBQUAD* m_pColorRGBX;
 	UINT16* m_pDepthBuffer;
 
-
 	// to prevent drawing until we have data for both streams
 	bool m_bDepthReceived;
 	bool m_bColorReceived;
@@ -63,19 +58,12 @@ private:
 	int                m_pColorWidth = 0;
 	int                m_pColorHeight = 0;
 
-
-
-
-
-
 	HRESULT CreateFirstConnected();
 	LONG m_colorToDepthDivisor;
 	void ProcessFrame(INT64 nTime,
 		UINT16* pDepthBuffer, int nDepthWidth, int nDepthHeight,
 		RGBQUAD* pColorBuffer, int nColorWidth, int nColorHeight,
 		USHORT nMinDistance, USHORT nMaxDistance);
-	
-
 };
 
 // Safe release for interfaces

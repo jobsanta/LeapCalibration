@@ -5,10 +5,10 @@
 #include "Camera.h"
 
 Camera::Camera()
-	: mPosition(0.0f, 0.0f, 0.0f), 
-	  mRight(1.0f, 0.0f, 0.0f),
-	  mUp(0.0f, 1.0f, 0.0f),
-	  mLook(0.0f, 0.0f, 1.0f)
+	: mPosition(0.0f, 0.0f, 0.0f),
+	mRight(1.0f, 0.0f, 0.0f),
+	mUp(0.0f, 1.0f, 0.0f),
+	mLook(0.0f, 0.0f, 1.0f)
 {
 	SetLens(0.25f*XM_PI, 1.0f, 1.0f, 1000.0f);
 }
@@ -121,8 +121,8 @@ void Camera::SetLens(float fovY, float aspect, float zn, float zf)
 	mNearZ = zn;
 	mFarZ = zf;
 
-	mNearWindowHeight = 2.0f * mNearZ * tanf( 0.5f*mFovY );
-	mFarWindowHeight  = 2.0f * mFarZ * tanf( 0.5f*mFovY );
+	mNearWindowHeight = 2.0f * mNearZ * tanf(0.5f*mFovY);
+	mFarWindowHeight = 2.0f * mFarZ * tanf(0.5f*mFovY);
 
 	XMMATRIX P = XMMatrixPerspectiveFovLH(mFovY, mAspect, mNearZ, mFarZ);
 	XMStoreFloat4x4(&mProj, P);
@@ -188,7 +188,7 @@ void Camera::Pitch(float angle)
 
 	XMMATRIX R = XMMatrixRotationAxis(XMLoadFloat3(&mRight), angle);
 
-	XMStoreFloat3(&mUp,   XMVector3TransformNormal(XMLoadFloat3(&mUp), R));
+	XMStoreFloat3(&mUp, XMVector3TransformNormal(XMLoadFloat3(&mUp), R));
 	XMStoreFloat3(&mLook, XMVector3TransformNormal(XMLoadFloat3(&mLook), R));
 }
 
@@ -198,7 +198,7 @@ void Camera::RotateY(float angle)
 
 	XMMATRIX R = XMMatrixRotationY(angle);
 
-	XMStoreFloat3(&mRight,   XMVector3TransformNormal(XMLoadFloat3(&mRight), R));
+	XMStoreFloat3(&mRight, XMVector3TransformNormal(XMLoadFloat3(&mRight), R));
 	XMStoreFloat3(&mUp, XMVector3TransformNormal(XMLoadFloat3(&mUp), R));
 	XMStoreFloat3(&mLook, XMVector3TransformNormal(XMLoadFloat3(&mLook), R));
 }
@@ -215,7 +215,7 @@ void Camera::UpdateViewMatrix()
 	U = XMVector3Normalize(XMVector3Cross(L, R));
 
 	// U, L already ortho-normal, so no need to normalize cross product.
-	R = XMVector3Cross(U, L); 
+	R = XMVector3Cross(U, L);
 
 	// Fill in the view matrix entries.
 	float x = -XMVectorGetX(XMVector3Dot(P, R));
@@ -226,25 +226,23 @@ void Camera::UpdateViewMatrix()
 	XMStoreFloat3(&mUp, U);
 	XMStoreFloat3(&mLook, L);
 
-	mView(0,0) = mRight.x; 
-	mView(1,0) = mRight.y; 
-	mView(2,0) = mRight.z; 
-	mView(3,0) = x;   
+	mView(0, 0) = mRight.x;
+	mView(1, 0) = mRight.y;
+	mView(2, 0) = mRight.z;
+	mView(3, 0) = x;
 
-	mView(0,1) = mUp.x;
-	mView(1,1) = mUp.y;
-	mView(2,1) = mUp.z;
-	mView(3,1) = y;  
+	mView(0, 1) = mUp.x;
+	mView(1, 1) = mUp.y;
+	mView(2, 1) = mUp.z;
+	mView(3, 1) = y;
 
-	mView(0,2) = mLook.x; 
-	mView(1,2) = mLook.y; 
-	mView(2,2) = mLook.z; 
-	mView(3,2) = z;   
+	mView(0, 2) = mLook.x;
+	mView(1, 2) = mLook.y;
+	mView(2, 2) = mLook.z;
+	mView(3, 2) = z;
 
-	mView(0,3) = 0.0f;
-	mView(1,3) = 0.0f;
-	mView(2,3) = 0.0f;
-	mView(3,3) = 1.0f;
+	mView(0, 3) = 0.0f;
+	mView(1, 3) = 0.0f;
+	mView(2, 3) = 0.0f;
+	mView(3, 3) = 1.0f;
 }
-
-

@@ -3,32 +3,27 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "textureclass.h"
 
-
 TextureClass::TextureClass()
 {
 	m_texture = 0;
 }
 
-
 TextureClass::TextureClass(const TextureClass& other)
 {
 }
-
 
 TextureClass::~TextureClass()
 {
 }
 
-
 bool TextureClass::Initialize(ID3D11Device* device, WCHAR* filename)
 {
 	HRESULT result;
 
-
 	// Load the texture in.
-	
-	result = CreateDDSTextureFromFile(device, filename, nullptr,&m_texture);
-	if(FAILED(result))
+
+	result = CreateDDSTextureFromFile(device, filename, nullptr, &m_texture);
+	if (FAILED(result))
 	{
 		return false;
 	}
@@ -36,11 +31,10 @@ bool TextureClass::Initialize(ID3D11Device* device, WCHAR* filename)
 	return true;
 }
 
-
 void TextureClass::Shutdown()
 {
 	// Release the texture resource.
-	if(m_texture)
+	if (m_texture)
 	{
 		m_texture->Release();
 		m_texture = 0;
@@ -48,7 +42,6 @@ void TextureClass::Shutdown()
 
 	return;
 }
-
 
 ID3D11ShaderResourceView* TextureClass::GetTexture()
 {

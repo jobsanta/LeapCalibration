@@ -3,39 +3,33 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "terrainclass.h"
 
-
 TerrainClass::TerrainClass()
 {
 	m_vertexBuffer = 0;
 	m_indexBuffer = 0;
 }
 
-
 TerrainClass::TerrainClass(const TerrainClass& other)
 {
 }
-
 
 TerrainClass::~TerrainClass()
 {
 }
 
-
 bool TerrainClass::Initialize(ID3D11Device* device)
 {
 	bool result;
 
-
 	// Load the rendering buffers with the terrain data.
 	result = InitializeBuffers(device);
-	if(!result)
+	if (!result)
 	{
 		return false;
 	}
 
 	return true;
 }
-
 
 void TerrainClass::Shutdown()
 {
@@ -45,7 +39,6 @@ void TerrainClass::Shutdown()
 	return;
 }
 
-
 bool TerrainClass::Render(ID3D11DeviceContext* deviceContext)
 {
 	// Put the vertex and index buffers on the graphics pipeline to prepare them for drawing.
@@ -54,12 +47,10 @@ bool TerrainClass::Render(ID3D11DeviceContext* deviceContext)
 	return true;
 }
 
-
 int TerrainClass::GetIndexCount()
 {
 	return m_indexCount;
 }
-
 
 bool TerrainClass::InitializeBuffers(ID3D11Device* device)
 {
@@ -72,14 +63,13 @@ bool TerrainClass::InitializeBuffers(ID3D11Device* device)
 	XMFLOAT4 color;
 	float positionX, positionZ;
 
-
 	// Set the height and width of the terrain grid.
 	terrainHeight = 5;
 	terrainWidth = 7;
 
 	// Set the color of the terrain grid.
 	color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	
+
 	// Calculate the number of vertices in the terrain.
 	m_vertexCount = (terrainWidth - 1) * (terrainHeight - 1) * 8;
 
@@ -88,25 +78,25 @@ bool TerrainClass::InitializeBuffers(ID3D11Device* device)
 
 	// Create the vertex array.
 	vertices = new VertexType[m_vertexCount];
-	if(!vertices)
+	if (!vertices)
 	{
 		return false;
 	}
 
 	// Create the index array.
 	indices = new unsigned long[m_indexCount];
-	if(!indices)
+	if (!indices)
 	{
 		return false;
 	}
-	
+
 	// Initialize the index into the vertex and index arrays.
 	index = 0;
 
 	// Load the vertex array and index array with data.
-	for(j=0; j<(terrainHeight-1); j++)
+	for (j = 0; j < (terrainHeight - 1); j++)
 	{
-		for(i=0; i<(terrainWidth-1); i++)
+		for (i = 0; i < (terrainWidth - 1); i++)
 		{
 			// Line 1 - Upper left.
 			positionX = (float)i;
@@ -197,7 +187,7 @@ bool TerrainClass::InitializeBuffers(ID3D11Device* device)
 
 	// Now create the vertex buffer.
 	result = device->CreateBuffer(&vertexBufferDesc, &vertexData, &m_vertexBuffer);
-	if(FAILED(result))
+	if (FAILED(result))
 	{
 		return false;
 	}
@@ -217,33 +207,32 @@ bool TerrainClass::InitializeBuffers(ID3D11Device* device)
 
 	// Create the index buffer.
 	result = device->CreateBuffer(&indexBufferDesc, &indexData, &m_indexBuffer);
-	if(FAILED(result))
+	if (FAILED(result))
 	{
 		return false;
 	}
 
 	// Release the arrays now that the buffers have been created and loaded.
-	delete [] vertices;
+	delete[] vertices;
 	vertices = 0;
 
-	delete [] indices;
+	delete[] indices;
 	indices = 0;
 
 	return true;
 }
 
-
 void TerrainClass::ShutdownBuffers()
 {
 	// Release the index buffer.
-	if(m_indexBuffer)
+	if (m_indexBuffer)
 	{
 		m_indexBuffer->Release();
 		m_indexBuffer = 0;
 	}
 
 	// Release the vertex buffer.
-	if(m_vertexBuffer)
+	if (m_vertexBuffer)
 	{
 		m_vertexBuffer->Release();
 		m_vertexBuffer = 0;
@@ -252,12 +241,10 @@ void TerrainClass::ShutdownBuffers()
 	return;
 }
 
-
 void TerrainClass::RenderBuffers(ID3D11DeviceContext* deviceContext)
 {
 	unsigned int stride;
 	unsigned int offset;
-
 
 	// Set vertex buffer stride and offset.
 	stride = sizeof(VertexType);

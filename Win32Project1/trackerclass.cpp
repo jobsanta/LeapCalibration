@@ -6,7 +6,6 @@ static const float sin_deg = 0.469471;
 static const float cos_deg = 0.882947;
 static const float depthOffset = 0.25;
 
-
 TrackerClass::TrackerClass()
 {
 	depthToCamera_points = new CameraSpacePoint[cDepthWidth*cDepthHeight];
@@ -14,20 +13,16 @@ TrackerClass::TrackerClass()
 	depthToColor_points = new ColorSpacePoint[cDepthHeight*cDepthWidth];
 	colorToDepth_points = new DepthSpacePoint[cColorWidth*cColorHeight];
 
-
-
 	previousPoints = Point3f(0, 0, 0);
 
-	aff_ltok = cv::Mat::eye(3, 4,  CV_64F);
+	aff_ltok = cv::Mat::eye(3, 4, CV_64F);
 	aff_ktol = cv::Mat::eye(3, 4, CV_64F);
 	wp = Mat(4, 1, CV_64F);
 	affine_set = false;
-
 }
 
 TrackerClass::~TrackerClass()
 {
-
 }
 
 void TrackerClass::getPointCloudData(float* dest, bool mirror)
@@ -36,13 +31,12 @@ void TrackerClass::getPointCloudData(float* dest, bool mirror)
 
 	float* fdest = (float*)dest;
 	for (int i = 0; i < nDepthHeight*nDepthWidth; i++) {
-
 		if (affine_set)
 			point = applyAffineTransform_KtoL(cameraToWorldSpace(depthToCamera_points[i]));
 		else
 			point = cameraToWorldSpace(depthToCamera_points[i]);
 
-		if (point.z <-10)
+		if (point.z < -10)
 		{
 			*fdest++ = 0;
 			*fdest++ = 0;
@@ -52,16 +46,12 @@ void TrackerClass::getPointCloudData(float* dest, bool mirror)
 		{
 			*fdest++ = point.x;
 			*fdest++ = point.y;
-			if(mirror)
-			*fdest++ = -point.z;
+			if (mirror)
+				*fdest++ = -point.z;
 			else
-			*fdest++ = point.z;
+				*fdest++ = point.z;
 		}
-
-
 	}
-
-
 }
 
 void TrackerClass::getColorPointCloudData(float* dest)
@@ -93,11 +83,9 @@ void TrackerClass::clear()
 	kinectPoints.clear();
 }
 
-
 HRESULT TrackerClass::Process(int depthWidth, int depthHeight, int colorWidth, int colorHeight,
 	USHORT minDistance, USHORT maxDistance, UINT16* depthBuffer, RGBQUAD* colorBuffer, ICoordinateMapper* coodinateMapper)
 {
-
 	nDepthWidth = depthWidth;
 	nDepthHeight = depthHeight;
 	nColorWidth = colorWidth;
@@ -109,18 +97,15 @@ HRESULT TrackerClass::Process(int depthWidth, int depthHeight, int colorWidth, i
 	pDepthBuffer = depthBuffer;
 	pColorBuffer = colorBuffer;
 	m_pCoordinateMapper = coodinateMapper;
-	
-	
-	
+
 	status = coordinateMapping(depthBuffer);
 
 	return status;
 }
 
-
 float TrackerClass::handMeasurement(PxVec3 wristPosition)
 {
-	if (wristPosition == PxVec3(0,0,0))
+	if (wristPosition == PxVec3(0, 0, 0))
 		return -1.0f;
 
 	if (!SUCCEEDED(status))
@@ -130,7 +115,7 @@ float TrackerClass::handMeasurement(PxVec3 wristPosition)
 
 	Point3f wristWorldPos = Point3f(wristPosition.x, wristPosition.y, wristPosition.z);
 	CameraSpacePoint wristCamPos;
-	if(affine_set)
+	if (affine_set)
 		wristCamPos = worldToCameraSpace(applyAffineTransform_LtoK(wristWorldPos));
 	else
 		wristCamPos = worldToCameraSpace(wristWorldPos);
@@ -138,27 +123,24 @@ float TrackerClass::handMeasurement(PxVec3 wristPosition)
 	DepthSpacePoint wristDepthPos;
 	m_pCoordinateMapper->MapCameraPointToDepthSpace(wristCamPos, &wristDepthPos);
 	Mat depthMap(nDepthHeight, nDepthWidth, CV_16UC1, reinterpret_cast<void*>(pDepthBuffer));
-	Mat handMap(nDepthHeight, nDepthWidth, CV_16UC1,cv::Scalar(0));
+	Mat handMap(nDepthHeight, nDepthWidth, CV_16UC1, cv::Scalar(0));
 
-	ushort wristDepth = depthMap.at<ushort>((int)(wristDepthPos.Y+0.5f), (int)(wristDepthPos.X + 0.5f));
-	Point2d topPosition = Point2d(0,0);
+	ushort wristDepth = depthMap.at<ushort>((int)(wristDepthPos.Y + 0.5f), (int)(wristDepthPos.X + 0.5f));
+	Point2d topPosition = Point2d(0, 0);
 	ushort topDepth = 0;
 	if (wristDepthPos.Y - kernelSize < 0 || wristDepthPos.Y + kernelSize > nDepthHeight ||
 		wristDepthPos.X - kernelSize < 0 || wristDepthPos.X + kernelSize > nDepthWidth)
 		return -1.0f;
 
-
-	for (int j = (int)(wristDepthPos.Y+0.5f) - kernelSize ; j < (int)(wristDepthPos.Y+0.5f) + kernelSize; j++)
+	for (int j = (int)(wristDepthPos.Y + 0.5f) - kernelSize; j < (int)(wristDepthPos.Y + 0.5f) + kernelSize; j++)
 	{
 		ushort* p = handMap.ptr<ushort>(j);
 		ushort* q = depthMap.ptr<ushort>(j);
-		for (int i = (int)(wristDepthPos.X+0.5f) - kernelSize; i <  (int)(wristDepthPos.X+0.5f) + kernelSize; i++)
+		for (int i = (int)(wristDepthPos.X + 0.5f) - kernelSize; i < (int)(wristDepthPos.X + 0.5f) + kernelSize; i++)
 		{
 			// convert from camera space - > world space
-		
 
-	
-			if (q[i] < wristDepth+50 && q[i] != 0)
+			if (q[i] < wristDepth + 50 && q[i] != 0)
 			{
 				p[i] = q[i];
 				if (i > topPosition.x)
@@ -171,23 +153,20 @@ float TrackerClass::handMeasurement(PxVec3 wristPosition)
 		}
 	}
 
-	if(topPosition.x >= (int)(wristDepthPos.X+0.5)+kernelSize || abs(topDepth - wristDepth) < 25 || handMap.at<ushort>((int)(wristDepthPos.Y + 0.5), (int)(wristDepthPos.X + 0.5) + kernelSize)>0)
+	if (topPosition.x >= (int)(wristDepthPos.X + 0.5) + kernelSize || abs(topDepth - wristDepth) < 25 || handMap.at<ushort>((int)(wristDepthPos.Y + 0.5), (int)(wristDepthPos.X + 0.5) + kernelSize) > 0)
 		return -1.0f;
 
 	float distance = float(topPosition.x - wristDepthPos.X);
 	float radian = (XM_PI * distance / 7.31427f) / 180;
 
-	float handsize = sqrt( topDepth*topDepth + wristDepth*wristDepth - 2 * topDepth*wristDepth*cos(radian));
-
-
+	float handsize = sqrt(topDepth*topDepth + wristDepth*wristDepth - 2 * topDepth*wristDepth*cos(radian));
 
 	Mat debugImg(nDepthHeight, nDepthWidth, CV_8UC1);
 	handMap.convertTo(debugImg, CV_8UC1, 255.0 / (nMaxDistance - nMinDistance));
 	circle(debugImg, Point(static_cast<int>(wristDepthPos.X), static_cast<int>(wristDepthPos.Y)), 2, Scalar(255));
 	//imshow("Debug", debugImg);
 
-	return handsize-15;
-
+	return handsize - 15;
 }
 
 Point3f* TrackerClass::goggleDetection()
@@ -204,9 +183,8 @@ Point3f* TrackerClass::goggleDetection()
 	cvtColor(color_resize, color_hsv, CV_BGR2HSV);
 
 	inRange(color_hsv, Scalar(0, 140, 140), Scalar(10, 255, 255), img_WristMask);
-	
-	medianBlur(img_WristMask, imgMask, 5);
 
+	medianBlur(img_WristMask, imgMask, 5);
 
 	int dilateSize = 5;
 	Mat element = getStructuringElement(MORPH_RECT,
@@ -223,39 +201,34 @@ Point3f* TrackerClass::goggleDetection()
 	imgMask.copyTo(temp_img);
 
 	findContours(temp_img, contours, hierarchy, CV_RETR_CCOMP,
-	CV_CHAIN_APPROX_SIMPLE);
-
+		CV_CHAIN_APPROX_SIMPLE);
 
 	vector<vector<Point> > contours_poly(contours.size());
 	vector<RotatedRect> boundRect(contours.size());
 	// Find indices of contours whose area is less than `threshold`
-
 
 	if (contours.size() != 1)
 	{
 		*worldPoint = Point3f(0, 0, 0);
 		return worldPoint;
 	}
-		
-	
-		for (size_t i = 0; i < contours.size(); ++i) {
-			Moments mu = moments(contours[i], false);
-			Point2f mc = Point2f(float(factor*mu.m10 / mu.m00), float(factor*mu.m01 / mu.m00));
 
-			if (mc.x > 0 && mc.x < 1980 && mc.y > 0 && mc.y < 1080)
-			{
-				result.push_back(mc);
+	for (size_t i = 0; i < contours.size(); ++i) {
+		Moments mu = moments(contours[i], false);
+		Point2f mc = Point2f(float(factor*mu.m10 / mu.m00), float(factor*mu.m01 / mu.m00));
 
-				approxPolyDP(Mat(contours[i]), contours_poly[i], 3, true);
-				boundRect[i] = minAreaRect(Mat(contours_poly[i]));
-				Point2f rect_points[4]; boundRect[i].points(rect_points);
-				for (int j = 0; j < 4; j++)
-					line(imgMask, rect_points[j], rect_points[(j + 1) % 4], Scalar(128));
-			}
+		if (mc.x > 0 && mc.x < 1980 && mc.y > 0 && mc.y < 1080)
+		{
+			result.push_back(mc);
+
+			approxPolyDP(Mat(contours[i]), contours_poly[i], 3, true);
+			boundRect[i] = minAreaRect(Mat(contours_poly[i]));
+			Point2f rect_points[4]; boundRect[i].points(rect_points);
+			for (int j = 0; j < 4; j++)
+				line(imgMask, rect_points[j], rect_points[(j + 1) % 4], Scalar(128));
 		}
+	}
 
-
-	
 	Point2i rect_points = boundRect[0].center*factor;
 	if (rect_points.y > 0 && rect_points.y < 1080 && rect_points.x >0 && rect_points.x < 1920)
 	{
@@ -274,18 +247,17 @@ Point3f* TrackerClass::goggleDetection()
 		//int depthY = (int)mapDepthY + 0.5f;
 		//if (depthX > 0 && depthX < nDepthWidth && depthY > 0 && depthY < nDepthHeight)
 		//{
-
 		//	*worldPoint = cameraToWorldSpace(depthToCamera_points[(int)(depthY *nDepthWidth + depthX)]);
 		if (worldPoint->x > -3.0 && worldPoint->x < 3 && worldPoint->y > 0.0 && worldPoint->y  < 5 && worldPoint->z > -15 && worldPoint->z < -2)
 		{
 			return smoothPoint(worldPoint);
 		}
 		else
-				return NULL;
+			return NULL;
 		//}
 		//else
 		//	return NULL;
-		
+
 		//if (worldPoint->x > -3.5 &&worldPoint->x < 3.5   &&worldPoint->y > 0 && worldPoint->y <4.0&& worldPoint->z >-10 && worldPoint->z < -4)
 		//	return worldPoint;
 		//else
@@ -295,11 +267,6 @@ Point3f* TrackerClass::goggleDetection()
 	{
 		return NULL;
 	}
-		
-
-
-
-
 }
 
 int TrackerClass::fingerTipDetection(PxVec3 fingertipPosition[5])
@@ -316,7 +283,6 @@ int TrackerClass::fingerTipDetection(PxVec3 fingertipPosition[5])
 	inRange(color_hsv, Scalar(25, 100, 100), Scalar(35, 255, 255), img_WristMask);
 
 	medianBlur(img_WristMask, imgMask, 3);
-
 
 	//int dilateSize = 5;
 	//Mat element = getStructuringElement(MORPH_RECT,
@@ -340,7 +306,7 @@ int TrackerClass::fingerTipDetection(PxVec3 fingertipPosition[5])
 	bool corrupt = false;
 	if (contours.size() == 5)
 	{
-		for (size_t i = 0; i < contours.size(); ++i) 
+		for (size_t i = 0; i < contours.size(); ++i)
 		{
 			Moments mu = moments(contours[i], false);
 			Point2f mc = Point2f(float(factor*mu.m10 / mu.m00), float(factor*mu.m01 / mu.m00));
@@ -355,27 +321,23 @@ int TrackerClass::fingerTipDetection(PxVec3 fingertipPosition[5])
 				for (int j = 0; j < 4; j++)
 					line(imgMask, rect_points[j], rect_points[(j + 1) % 4], Scalar(128));
 
-
 				Point2i cen_point = boundRect[i].center*factor;
-				
+
 				if (cen_point.y > 0 && cen_point.y < 1080 && cen_point.x >0 && cen_point.x < 1920)
 				{
 					int colorX = static_cast<int>(cen_point.x + 0.5f);
 					int colorY = static_cast<int>(cen_point.y + 0.5f);
 					long colorIndex = (long)(colorY*cColorWidth + colorX);
-					cam_point[i] = cameraToWorldSpace( colorToCamera_points[colorIndex]);
-					if (cam_point[i].z >= -2 || cam_point[i].z < -8  || cam_point[i].y < 0.5 ||cam_point[i].y > 5 || cam_point[i].x >=5 || cam_point[i].x <-5)
+					cam_point[i] = cameraToWorldSpace(colorToCamera_points[colorIndex]);
+					if (cam_point[i].z >= -2 || cam_point[i].z < -8 || cam_point[i].y < 0.5 || cam_point[i].y > 5 || cam_point[i].x >= 5 || cam_point[i].x < -5)
 					{
 						corrupt = true;
 						i = contours.size();
 					}
-
-
 				}
-			
 			}
 		}
-		
+
 		if (!corrupt)
 		{
 			int d;
@@ -394,7 +356,6 @@ int TrackerClass::fingerTipDetection(PxVec3 fingertipPosition[5])
 					d--;
 				}
 			}
-
 
 			double distance = 0;
 			if (leapPoints.size() > 0)
@@ -420,10 +381,7 @@ int TrackerClass::fingerTipDetection(PxVec3 fingertipPosition[5])
 				}
 			}
 		}
-	
 	}
-
-
 
 	imshow("Mask", imgMask);
 
@@ -446,11 +404,10 @@ void TrackerClass::estimateAffineTransform()
 				kinectPoints.push_back(Point3f(kx, ky, kz));
 			}
 			fin.close();
-
 		}
 
-		int ret = cv::estimateAffine3D(leapPoints, kinectPoints, aff_ltok, inliers,0.1);
-		ret = cv::estimateAffine3D(kinectPoints, leapPoints, aff_ktol, inliers,0.1);
+		int ret = cv::estimateAffine3D(leapPoints, kinectPoints, aff_ltok, inliers, 0.1);
+		ret = cv::estimateAffine3D(kinectPoints, leapPoints, aff_ktol, inliers, 0.1);
 		//pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in(new pcl::PointCloud<pcl::PointXYZ>);
 		//pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out(new pcl::PointCloud<pcl::PointXYZ>);
 
@@ -478,14 +435,11 @@ void TrackerClass::estimateAffineTransform()
 		{
 			for (int i = 0; i < leapPoints.size(); i++)
 			{
-
-				fout << leapPoints[i].x << " " << leapPoints[i].y <<" " << leapPoints[i].z <<
-					" "<< kinectPoints[i].x << " " << kinectPoints[i].y << " " << kinectPoints[i].z << endl;
+				fout << leapPoints[i].x << " " << leapPoints[i].y << " " << leapPoints[i].z <<
+					" " << kinectPoints[i].x << " " << kinectPoints[i].y << " " << kinectPoints[i].z << endl;
 			}
 			fout.close();
 		}
-		
-	
 
 		//}
 
@@ -515,12 +469,9 @@ void TrackerClass::estimateAffineTransform()
 		}
 	}
 
-
-
 	leapPoints.clear();
 	kinectPoints.clear();
 }
-
 
 HRESULT TrackerClass::coordinateMapping(UINT16* pDepthBuffer)
 {
@@ -538,14 +489,13 @@ HRESULT TrackerClass::coordinateMapping(UINT16* pDepthBuffer)
 
 	HRESULT hr;
 
-
 	hr = m_pCoordinateMapper->MapDepthFrameToCameraSpace(nDepthHeight*nDepthWidth, pDepthBuffer, nDepthHeight*nDepthWidth, depthToCamera_points);
-	if(SUCCEEDED(hr))
+	if (SUCCEEDED(hr))
 		hr = m_pCoordinateMapper->MapDepthFrameToColorSpace(nDepthWidth*nDepthHeight, pDepthBuffer, nDepthHeight*nDepthWidth, depthToColor_points);
 	if (SUCCEEDED(hr))
-	hr = m_pCoordinateMapper->MapColorFrameToDepthSpace(nDepthHeight*nDepthWidth, pDepthBuffer, nColorHeight* nColorWidth, colorToDepth_points);
+		hr = m_pCoordinateMapper->MapColorFrameToDepthSpace(nDepthHeight*nDepthWidth, pDepthBuffer, nColorHeight* nColorWidth, colorToDepth_points);
 	if (SUCCEEDED(hr))
-	hr = m_pCoordinateMapper->MapColorFrameToCameraSpace(nDepthHeight*nDepthWidth, pDepthBuffer, nColorHeight*nColorWidth, colorToCamera_points);
+		hr = m_pCoordinateMapper->MapColorFrameToCameraSpace(nDepthHeight*nDepthWidth, pDepthBuffer, nColorHeight*nColorWidth, colorToCamera_points);
 
 	return hr;
 }
@@ -558,23 +508,19 @@ Point3f TrackerClass::cameraToWorldSpace(CameraSpacePoint camPoint)
 	result.y = cos_deg*camPoint.Y - sin_deg*camPoint.Z + height;
 	result.z = -sin_deg*camPoint.Y - cos_deg*camPoint.Z + depthOffset;
 
-
 	result.z -= 0.1f;
 	return result*10.0;
 }
 
 CameraSpacePoint TrackerClass::worldToCameraSpace(Point3f worldPoint)
 {
-
-
 	CameraSpacePoint camPoint;
-	worldPoint = worldPoint/10.0f;
+	worldPoint = worldPoint / 10.0f;
 	worldPoint.z += 0.1f;
 
-
-	camPoint.X = worldPoint.x; 
-	camPoint.Y = cos_deg*(worldPoint.y - height) - sin_deg*(worldPoint.z-depthOffset);
-	 camPoint.Z = -sin_deg*(worldPoint.y - height) - cos_deg*(worldPoint.z-depthOffset);
+	camPoint.X = worldPoint.x;
+	camPoint.Y = cos_deg*(worldPoint.y - height) - sin_deg*(worldPoint.z - depthOffset);
+	camPoint.Z = -sin_deg*(worldPoint.y - height) - cos_deg*(worldPoint.z - depthOffset);
 	return camPoint;
 }
 
@@ -591,10 +537,9 @@ Point3f TrackerClass::applyAffineTransform_KtoL(Point3f worldPoint)
 	//Mat kp = aff_ktol*wp;
 
 	Point3f result;
-	result.x = affktol[0][0]*worldPoint.x+ affktol[0][1] * worldPoint.y+ affktol[0][2] * worldPoint.z+ affktol[0][3];
+	result.x = affktol[0][0] * worldPoint.x + affktol[0][1] * worldPoint.y + affktol[0][2] * worldPoint.z + affktol[0][3];
 	result.y = affktol[1][0] * worldPoint.x + affktol[1][1] * worldPoint.y + affktol[1][2] * worldPoint.z + affktol[1][3];
 	result.z = affktol[2][0] * worldPoint.x + affktol[2][1] * worldPoint.y + affktol[2][2] * worldPoint.z + affktol[2][3];
-
 
 	return result;
 }
@@ -623,13 +568,11 @@ Point3f* TrackerClass::smoothPoint(Point3f* currentPoint)
 		previousPoints = *currentPoint;
 		return currentPoint;
 	}
-	
+
 	Point3f diff = *currentPoint - previousPoints;
 	*currentPoint = previousPoints + diff*0.1f;
 	previousPoints = *currentPoint;
 	return currentPoint;
-
-
 }
 
 void TrackerClass::handVisualize(vector<handActor*> hand)
@@ -640,20 +583,20 @@ void TrackerClass::handVisualize(vector<handActor*> hand)
 	Mat depthMap(nDepthHeight, nDepthWidth, CV_16UC1, reinterpret_cast<void*>(pDepthBuffer));
 	Mat depthImg(nDepthHeight, nDepthWidth, CV_8UC1);
 	depthMap.convertTo(depthImg, CV_8UC1, 255.0 / (nMaxDistance - nMinDistance));
-	
+
 	for (int i = 0; i < hand.size(); i++)
 	{
 		if (hand[i]->leapJointPosition != nullptr)
 			drawFinger(hand[i]->leapJointPosition, depthImg);
 	}
 
-//	imshow("Debug Depth", depthImg);
+	//	imshow("Debug Depth", depthImg);
 }
 
 void TrackerClass::drawFinger(PxVec3* leapJointPosition, Mat depthImg)
 {
 	CameraSpacePoint kinectJointPosition[20];
-	for(int i = 0; i <5 ;i++)
+	for (int i = 0; i < 5; i++)
 	{
 		for (int j = 0; j < 4; j++)
 		{
@@ -668,7 +611,6 @@ void TrackerClass::drawFinger(PxVec3* leapJointPosition, Mat depthImg)
 					Point3f(leapJointPosition[i * 4 + j].x / 100.0f, leapJointPosition[i * 4 + j].y / 100.0f - 1.0f, -leapJointPosition[i * 4 + j].z / 100.0f - 2.6f));
 				kinectJointPosition[i * 4 + j] = worldToCameraSpace(cam);
 			}
-
 		}
 	}
 
@@ -676,14 +618,13 @@ void TrackerClass::drawFinger(PxVec3* leapJointPosition, Mat depthImg)
 
 	m_pCoordinateMapper->MapCameraPointsToDepthSpace(20, kinectJointPosition, 20, depthJointPosition);
 
-
 	for (int i = 0; i < 5; i++)
 	{
 		for (int j = 0; j < 4; j++)
 		{
-			if(depthJointPosition[i * 4 + j].X >= 0 && depthJointPosition[i * 4 + j].X < nDepthWidth &&
-				depthJointPosition[i * 4 + j].Y >= 0 && depthJointPosition[i *4 + j].Y < nDepthHeight)
-			circle(depthImg, Point((int)depthJointPosition[i*4+j].X, (int)depthJointPosition[i * 4 + j].Y), 2, Scalar(128+j*32));
+			if (depthJointPosition[i * 4 + j].X >= 0 && depthJointPosition[i * 4 + j].X < nDepthWidth &&
+				depthJointPosition[i * 4 + j].Y >= 0 && depthJointPosition[i * 4 + j].Y < nDepthHeight)
+				circle(depthImg, Point((int)depthJointPosition[i * 4 + j].X, (int)depthJointPosition[i * 4 + j].Y), 2, Scalar(128 + j * 32));
 		}
 	}
 }
@@ -692,7 +633,7 @@ void TrackerClass::setAffineLtoK(Mat transform)
 {
 	aff_ltok = transform;
 	affine_set = true;
-//	affine_set = true;
+	//	affine_set = true;
 }
 
 void TrackerClass::setAffineKtoL(Mat transform)
@@ -705,7 +646,6 @@ void TrackerClass::setAffineKtoL(Mat transform)
 			affktol[i][j] = aff_ktol.at<double>(i, j);
 		}
 	}
-
 
 	affine_set = true;
 }

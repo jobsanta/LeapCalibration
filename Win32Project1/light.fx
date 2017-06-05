@@ -2,7 +2,6 @@
 // Filename: light.vs
 ////////////////////////////////////////////////////////////////////////////////
 
-
 /////////////
 // GLOBALS //
 /////////////
@@ -13,7 +12,6 @@ Texture2D shadowTexture  : register(t1);
 SamplerState SampleTypeClamp : register(s0);
 SamplerState SampleTypeWrap  : register(s1);
 
-
 cbuffer MatrixBuffer
 {
 	matrix worldMatrix;
@@ -22,7 +20,6 @@ cbuffer MatrixBuffer
 	float3 camera;
 	float zoffset;
 };
-
 
 cbuffer LightBuffer
 {
@@ -55,7 +52,6 @@ struct PixelInputType
 	float3 lightPos:TEXCOORD2;
 };
 
-
 ////////////////////////////////////////////////////////////////////////////////
 // Vertex Shader
 ////////////////////////////////////////////////////////////////////////////////
@@ -67,8 +63,6 @@ PixelInputType LightVertexShader(VertexInputType input)
 
 	// Change the position vector to be 4 units for proper matrix calculations.
 	input.position.w = 1.0f;
-
-
 
 	// Calculate the position of the vertex against the world, view, and projection matrices.
 	output.position = mul(input.position, worldMatrix);

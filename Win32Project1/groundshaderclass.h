@@ -1,10 +1,8 @@
-
 ////////////////////////////////////////////////////////////////////////////////
 // Filename: colorshaderclass.h
 ////////////////////////////////////////////////////////////////////////////////
 #ifndef _GROUNDSHADERCLASS_H_
 #define _GROUNDSHADERCLASS_H_
-
 
 //////////////
 // INCLUDES //
@@ -30,7 +28,6 @@ private:
 		XMMATRIX projection;
 	};
 
-
 	struct LightBufferType
 	{
 		XMFLOAT4 ambientColor;
@@ -50,7 +47,7 @@ public:
 
 	bool Initialize(ID3D11Device*, HWND);
 	void Shutdown();
-	bool Render(ID3D11DeviceContext*, int,int,int, XMMATRIX, XMMATRIX, XMMATRIX ,XMMATRIX, XMMATRIX, ID3D11ShaderResourceView*, XMFLOAT3, XMFLOAT4, XMFLOAT4);
+	bool Render(ID3D11DeviceContext*, int, int, int, XMMATRIX, XMMATRIX, XMMATRIX, XMMATRIX, XMMATRIX, ID3D11ShaderResourceView*, XMFLOAT3, XMFLOAT4, XMFLOAT4);
 
 private:
 	bool InitializeShader(ID3D11Device*, HWND, WCHAR*, WCHAR*);
@@ -58,7 +55,7 @@ private:
 	void OutputShaderErrorMessage(ID3D10Blob*, HWND, WCHAR*);
 
 	bool SetShaderParameters(ID3D11DeviceContext*, XMMATRIX, XMMATRIX, XMMATRIX, XMMATRIX, XMMATRIX, ID3D11ShaderResourceView*, XMFLOAT3, XMFLOAT4, XMFLOAT4);
-	void RenderShader(ID3D11DeviceContext*, int,int,int);
+	void RenderShader(ID3D11DeviceContext*, int, int, int);
 
 private:
 	ID3D11VertexShader* m_vertexShader;

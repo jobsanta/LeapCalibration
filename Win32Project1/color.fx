@@ -23,8 +23,6 @@ cbuffer cbPerFrame : register(b0)
 	float range;
 	float3 att;
 	float padding;
-
-
 };
 
 cbuffer cbPerObject : register(b1)
@@ -36,8 +34,6 @@ cbuffer cbPerObject : register(b1)
 	float3 camera;
 	float zoffset;
 };
-
-
 
 //////////////
 // TYPEDEFS //
@@ -54,7 +50,6 @@ struct PixelInputType
 	float3 posW: POSITION;
 	float3 normal : NORMAL;
 	float4 viewPosition  : TEXCOORD1;
-
 };
 
 //---------------------------------------------------------------------------------------
@@ -86,7 +81,7 @@ void ComputePointLight(Material mat, float3 LPosition, float lightRange, float4 
 	// Ambient term.
 	ambient = mat.Ambient * lightAmbient;
 
-	// Add diffuse and specular term, provided the surface is in 
+	// Add diffuse and specular term, provided the surface is in
 	// the line of site of the light.
 
 	float diffuseFactor = dot(lightVec, normal);
@@ -126,7 +121,7 @@ void ComputeDirectionalLight(Material mat, float3 Direction, float4 lightAmbient
 	// Add ambient term.
 	ambient = mat.Ambient * lightAmbient;
 
-	// Add diffuse and specular term, provided the surface is in 
+	// Add diffuse and specular term, provided the surface is in
 	// the line of site of the light.
 
 	float diffuseFactor = dot(lightVec, normal);
@@ -143,8 +138,6 @@ void ComputeDirectionalLight(Material mat, float3 Direction, float4 lightAmbient
 	}
 }
 
-
-
 ////////////////////////////////////////////////////////////////////////////////
 // Vertex Shader
 ////////////////////////////////////////////////////////////////////////////////
@@ -157,7 +150,7 @@ PixelInputType ColorVertexShader(VertexInputType input)
 	// Calculate the position of the vertex against the world, view, and projection matrices.
 	output.position = mul(input.position, worldMatrix);
 	output.posW = output.position.xyz;
-	
+
 	output.position = mul(output.position, viewMatrix);
 	output.position = mul(output.position, projectionMatrix);
 
@@ -176,7 +169,6 @@ PixelInputType ColorVertexShader(VertexInputType input)
 
 	return output;
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Pixel Shader
@@ -223,8 +215,7 @@ projectTexCoord.y = -input.viewPosition.y / input.viewPosition.w / 2.0f + 0.5f;
 shadowValue = shadowTexture.Sample(SampleTypeClamp, projectTexCoord).r;
 
 // Combine the shadows with the final color.
-float4 litColor = (ambient+diffuse+spec)*shadowValue;
+float4 litColor = (ambient + diffuse + spec)*shadowValue;
 litColor.a = gMat.Diffuse.a;
 return litColor;
 }
-

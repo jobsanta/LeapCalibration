@@ -1,4 +1,3 @@
-
 /////////////
 // GLOBALS //
 /////////////
@@ -12,7 +11,6 @@ cbuffer MatrixBuffer
 	matrix projectionMatrix;
 };
 
-
 //////////////
 // TYPEDEFS //
 //////////////
@@ -21,7 +19,6 @@ struct VertexInputType
 	float4 position : POSITION;
 	float2 tex : TEXCOORD0;
 };
-
 
 struct PixelInputType
 {
@@ -35,7 +32,6 @@ struct PixelInputType
 PixelInputType TextureVertexShader(VertexInputType input)
 {
 	PixelInputType output;
-
 
 	// Change the position vector to be 4 units for proper matrix calculations.
 	input.position.w = 1.0f;
@@ -51,14 +47,12 @@ PixelInputType TextureVertexShader(VertexInputType input)
 	return output;
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
 // Pixel Shader
 ////////////////////////////////////////////////////////////////////////////////
 float4 TexturePixelShader(PixelInputType input) : SV_TARGET
 {
 	float4 textureColor;
-
 
 // Sample the pixel color from the texture using the sampler at this texture coordinate location.
 textureColor = shaderTexture.Sample(SampleType, input.tex);

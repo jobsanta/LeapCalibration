@@ -72,7 +72,7 @@ GS_INPUT VS()
 
 //--------------------------------------------------------------------------------------
 // Geometry Shader
-// 
+//
 // Takes in a single vertex point.  Expands it into the 4 vertices of a quad.
 // Depth is sampled from a texture passed in of the Kinect's depth output.
 // Color is sampled from a texture passed in of the Kinect's color output mapped to depth space.
@@ -82,19 +82,16 @@ void GS(point GS_INPUT particles[1], uint primID : SV_PrimitiveID, inout Triangl
 {
 	PS_INPUT output;
 
-
-	// texture load location for the pixel we're on 
+	// texture load location for the pixel we're on
 	int3 baseLookupCoords = int3(primID % DepthWidth, primID / DepthWidth, 0);
 
 	float3 pos = txDepth.Load(baseLookupCoords);
-
 
 	// set the base world position here so we don't have to do it per vertex
 	// convert x and y lookup coords to world space meters
 	float4 WorldPos;
 	WorldPos.xyz = pos;
 	WorldPos.w = 1.0;
-
 
 	// convert to camera space
 	float4 ViewPos = mul(WorldPos, View);
@@ -111,7 +108,7 @@ void GS(point GS_INPUT particles[1], uint primID : SV_PrimitiveID, inout Triangl
 	for (uint c = 0; c < 4; ++c)
 	{
 		// expand the quad in camera space so that it's always the same size irrespective of camera angle
-		float4 ViewPosExpanded = ViewPos + quadOffsets[c] *quadOffsetScalingFactorInViewspace;
+		float4 ViewPosExpanded = ViewPos + quadOffsets[c] * quadOffsetScalingFactorInViewspace;
 
 		// then project it
 		output.Pos = mul(ViewPosExpanded, Projection);

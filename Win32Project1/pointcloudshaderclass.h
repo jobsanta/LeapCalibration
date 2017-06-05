@@ -1,10 +1,8 @@
-
 ////////////////////////////////////////////////////////////////////////////////
 // Filename: colorshaderclass.h
 ////////////////////////////////////////////////////////////////////////////////
 #ifndef _POINTCLOUDSHADERCLASS_H_
 #define _POINTCLOUDSHADERCLASS_H_
-
 
 //////////////
 // INCLUDES //
@@ -31,7 +29,6 @@ private:
 		XMMATRIX Projection;
 		XMFLOAT4 XYScale;
 		XMFLOAT3 camera;
-
 	};
 
 public:
@@ -39,17 +36,17 @@ public:
 	PointCloudShaderClass(const PointCloudShaderClass&);
 	~PointCloudShaderClass();
 
-	bool Initialize(ID3D11Device*, HWND,int,int);
+	bool Initialize(ID3D11Device*, HWND, int, int);
 	void Shutdown();
-	bool Render(ID3D11DeviceContext*, XMMATRIX, XMMATRIX, XMMATRIX,XMFLOAT3);
+	bool Render(ID3D11DeviceContext*, XMMATRIX, XMMATRIX, XMMATRIX, XMFLOAT3);
 	bool UpdateSubResource(ID3D11DeviceContext*, FLOAT*, FLOAT*);
 
 private:
-	bool InitializeShader(ID3D11Device*, HWND, WCHAR*, WCHAR*,int,int);
+	bool InitializeShader(ID3D11Device*, HWND, WCHAR*, WCHAR*, int, int);
 	void ShutdownShader();
 	void OutputShaderErrorMessage(ID3D10Blob*, HWND, WCHAR*);
 
-	bool SetShaderParameters(ID3D11DeviceContext*, XMMATRIX, XMMATRIX, XMMATRIX,XMFLOAT3);
+	bool SetShaderParameters(ID3D11DeviceContext*, XMMATRIX, XMMATRIX, XMMATRIX, XMFLOAT3);
 	void RenderShader(ID3D11DeviceContext*);
 
 private:
@@ -63,7 +60,6 @@ private:
 
 	ID3D11Buffer*                       m_pVertexBuffer;
 	ID3D11Buffer*                       m_pCBChangesEveryFrame;
-
 
 	ID3D11Texture2D*                    m_pDepthTexture2D;
 	ID3D11ShaderResourceView*           m_pDepthTextureRV;

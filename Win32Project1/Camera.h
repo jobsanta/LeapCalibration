@@ -1,9 +1,9 @@
 //***************************************************************************************
 // Camera.h by Frank Luna (C) 2011 All Rights Reserved.
-//   
+//
 // Simple first person style camera class that lets the viewer explore the 3D scene.
 //   -It keeps track of the camera coordinate system relative to the world space
-//    so that the view matrix can be constructed.  
+//    so that the view matrix can be constructed.
 //   -It keeps track of the viewing frustum of the camera so that the projection
 //    matrix can be obtained.
 //***************************************************************************************
@@ -25,7 +25,7 @@ public:
 	XMFLOAT3 GetPosition()const;
 	void SetPosition(float x, float y, float z);
 	void SetPosition(const XMFLOAT3& v);
-	
+
 	// Get camera basis vectors.
 	XMVECTOR GetRightXM()const;
 	XMFLOAT3 GetRight()const;
@@ -46,7 +46,7 @@ public:
 	float GetNearWindowHeight()const;
 	float GetFarWindowWidth()const;
 	float GetFarWindowHeight()const;
-	
+
 	// Set frustum.
 	void SetLens(float fovY, float aspect, float zn, float zf);
 

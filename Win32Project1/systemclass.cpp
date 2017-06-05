@@ -13,7 +13,6 @@ SystemClass::SystemClass(const SystemClass& other)
 {
 }
 
-
 SystemClass::~SystemClass()
 {
 }
@@ -22,7 +21,6 @@ bool SystemClass::Initialize()
 {
 	int screenWidth, screenHeight;
 	bool result;
-
 
 	// Initialize the width and height of the screen to zero before sending the variables into the function.
 	screenWidth = 0;
@@ -46,7 +44,6 @@ bool SystemClass::Initialize()
 		return false;
 	}
 
-
 	// Create the graphics object.  This object will handle rendering all the graphics for this application.
 	m_Graphics = new GraphicsClass;
 	if (!m_Graphics)
@@ -60,7 +57,6 @@ bool SystemClass::Initialize()
 	{
 		return false;
 	}
-
 
 	return true;
 }
@@ -94,7 +90,6 @@ void SystemClass::Run()
 	MSG msg;
 	bool done, result;
 
-
 	// Initialize the message structure.
 	ZeroMemory(&msg, sizeof(MSG));
 
@@ -123,7 +118,6 @@ void SystemClass::Run()
 				done = true;
 			}
 		}
-
 	}
 
 	return;
@@ -135,7 +129,7 @@ bool SystemClass::Frame()
 	m_Input->Frame();
 
 	// Check if the user pressed escape and wants to exit the application.
-	if (m_Input->IsEscapePressed()==true)
+	if (m_Input->IsEscapePressed() == true)
 	{
 		return false;
 	}
@@ -146,7 +140,7 @@ bool SystemClass::Frame()
 	}
 	if (m_Input->IsQPressed() == true)
 	{
-	//	m_Graphics->CalculateCalibration();
+		//	m_Graphics->CalculateCalibration();
 		m_Graphics->StopCalibrate(true);
 	}
 
@@ -154,7 +148,6 @@ bool SystemClass::Frame()
 	{
 		m_Graphics->toggleGOGO();
 	}
-
 
 	if (m_Input->IsOnePressed() == true)
 	{
@@ -199,7 +192,6 @@ bool SystemClass::Frame()
 		m_Graphics->ChangeMirrorHand();
 	}
 
-
 	if (m_Input->IsDownPressed() == true)
 	{
 		m_Graphics->ChangeZvalue(-0.025);
@@ -221,13 +213,10 @@ bool SystemClass::Frame()
 	{
 		m_Graphics->ChangeSize(-0.05);
 	}
-	if(m_Input->IsPageUpPressed() == true)
+	if (m_Input->IsPageUpPressed() == true)
 	{
 		m_Graphics->ChangeSize(+0.05);
-	 }
-
-
-
+	}
 
 	// Do the frame processing for the graphics object.
 	result = m_Graphics->Frame();
@@ -250,8 +239,7 @@ void SystemClass::InitializeWindows(int& screenWidth, int& screenHeight)
 	DEVMODE dmScreenSettings;
 	int posX, posY;
 
-
-	// Get an external pointer to this object.	
+	// Get an external pointer to this object.
 	ApplicationHandle = this;
 
 	// Get the instance of this application.

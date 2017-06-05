@@ -4,7 +4,6 @@
 #ifndef _MODELCLASS_H_
 #define _MODELCLASS_H_
 
-
 //////////////
 // INCLUDES //
 //////////////
@@ -16,12 +15,9 @@
 using namespace std;
 using namespace DirectX;
 
-
 ///////////////////////
 // MY CLASS INCLUDES //
 ///////////////////////
-
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class name: ModelClass
@@ -32,7 +28,7 @@ private:
 	struct VertexType
 	{
 		XMFLOAT3 position;
-	    XMFLOAT2 texture;
+		XMFLOAT2 texture;
 		XMFLOAT3 normal;
 	};
 

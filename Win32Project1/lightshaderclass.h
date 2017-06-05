@@ -4,7 +4,6 @@
 #ifndef _LIGHTSHADERCLASS_H_
 #define _LIGHTSHADERCLASS_H_
 
-
 //////////////
 // INCLUDES //
 //////////////
@@ -14,7 +13,6 @@
 #include <fstream>
 using namespace std;
 using namespace DirectX;
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class name: LightShaderClass
@@ -54,7 +52,7 @@ private:
 	bool InitializeShader(ID3D11Device*, HWND, WCHAR*, WCHAR*);
 	void ShutdownShader();
 	void OutputShaderErrorMessage(ID3DBlob*, HWND, WCHAR*);
-	bool SetShaderParameters(ID3D11DeviceContext* deviceContext, XMMATRIX, XMMATRIX, XMMATRIX, ID3D11ShaderResourceView*,ID3D11ShaderResourceView*, XMFLOAT3, XMFLOAT4, XMFLOAT4, XMFLOAT3,float);
+	bool SetShaderParameters(ID3D11DeviceContext* deviceContext, XMMATRIX, XMMATRIX, XMMATRIX, ID3D11ShaderResourceView*, ID3D11ShaderResourceView*, XMFLOAT3, XMFLOAT4, XMFLOAT4, XMFLOAT3, float);
 	void RenderShader(ID3D11DeviceContext*, int);
 
 private:

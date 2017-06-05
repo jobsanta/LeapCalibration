@@ -11,10 +11,9 @@ struct FilterGroup
 		eWall = (1 << 1),
 		eFinger = (1 << 4),
 		eBox = (1 << 2),
-		eTarget = ( 1 << 3),
+		eTarget = (1 << 3),
 	};
 };
-
 
 void LeapClass::setupFiltering(PxRigidActor* actor, PxU32 filterGroup, PxU32 filterMask)
 {
@@ -39,26 +38,22 @@ void LeapClass::connect()
 
 	globalHandMode = HandMode::Normal;
 	while (!controller.isConnected());
-	
 }
 
-bool LeapClass::captureFingerTip( float * x, float *y , float*z)
+bool LeapClass::captureFingerTip(float * x, float *y, float*z)
 {
 	while (!controller.isConnected());
 	Frame frame = controller.frame();
 	if (frame.id() == lastFrameID_cap)
 	{
 		return false;
-
 	}
 
 	HandList hands = frame.hands();
 	if (hands.isEmpty())
-	{		
+	{
 		lastFrameID_cap = frame.id();
 		return false;
-
-
 	}
 	else if (!hands.isEmpty())
 	{
@@ -74,7 +69,6 @@ bool LeapClass::captureFingerTip( float * x, float *y , float*z)
 	return true;
 }
 
-
 bool LeapClass::capturePalm(float*z)
 {
 	while (!controller.isConnected());
@@ -82,7 +76,6 @@ bool LeapClass::capturePalm(float*z)
 	if (frame.id() == lastFrameID_cap)
 	{
 		return false;
-
 	}
 
 	HandList hands = frame.hands();
@@ -90,13 +83,11 @@ bool LeapClass::capturePalm(float*z)
 	{
 		lastFrameID_cap = frame.id();
 		return false;
-
-
 	}
 	else if (!hands.isEmpty())
 	{
 		Hand hand = hands[0];
-		
+
 		*z = -hand.palmPosition().z / 100 - 1.5;
 	}
 
@@ -376,8 +367,15 @@ void LeapClass::processFrame(float headPosition_x, float headPosition_y, float h
 	//}
 #pragma endregion
 
-		std::vector<int> tobeDelete;
-		for (int i = 0; i < mHandList.size(); i++)
+	std::vector<int> tobeDelete;
+	for (int i = 0; i < mHandList.size(); i++)
+	{		
+		if (mHandList[i]->toBeDelete)
+		{
+			deleteHand(mHandList[i]);
+			tobeDelete.push_back(i);
+		}
+		else
 		{
 			if (frame.hand(mHandList[i]->id).isValid() && frame.hand(mHandList[i]->id).palmPosition().y > 10.0f)
 			{
@@ -388,40 +386,37 @@ void LeapClass::processFrame(float headPosition_x, float headPosition_y, float h
 				deleteHand(mHandList[i]);
 				tobeDelete.push_back(i);
 			}
-
-			if (mHandList[i]->toBeDelete)
-			{
-				deleteHand(mHandList[i]);
-				tobeDelete.push_back(i);
-			}
 		}
-		int size = tobeDelete.size();
-		for (int i = 0; i < size; i++)
+
+
+
+	}
+	int size = tobeDelete.size();
+	for (int i = 0; i < size; i++)
+	{
+		mHandList.erase(mHandList.begin() + (int)tobeDelete.back());
+		tobeDelete.pop_back();
+	}
+	tobeDelete.clear();
+
+	for (int i = 0; i < hands.count(); i++)
+	{
+		bool tracked = false;
+		for (int j = 0; j < mHandList.size() && tracked == false; j++)
 		{
-			mHandList.erase(mHandList.begin() + (int)tobeDelete.back());
-			tobeDelete.pop_back();
+			if (hands[i].id() == mHandList[j]->id)
+			{
+				tracked = true;
+			}
 		}
-		tobeDelete.clear();
-
-		for (int i = 0; i < hands.count(); i++)
+		if (tracked == false)
 		{
-			bool tracked = false;
-			for (int j = 0; j < mHandList.size() && tracked == false; j++)
+			if (hands[i].isValid() && hands[i].palmPosition().y > 10.0f)
 			{
-				if (hands[i].id() == mHandList[j]->id)
-				{
-					tracked = true;
-				}
-			}
-			if (tracked == false)
-			{
-				if (hands[i].isValid() && hands[i].palmPosition().y > 10.0f)
-				{
-					createHands(hands[i]);
-				}
+				createHands(hands[i]);
 			}
 		}
-
+	}
 
 	lastFrameID = frame.id();
 }
@@ -466,7 +461,6 @@ PxRigidDynamic* LeapClass::CreateBox(PxVec3 dimension, PxVec3 pose, PxQuat quat)
 	gScene->addActor(*actor);
 
 	return actor;
-
 }
 
 void LeapClass::InitPhysx(PxPhysics* sdk, PxScene* scene)
@@ -495,12 +489,11 @@ PxVec3 LeapClass::leapToWorld(Leap::Vector bone_center, HandMode::Enum handmode)
 	PxVec3 converted;
 	converted.x = bone_center.x / 100.f;
 	converted.y = bone_center.y / 100.f - 2.7;
-	if(handmode == HandMode::Normal)
-	converted.z = -bone_center.z / 100.f - 2.6f;
+	if (handmode == HandMode::Normal)
+		converted.z = -bone_center.z / 100.f - 2.6f;
 	else if (handmode == HandMode::Mirror)
 		converted.z = bone_center.z / 100.f + 2.6f;
 	float normalized_y = y_head - 1.7;
-
 
 	if (handmode == HandMode::Gogo)
 	{
@@ -519,14 +512,11 @@ PxVec3 LeapClass::leapToWorld(Leap::Vector bone_center, HandMode::Enum handmode)
 		converted = (r.getNormalized()*R_v + head);
 	}
 
+	converted.x = (x_head - converted.x)*z_head / (z_head - converted.z);
+	converted.y = (normalized_y - converted.y)*z_head / (z_head - converted.z);
 
-
-
-	converted.x = (x_head-converted.x)*z_head/ (z_head - converted.z);
-	converted.y = (normalized_y -converted.y)*z_head / (z_head - converted.z);
-
-	float sx = -(converted.x - x_head)/ 3.0f;
-	float sy  = -(converted.y- normalized_y) /1.7f;
+	float sx = -(converted.x - x_head) / 3.0f;
+	float sy = -(converted.y - normalized_y) / 1.7f;
 
 	float xScale = projectionMatrix._11;
 	float yScale = projectionMatrix._22;
@@ -552,8 +542,7 @@ PxVec3 LeapClass::leapToWorld(Leap::Vector bone_center, HandMode::Enum handmode)
 
 	float xp, yp, zp = converted.z + z_offset;
 
-
-	MatrixXf a(2,2);
+	MatrixXf a(2, 2);
 	VectorXf b(2);
 
 	if (!CORRECTPERS)
@@ -568,10 +557,10 @@ PxVec3 LeapClass::leapToWorld(Leap::Vector bone_center, HandMode::Enum handmode)
 	}
 	else
 	{
-		a(0, 0) = -xScale*xx -rl *zx+sx*zx;
-		a(1, 0) = -yScale*yx +sy*zx-tb*zx;
-		a(0, 1) = -xScale*xy-rl*zy+sx*zy;
-		a(1, 1) = -yScale*yy+sy*zy-tb*zy;
+		a(0, 0) = -xScale*xx - rl *zx + sx*zx;
+		a(1, 0) = -yScale*yx + sy*zx - tb*zx;
+		a(0, 1) = -xScale*xy - rl*zy + sx*zy;
+		a(1, 1) = -yScale*yy + sy*zy - tb*zy;
 
 		b(0) = -dz*rl + dz*sx - dx*xScale + xScale*xz*zp + rl*zp*zz - sx*zp*zz;
 		b(1) = dz*sy - dz*tb - dy*yScale + yScale*yz*zp - sy*zp*zz + tb*zp*zz;
@@ -584,12 +573,6 @@ PxVec3 LeapClass::leapToWorld(Leap::Vector bone_center, HandMode::Enum handmode)
 	converted.y = c(1);
 	converted.z = zp;
 
-
-
-
-
-
-
 	//converted.x = xs*(converted.z+z_offset + 8.0f) / x_scale;
 	//converted.y = (ys*(converted.z+ z_offset + 8.0f) + y_scale*1.5) / y_scale;
 	//converted.z = converted.z + z_offset;
@@ -599,13 +582,11 @@ PxVec3 LeapClass::leapToWorld(Leap::Vector bone_center, HandMode::Enum handmode)
 	//PxVec4 buffer = projectionMatrix.transform(converted);
 	//PxVec4 result = viewMatrix.transform(buffer);
 
-
 	//PxVec3 result;
 	//result = ltoworldtransform.transform(converted);
 	//
 
 	return converted;//PxVec3(result.x/result.w,result.y/result.w,result.z/result.w);
-
 }
 
 void LeapClass::setProjectionMatrix(PxMat44 mat)
@@ -623,13 +604,12 @@ void LeapClass::setMatrix(PxMat44 mat)
 	ltoworldtransform = mat;
 }
 
-
-void LeapClass::createHand(Hand hand, bool goinUp, bool isInTransit, float handLength, HandMode::Enum handMode)
+void LeapClass::createHand(Hand hand, bool goinUp, bool isInTransit, float handLength, HandMode::Enum handMode, PxRigidDynamic* grab)
 {
 	PxU32 nbActors = 45;
 
-	float mass[4] = {0.1,0.1,0.1,0.1 };
-	PxVec3 I_tensor = PxVec3(0.05,0.05,0.05);
+	float mass[4] = { 0.1,0.1,0.1,0.1 };
+	PxVec3 I_tensor = PxVec3(0.05, 0.05, 0.05);
 	bool selfCollision = false;
 	handActor* newHand = new handActor();
 
@@ -645,11 +625,12 @@ void LeapClass::createHand(Hand hand, bool goinUp, bool isInTransit, float handL
 	newHand->alphaValue = 1.0f;
 	newHand->toBeDelete = false;
 	newHand->goingUp = goinUp;
-
+	newHand->grabActor = grab;
+	newHand->pinchStrength = new float[1];
 
 	Leap::Matrix handTransform = hand.basis();
 	handTransform.origin = hand.palmPosition();
-	newHand->previousTime = (double)hand.frame().timestamp()/1000000.0;
+	newHand->previousTime = (double)hand.frame().timestamp() / 1000000.0;
 	newHand->startTransitTime = (double)hand.frame().timestamp() / 1000000.0;
 
 	for (int i = 0; i < 5; i++)
@@ -658,7 +639,6 @@ void LeapClass::createHand(Hand hand, bool goinUp, bool isInTransit, float handL
 			newHand->previousSpringHandAngle[i][j] = PxHalfPi;
 			newHand->previousHandAngle[i][j] = PxHalfPi;
 		}
-
 
 	if (hand.isLeft())
 	{
@@ -669,9 +649,9 @@ void LeapClass::createHand(Hand hand, bool goinUp, bool isInTransit, float handL
 
 	PxVec3 col1, col2, col3;
 	PxMat33 flipmat;
-	if(handMode == HandMode::Normal || handMode == HandMode::Gogo)
+	if (handMode == HandMode::Normal || handMode == HandMode::Gogo)
 		flipmat = PxMat33({ 1, 0, 0 }, { 0, 1, 0 }, { 0, 0, -1 });
-	else if(handMode == HandMode::Mirror)
+	else if (handMode == HandMode::Mirror)
 		flipmat = PxMat33({ 1, 0, 0 }, { 0, 1, 0 }, { 0, 0, 1 });
 
 	if (hand.isLeft())
@@ -682,17 +662,15 @@ void LeapClass::createHand(Hand hand, bool goinUp, bool isInTransit, float handL
 	}
 	else
 	{
-
 		col1 = PxVec3(hand.basis().xBasis.x, hand.basis().xBasis.y, hand.basis().xBasis.z);
 		col2 = PxVec3(hand.basis().yBasis.x, hand.basis().yBasis.y, hand.basis().yBasis.z);
 		col3 = PxVec3(hand.basis().zBasis.x, hand.basis().zBasis.y, hand.basis().zBasis.z);
 	}
 
-
 	PxQuat quat = PxQuat(flipmat*PxMat33(col1, col2, col3)*flipmat);
 
 	PxMaterial* material = gPhysicsSDK->createMaterial(1.0f, 1.0f, 0.1f);
-	newHand->palm = PxCreateDynamic(*gPhysicsSDK, PxTransform(leapToWorld(hand.palmPosition(), handMode),quat), PxBoxGeometry((hand.palmWidth() - hand.fingers()[0].width())/200, 0.1, hand.palmWidth() / 200 ), *material, 1.0f);
+	newHand->palm = PxCreateDynamic(*gPhysicsSDK, PxTransform(leapToWorld(hand.palmPosition(), handMode), quat), PxBoxGeometry((hand.palmWidth() - hand.fingers()[0].width()) / 200, 0.1, hand.palmWidth() / 200), *material, 1.0f);
 	if (newHand->palm == NULL)
 	{
 		return;
@@ -702,7 +680,6 @@ void LeapClass::createHand(Hand hand, bool goinUp, bool isInTransit, float handL
 	newHand->palm->getShapes(&shapes, 1);
 	shapes->setFlag(PxShapeFlag::eSIMULATION_SHAPE, false);
 	shapes->setFlag(PxShapeFlag::eTRIGGER_SHAPE, true);
-
 
 	setupFiltering(newHand->palm, FilterGroup::eHand, FilterGroup::eBox | FilterGroup::eTarget);
 
@@ -721,8 +698,7 @@ void LeapClass::createHand(Hand hand, bool goinUp, bool isInTransit, float handL
 
 	float factor = 1;// handLength / middle_length;
 
-
-	newHand->palmDimension = PxVec3(hand.palmWidth()/120.0f, hand.palmWidth()/100.0f, hand.palmWidth()/400.0f);
+	newHand->palmDimension = PxVec3(hand.palmWidth() / 120.0f, hand.palmWidth() / 100.0f, hand.palmWidth() / 400.0f);
 	newHand->leapJointPosition = new PxVec3[20];
 	newHand->leapJointPosition2 = new PxVec3[20];
 	newHand->fingerTipPosition = new PxVec3[5];
@@ -750,7 +726,6 @@ void LeapClass::createHand(Hand hand, bool goinUp, bool isInTransit, float handL
 
 		// newHand->aggregate->addActor(*newHand->finger_tip_achor[i]);
 		// Leap::Vector attachpos_prev, attachpos_cur;
-		 
 
 		if (i == 0)
 		{
@@ -766,7 +741,6 @@ void LeapClass::createHand(Hand hand, bool goinUp, bool isInTransit, float handL
 			newHand->finger_actor[i][1]->setMass(mass[1]);
 			newHand->finger_actor[i][1]->setMassSpaceInertiaTensor(I_tensor);
 
-			
 			setupFiltering(newHand->finger_actor[i][1], FilterGroup::eFinger, FilterGroup::eBox | FilterGroup::eTarget);
 			newHand->aggregate->addActor(*newHand->finger_actor[i][1]);
 
@@ -778,18 +752,16 @@ void LeapClass::createHand(Hand hand, bool goinUp, bool isInTransit, float handL
 
 			newHand->aggregate->addActor(*newHand->finger_joint_actor[i][1]);
 
-
-
-			Vector joint = preBone.transformPoint(bone.prevJoint())/100.0;
+			Vector joint = preBone.transformPoint(bone.prevJoint()) / 100.0;
 			if (handMode == HandMode::Normal || handMode == HandMode::Gogo)
-			newHand->finger_joint[i][1] = PxD6JointCreate(*gPhysicsSDK, newHand->palm, PxTransform(PxVec3(joint.x,joint.y,-joint.z)), newHand->finger_actor[i][1], PxTransform(PxVec3(0, 0, -newHand->halfHeight[i][1])));
+				newHand->finger_joint[i][1] = PxD6JointCreate(*gPhysicsSDK, newHand->palm, PxTransform(PxVec3(joint.x, joint.y, -joint.z)), newHand->finger_actor[i][1], PxTransform(PxVec3(0, 0, -newHand->halfHeight[i][1])));
 			else if (handMode == HandMode::Mirror)
 				newHand->finger_joint[i][1] = PxD6JointCreate(*gPhysicsSDK, newHand->palm, PxTransform(PxVec3(joint.x, joint.y, joint.z)), newHand->finger_actor[i][1], PxTransform(PxVec3(0, 0, newHand->halfHeight[i][1])));
 
 			newHand->finger_joint[i][1]->setMotion(PxD6Axis::eTWIST, PxD6Motion::eFREE);
 			newHand->finger_joint[i][1]->setMotion(PxD6Axis::eSWING1, PxD6Motion::eFREE);
 			newHand->finger_joint[i][1]->setMotion(PxD6Axis::eSWING2, PxD6Motion::eFREE);
-			
+
 			for (int j = 2; j < 4; j++)
 			{
 				boneType = static_cast<Leap::Bone::Type>(j);
@@ -815,14 +787,14 @@ void LeapClass::createHand(Hand hand, bool goinUp, bool isInTransit, float handL
 
 				newHand->leapJointPosition[i * 4 + j] = PxVec3(bone.center().x, bone.center().y, bone.center().z);
 
-				if(handMode == HandMode::Normal || handMode == HandMode::Gogo)
-				newHand->finger_joint[i][j] = PxD6JointCreate(*gPhysicsSDK, newHand->finger_actor[i][j-1], PxTransform(PxVec3(0,0,newHand->halfHeight[i][j-1])), newHand->finger_actor[i][j], PxTransform(PxVec3( 0, 0, -newHand->halfHeight[i][j])));
-				else if(handMode == HandMode::Mirror)
-				newHand->finger_joint[i][j] = PxD6JointCreate(*gPhysicsSDK, newHand->finger_actor[i][j - 1], PxTransform(PxVec3(0, 0, -newHand->halfHeight[i][j - 1])), newHand->finger_actor[i][j], PxTransform(PxVec3(0, 0, newHand->halfHeight[i][j])));
-				
+				if (handMode == HandMode::Normal || handMode == HandMode::Gogo)
+					newHand->finger_joint[i][j] = PxD6JointCreate(*gPhysicsSDK, newHand->finger_actor[i][j - 1], PxTransform(PxVec3(0, 0, newHand->halfHeight[i][j - 1])), newHand->finger_actor[i][j], PxTransform(PxVec3(0, 0, -newHand->halfHeight[i][j])));
+				else if (handMode == HandMode::Mirror)
+					newHand->finger_joint[i][j] = PxD6JointCreate(*gPhysicsSDK, newHand->finger_actor[i][j - 1], PxTransform(PxVec3(0, 0, -newHand->halfHeight[i][j - 1])), newHand->finger_actor[i][j], PxTransform(PxVec3(0, 0, newHand->halfHeight[i][j])));
+
 				newHand->finger_joint[i][j]->setMotion(PxD6Axis::eTWIST, PxD6Motion::eFREE);
-				if(j==2)
-				newHand->finger_joint[i][j]->setMotion(PxD6Axis::eSWING1, PxD6Motion::eFREE);
+				if (j == 2)
+					newHand->finger_joint[i][j]->setMotion(PxD6Axis::eSWING1, PxD6Motion::eFREE);
 
 				//newHand->finger_joint[i][j]->setMotion(PxD6Axis::eX, PxD6Motion::eFREE);
 				//newHand->finger_joint[i][j]->setMotion(PxD6Axis::eY, PxD6Motion::eFREE);
@@ -832,14 +804,13 @@ void LeapClass::createHand(Hand hand, bool goinUp, bool isInTransit, float handL
 		}
 		else
 		{
-			
 			boneType = static_cast<Leap::Bone::Type>(0);
 			bone = (*fl).bone(boneType);
 
-			newHand->halfHeight[i][0] = bone.length()/ 200.0f;
+			newHand->halfHeight[i][0] = bone.length() / 200.0f;
 			newHand->fingerWidth[i][0] = factor*bone.width() / 100.0f;
 			newHand->finger_actor[i][0] = gPhysicsSDK->createRigidDynamic(PxTransform(leapToWorld(bone.center(), handMode)));
-			PxShape* box = newHand->finger_actor[i][0]->createShape(PxBoxGeometry(newHand->halfHeight[i][0],newHand->fingerWidth[i][0] / 2.0f, newHand->fingerWidth[i][0] / 4.0f ), *material);
+			PxShape* box = newHand->finger_actor[i][0]->createShape(PxBoxGeometry(newHand->halfHeight[i][0], newHand->fingerWidth[i][0] / 2.0f, newHand->fingerWidth[i][0] / 4.0f), *material);
 			box->setLocalPose(PxTransform(PxQuat(-PxHalfPi, PxVec3(0, 1, 0))));
 			newHand->finger_actor[i][0]->setMass(mass[0]);
 			newHand->finger_actor[i][0]->setMassSpaceInertiaTensor(I_tensor);
@@ -856,13 +827,12 @@ void LeapClass::createHand(Hand hand, bool goinUp, bool isInTransit, float handL
 
 			newHand->aggregate->addActor(*newHand->finger_joint_actor[i][0]);
 
-			Vector joint =  preBone.transformPoint(bone.prevJoint())/100.0;
+			Vector joint = preBone.transformPoint(bone.prevJoint()) / 100.0;
 			if (handMode == HandMode::Normal || handMode == HandMode::Gogo)
-			newHand->finger_joint[i][0] = PxD6JointCreate(*gPhysicsSDK, newHand->palm, PxTransform(PxVec3(joint.x,joint.y, -joint.z)), newHand->finger_actor[i][0], PxTransform(PxVec3(0, 0, -newHand->halfHeight[i][0])));
+				newHand->finger_joint[i][0] = PxD6JointCreate(*gPhysicsSDK, newHand->palm, PxTransform(PxVec3(joint.x, joint.y, -joint.z)), newHand->finger_actor[i][0], PxTransform(PxVec3(0, 0, -newHand->halfHeight[i][0])));
 			else if (handMode == HandMode::Mirror)
 				newHand->finger_joint[i][0] = PxD6JointCreate(*gPhysicsSDK, newHand->palm, PxTransform(PxVec3(joint.x, joint.y, joint.z)), newHand->finger_actor[i][0], PxTransform(PxVec3(0, 0, newHand->halfHeight[i][0])));
 
-			
 			newHand->finger_joint[i][0]->setMotion(PxD6Axis::eTWIST, PxD6Motion::eFREE);
 			newHand->finger_joint[i][0]->setMotion(PxD6Axis::eSWING1, PxD6Motion::eFREE);
 			newHand->finger_joint[i][0]->setMotion(PxD6Axis::eSWING2, PxD6Motion::eFREE);
@@ -897,15 +867,14 @@ void LeapClass::createHand(Hand hand, bool goinUp, bool isInTransit, float handL
 
 				newHand->leapJointPosition[i * 4 + j] = PxVec3(bone.center().x, bone.center().y, bone.center().z);
 
-
 				if (handMode == HandMode::Normal || handMode == HandMode::Gogo)
 					newHand->finger_joint[i][j] = PxD6JointCreate(*gPhysicsSDK, newHand->finger_actor[i][j - 1], PxTransform(PxVec3(0, 0, newHand->halfHeight[i][j - 1])), newHand->finger_actor[i][j], PxTransform(PxVec3(0, 0, -newHand->halfHeight[i][j])));
 				else if (handMode == HandMode::Mirror)
 					newHand->finger_joint[i][j] = PxD6JointCreate(*gPhysicsSDK, newHand->finger_actor[i][j - 1], PxTransform(PxVec3(0, 0, -newHand->halfHeight[i][j - 1])), newHand->finger_actor[i][j], PxTransform(PxVec3(0, 0, newHand->halfHeight[i][j])));
 
 				newHand->finger_joint[i][j]->setMotion(PxD6Axis::eTWIST, PxD6Motion::eFREE);
-				if(j==1)
-				newHand->finger_joint[i][j]->setMotion(PxD6Axis::eSWING1, PxD6Motion::eFREE);
+				if (j == 1)
+					newHand->finger_joint[i][j]->setMotion(PxD6Axis::eSWING1, PxD6Motion::eFREE);
 				//newHand->finger_joint[i][j]->setMotion(PxD6Axis::eSWING2, PxD6Motion::eFREE);
 
 				//newHand->finger_joint[i][j]->setMotion(PxD6Axis::eX, PxD6Motion::eFREE);
@@ -915,46 +884,43 @@ void LeapClass::createHand(Hand hand, bool goinUp, bool isInTransit, float handL
 			}
 		}
 	}
-	
+
 	gScene->addAggregate(*(newHand->aggregate));
 
 	mHandList.push_back(newHand);
-
 }
 
 void LeapClass::createHands(Hand hand)
 {
 	if (globalHandMode == HandMode::Normal)
 	{
-
 		if (hand.isRight())
 		{
 			if (rightHandMirrored)
 			{
-				createHand(hand, false, false, 1, HandMode::Mirror);
+				createHand(hand, false, false, 1, HandMode::Mirror,NULL);
 			}
 			else
 			{
-				createHand(hand, false, false, 1, HandMode::Normal);
+				createHand(hand, false, false, 1, HandMode::Normal, NULL);
 			}
 		}
 		else if (hand.isLeft())
 		{
 			if (leftHandMirrored)
 			{
-				createHand(hand, false, false, 1, HandMode::Mirror);
+				createHand(hand, false, false, 1, HandMode::Mirror, NULL);
 			}
 			else
 			{
-				createHand(hand, false, false, 1, HandMode::Normal);
+				createHand(hand, false, false, 1, HandMode::Normal, NULL);
 			}
 		}
 	}
 	else if (globalHandMode == HandMode::Gogo)
 	{
-		createHand(hand, false, false, 1, HandMode::Gogo);
+		createHand(hand, false, false, 1, HandMode::Gogo, NULL);
 	}
-
 }
 
 void LeapClass::updateHands(Hand hand, handActor* actor)
@@ -988,16 +954,15 @@ void LeapClass::updateHands(Hand hand, handActor* actor)
 	{
 		updateHand(hand, actor, HandMode::Gogo);
 	}
-
-
 }
 
 void LeapClass::updateHand(Hand hand, handActor* actor, HandMode::Enum handmode)
 {
-
-	float springTerm = 2800;
+	//if (hand.confidence() < 0.3)
+	//	return;
+	float springTerm = 5000;
 	float dampingTerm = 10;
-	float physxSpring = 3000;
+	float physxSpring = 5000;
 	Leap::Matrix handTransform = hand.basis();
 	handTransform.origin = hand.palmPosition();
 	PxQuat prevQuat, handQuat;
@@ -1007,18 +972,15 @@ void LeapClass::updateHand(Hand hand, handActor* actor, HandMode::Enum handmode)
 		handTransform.xBasis = -handTransform.xBasis;
 	}
 
-
 	handTransform = handTransform.rigidInverse();
-
 
 	PxVec3 col1, col2, col3;
 	PxMat33 flipmat;
-	if(handmode == HandMode::Normal || handmode == HandMode::Gogo)
+	if (handmode == HandMode::Normal || handmode == HandMode::Gogo)
 		flipmat = PxMat33({ 1, 0, 0 }, { 0, 1, 0 }, { 0, 0, -1 });
-	else if(handmode == HandMode::Mirror)
+	else if (handmode == HandMode::Mirror)
 		flipmat = PxMat33({ 1, 0, 0 }, { 0, 1, 0 }, { 0, 0, 1 });
-	
-	
+
 	if (hand.isLeft())
 	{
 		col1 = PxVec3(-hand.basis().xBasis.x, -hand.basis().xBasis.y, -hand.basis().xBasis.z);
@@ -1036,6 +998,147 @@ void LeapClass::updateHand(Hand hand, handActor* actor, HandMode::Enum handmode)
 	PxVec3 palmPos = leapToWorld(hand.palmPosition(), handmode);
 	PxTransform transform_update(palmPos, quat_hand);
 
+	Leap::FingerList fingers = hand.fingers();
+	PxVec3 tipPos[5];
+	for (int i = 0; i < 5; i++)
+	{
+			tipPos[i] = leapToWorld(fingers[i].tipPosition(), handmode);
+	}
+
+	if (hand.pinchStrength() > 0.2)
+	{
+		if (actor->grabActor == NULL)
+		{
+			if (handmode == HandMode::Gogo)
+			{
+				PxVec3 center = leapToWorld(hand.sphereCenter() , handmode);
+				actor->grabActor = queryScene(PxTransform(center), PxSphereGeometry(1.0f));
+
+				if (actor->grabActor != NULL)
+				{
+
+					float st = hand.pinchStrength();
+					actor->pinchStrength[0] = st;
+					actor->grabActorStartPos = actor->grabActor->getGlobalPose();
+
+					actor->grabActor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
+					actor->grabActor->userData = static_cast<void*>(actor->pinchStrength);
+					if (center.y < 1.25f)
+						center.y = 1.25f;
+
+					actor->grabHandStartPos = PxTransform(center, quat_hand);
+					actor->grabActor->setKinematicTarget(PxTransform(actor->grabActorStartPos));
+
+				}
+			
+			}
+			else
+			{
+				actor->grabActor = queryScene(PxTransform(tipPos[0]), PxSphereGeometry(0.1f));
+				if (actor->grabActor != NULL)
+				{
+
+					PxVec3 center = PxVec3(0, 0, 0);
+					PxVec3 thumb = tipPos[0];
+
+					int count = 1;
+					for (int i = 1; i < 5; i++)
+					{
+						if (queryScene(PxTransform(tipPos[i]), PxSphereGeometry(0.1f)) != NULL)
+						{
+							center += tipPos[i];
+							count++;
+						}
+
+					}
+					if (count == 1)
+					{
+						actor->grabActor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, false);
+						actor->grabActor = NULL;
+					}
+					else
+					{
+						float st = hand.pinchStrength();
+						actor->pinchStrength[0] = st;
+						actor->grabActorStartPos = actor->grabActor->getGlobalPose();
+
+						actor->grabActor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
+						actor->grabActor->userData = static_cast<void*>(actor->pinchStrength);
+						center = (center + thumb) / count;
+						if (center.y < 1.25f)
+							center.y = 1.25f;
+
+						actor->grabHandStartPos = PxTransform(center, quat_hand);
+						actor->grabActor->setKinematicTarget(PxTransform(actor->grabActorStartPos));
+					}
+
+				}
+			}
+
+		}
+		else
+		{
+
+			if (handmode == HandMode::Gogo) {
+				PxVec3 center = leapToWorld(hand.sphereCenter(), handmode);
+				PxQuat diff = actor->grabHandStartPos.q *quat_hand.getConjugate();
+				if (center.y < 1.25f)
+					center.y = 1.25f;
+				float st = hand.pinchStrength();
+				actor->pinchStrength[0] = st;
+				actor->grabActor->userData = static_cast<float*>(actor->pinchStrength);
+				actor->grabActor->setKinematicTarget(PxTransform(actor->grabActorStartPos.p + (center - actor->grabHandStartPos.p), diff.getConjugate()* actor->grabActorStartPos.q));
+			}
+			else
+			{
+				PxVec3 thumb = tipPos[0];
+				PxVec3 center = PxVec3(0, 0, 0);
+				int count = 1;
+				for (int i = 1; i < 5; i++)
+				{
+					if (queryScene(PxTransform(tipPos[i]), PxSphereGeometry(0.1f)) != NULL)
+					{
+						center += tipPos[i];
+						count++;
+					}
+
+				}
+
+				if (count == 1 && !actor->goingUp)
+				{
+					actor->grabActor->userData = NULL;
+					actor->grabActor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, false);
+					actor->grabActor = NULL;
+				}
+				else if (count>1)
+				{
+					PxQuat diff = actor->grabHandStartPos.q *quat_hand.getConjugate();
+					center = (center + thumb) / count;
+					if (center.y < 1.25f)
+						center.y = 1.25f;
+					float st = hand.pinchStrength();
+					actor->pinchStrength[0] = st;
+					actor->grabActor->userData = static_cast<float*>(actor->pinchStrength);
+					actor->grabActor->setKinematicTarget(PxTransform(actor->grabActorStartPos.p + (center - actor->grabHandStartPos.p), diff.getConjugate()* actor->grabActorStartPos.q));
+				}
+			}
+			
+
+		}
+	}
+	else if (hand.pinchStrength() <= 0.2)
+	{
+		if (actor->grabActor != NULL)
+		{
+			actor->grabActor->userData = NULL;
+			actor->grabActor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, false);
+			actor->grabActor = NULL;
+		}
+
+	}
+
+
+	//Transfer hand in to mirror
 	if (handmode == HandMode::Normal)
 	{
 		if (palmPos.z > -SWITCHRANGE && palmPos.z < 0 && actor->isInTransit == false)
@@ -1043,14 +1146,12 @@ void LeapClass::updateHand(Hand hand, handActor* actor, HandMode::Enum handmode)
 			actor->isInTransit = true;
 			actor->transitComplete = false;
 
-			createHand(hand, true, true, 1.0f, HandMode::Mirror);
+			createHand(hand, true, true, 1.0f, HandMode::Mirror,actor->grabActor);
 
 			actor->startTransitTime = ((double)hand.frame().timestamp() / 1000000.0);
-
 		}
 		else if (actor->isInTransit == true)
 		{
-
 			if (palmPos.z < -SWITCHRANGE)
 			{
 				double timediff = ((double)hand.frame().timestamp() / 1000000.0) - actor->startTransitTime;
@@ -1059,7 +1160,6 @@ void LeapClass::updateHand(Hand hand, handActor* actor, HandMode::Enum handmode)
 				{
 					actor->alphaValue = 0.0f;
 					actor->toBeDelete = true;
-
 				}
 				else
 				{
@@ -1067,7 +1167,6 @@ void LeapClass::updateHand(Hand hand, handActor* actor, HandMode::Enum handmode)
 					actor->toBeDelete = false;
 					actor->goingUp = false;
 				}
-
 			}
 			else if (!actor->goingUp)
 			{
@@ -1077,6 +1176,12 @@ void LeapClass::updateHand(Hand hand, handActor* actor, HandMode::Enum handmode)
 					actor->isInTransit = false;
 					actor->toBeDelete = true;
 					timediff = SWITCHTIME;
+					if (actor->grabActor != NULL)
+					{
+						actor->grabActor->userData = NULL;
+						actor->grabActor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, false);
+						actor->grabActor = NULL;
+					}
 				}
 				else
 				{
@@ -1102,7 +1207,7 @@ void LeapClass::updateHand(Hand hand, handActor* actor, HandMode::Enum handmode)
 						PxTransform t = transform_update;
 						t.p.z = -t.p.z;
 
-						PxRigidDynamic* touchActor = queryScene(t);
+						PxRigidDynamic* touchActor = actor->grabActor;
 						if (touchActor != NULL)
 						{
 							PxTransform trans = touchActor->getGlobalPose();
@@ -1111,14 +1216,11 @@ void LeapClass::updateHand(Hand hand, handActor* actor, HandMode::Enum handmode)
 							PxQuat q = PxQuat(rotatemat*PxMat33(trans.q.getBasisVector0(), trans.q.getBasisVector1(), trans.q.getBasisVector2())*rotatemat);
 							trans.q = q;
 							touchActor->setGlobalPose(trans);
+
 						}
 
 						actor->transitComplete = true;
 					}
-
-
-
-
 				}
 				actor->alphaValue = (timediff) / SWITCHTIME;
 			}
@@ -1126,18 +1228,16 @@ void LeapClass::updateHand(Hand hand, handActor* actor, HandMode::Enum handmode)
 	}
 	else if (handmode == HandMode::Mirror)
 	{
-		if (palmPos.z  < SWITCHRANGE && palmPos.z > 0 && actor->isInTransit == false)
+		if (palmPos.z < SWITCHRANGE && palmPos.z > 0 && actor->isInTransit == false)
 		{
 			actor->isInTransit = true;
 			actor->transitComplete = false;
-			createHand(hand, true, true, 1.0f, HandMode::Normal);
+			createHand(hand, true, true, 1.0f, HandMode::Normal,actor->grabActor);
 			actor->startTransitTime = ((double)hand.frame().timestamp() / 1000000.0);
-
 		}
 		else if (actor->isInTransit == true)
 		{
-
-			if (palmPos.z  > SWITCHRANGE)
+			if (palmPos.z > SWITCHRANGE)
 			{
 				double timediff = ((double)hand.frame().timestamp() / 1000000.0) - actor->startTransitTime;
 				actor->isInTransit = false;
@@ -1145,7 +1245,6 @@ void LeapClass::updateHand(Hand hand, handActor* actor, HandMode::Enum handmode)
 				{
 					actor->alphaValue = 0.0f;
 					actor->toBeDelete = true;
-
 				}
 				else
 				{
@@ -1153,7 +1252,6 @@ void LeapClass::updateHand(Hand hand, handActor* actor, HandMode::Enum handmode)
 					actor->toBeDelete = false;
 					actor->goingUp = false;
 				}
-
 			}
 			else if (!actor->goingUp)
 			{
@@ -1162,6 +1260,17 @@ void LeapClass::updateHand(Hand hand, handActor* actor, HandMode::Enum handmode)
 				{
 					timediff = SWITCHTIME;
 					actor->toBeDelete = true;
+					if (actor->grabActor != NULL)
+					{
+						actor->grabActor->userData = NULL;
+						actor->grabActor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, false);
+						actor->grabActor = NULL;
+					}
+
+				}
+				else
+				{
+					actor->toBeDelete = false;
 				}
 				actor->alphaValue = (SWITCHTIME - timediff) / SWITCHTIME;
 			}
@@ -1184,7 +1293,7 @@ void LeapClass::updateHand(Hand hand, handActor* actor, HandMode::Enum handmode)
 						PxTransform t = transform_update;
 						t.p.z = -t.p.z;
 
-						PxRigidDynamic* touchActor = queryScene(t);
+						PxRigidDynamic* touchActor = actor->grabActor;
 						if (touchActor != NULL)
 						{
 							PxTransform trans = touchActor->getGlobalPose();
@@ -1203,6 +1312,11 @@ void LeapClass::updateHand(Hand hand, handActor* actor, HandMode::Enum handmode)
 		}
 	}
 
+	
+
+
+
+
 	if (!actor->isRef)
 	{
 		actor->palm->setKinematicTarget(transform_update);
@@ -1214,7 +1328,6 @@ void LeapClass::updateHand(Hand hand, handActor* actor, HandMode::Enum handmode)
 	drive[1] = PxD6JointDrive(physxSpring, 0, PX_MAX_F32, true);
 	drive[0] = PxD6JointDrive(physxSpring, 0, PX_MAX_F32, true);
 	drivePos = PxD6JointDrive(3000.0, 0, PX_MAX_F32, true);
-
 
 	calculateTrackedHand(hand);
 	calculateSpringHand(actor);
@@ -1229,12 +1342,9 @@ void LeapClass::updateHand(Hand hand, handActor* actor, HandMode::Enum handmode)
 		{
 			for (int j = 0; j < 3; j++)
 			{
-
 				w_t[i][j] = (trackHandAngle[i][j] - actor->previousHandAngle[i][j]) / timediff;
 				w_s[i][j] = (springHandAngle[i][j] - actor->previousSpringHandAngle[i][j]) / timediff;
 			}
-
-
 		}
 	}
 	else
@@ -1250,7 +1360,7 @@ void LeapClass::updateHand(Hand hand, handActor* actor, HandMode::Enum handmode)
 	}
 
 	int i = 0;
-	Leap::FingerList fingers = hand.fingers();
+	
 	for (Leap::FingerList::const_iterator fl = fingers.begin(); fl != fingers.end(); fl++, i++)
 	{
 		Leap::Bone bone;
@@ -1263,84 +1373,6 @@ void LeapClass::updateHand(Hand hand, handActor* actor, HandMode::Enum handmode)
 		{
 			for (int j = 0; j < 4; j++)
 			{
-
-					boneType = static_cast<Leap::Bone::Type>(j);
-					bone = (*fl).bone(boneType);
-					Leap::Matrix bonebasis = bone.basis();
-
-					if (hand.isLeft())
-						bonebasis.xBasis = -bonebasis.xBasis;
-
-					actor->finger_joint_actor[i][j]->setKinematicTarget(PxTransform(leapToWorld(bone.center(), handmode), quat_hand));
-
-					if (j == 0 )
-					{
-
-						Leap::Matrix localFingerBasis = prevBasis*bonebasis;
-						PxVec3 col1, col2, col3;
-
-						col1 = PxVec3(localFingerBasis.xBasis.x, localFingerBasis.xBasis.y, localFingerBasis.xBasis.z);
-						col2 = PxVec3(localFingerBasis.yBasis.x, localFingerBasis.yBasis.y, localFingerBasis.yBasis.z);
-						col3 = PxVec3(localFingerBasis.zBasis.x, localFingerBasis.zBasis.y, localFingerBasis.zBasis.z);
-						PxMat33 rotatemat;
-						if(handmode == HandMode::Normal || handmode == HandMode::Gogo)
-							rotatemat = PxMat33({ 1, 0, 0 }, { 0, 1, 0 }, { 0, 0, -1 });
-						else if(handmode == HandMode::Mirror)
-							rotatemat = PxMat33({ 1, 0, 0 }, { 0, 1, 0 }, { 0, 0, 1 });
-						//test = PxVec3(test.x, test.y, -test.z);
-
-						PxQuat quat = PxQuat(rotatemat*PxMat33(col1, col2, col3)*rotatemat);
-									
-					
-						actor->finger_joint[i][j]->setDrive(PxD6Drive::eSLERP, drivePos);
-						actor->finger_joint[i][j]->setDrivePosition(PxTransform(quat));
-					}
-					else if (j != 0)
-					{
-
-						actor->finger_joint[i][j]->setDrive(PxD6Drive::eTWIST, drive[j]);
-						float different = ((trackHandAngle[i][j - 1] - springHandAngle[i][j - 1]) * springTerm - dampingTerm*(w_s[i][j - 1] - w_t[i][j - 1])) / physxSpring;
-						if(handmode == HandMode::Normal || handmode == HandMode::Gogo)
-							actor->finger_joint[i][j]->setDrivePosition(PxTransform(PxQuat(springHandAngle[i][j - 1] + different - PxHalfPi, PxVec3(1, 0, 0))));
-						else if(handmode == HandMode::Mirror)
-							actor->finger_joint[i][j]->setDrivePosition(PxTransform(PxQuat(-springHandAngle[i][j - 1] - different + PxHalfPi, PxVec3(1, 0, 0))));
-
-						//actor->finger_joint[i][j]->setDrivePosition(PxTransform(PxQuat(trackHandAngle[i][j - 1] - PxHalfPi, PxVec3(1, 0, 0))));
-							if (j == 1)
-							{
-								actor->finger_joint[i][j]->setDrive(PxD6Drive::eTWIST, drive[j]);
-								actor->finger_joint[i][j]->setDrive(PxD6Drive::eSWING, drive[j]);
-								float different = ((trackHandAngle[i][j - 1] - springHandAngle[i][j - 1]) * springTerm - dampingTerm*(w_s[i][j - 1] - w_t[i][j - 1])) / physxSpring;
-								float different1 = (trackHandAbduct[i]-springHandAbduct[i] ) * springTerm / physxSpring;
-								PxQuat a = PxQuat(springHandAngle[i][j - 1] + different - PxHalfPi, PxVec3(1, 0, 0));
-								PxQuat b = PxQuat(PxHalfPi - springHandAbduct[i] - different1, PxVec3(0, 1, 0));
-								if(hand.isLeft())
-									b = PxQuat(-PxHalfPi + springHandAbduct[i] + different1, PxVec3(0, 1, 0));
-
-								if (handmode == HandMode::Mirror)
-								{
-									a = PxQuat(-springHandAngle[i][j - 1] - different + PxHalfPi, PxVec3(1, 0, 0));
-									b = PxQuat(-PxHalfPi + springHandAbduct[i] + different1, PxVec3(0, 1, 0));
-									if (hand.isLeft())
-										b = PxQuat(PxHalfPi - springHandAbduct[i] - different1, PxVec3(0, 1, 0));
-								}
-
-								//PxQuat a = PxQuat(trackHandAngle[i][j - 1] - PxHalfPi, PxVec3(1, 0, 0));
-								//PxQuat b = PxQuat(PxHalfPi - trackHandAbduct[i], PxVec3(0, 1, 0));
-												
-								actor->finger_joint[i][j]->setDrivePosition(PxTransform(b*a));
-							}
-					}
-					actor->leapJointPosition[i * 4 + j] = PxVec3(bone.prevJoint().x, bone.prevJoint().y, bone.prevJoint().z);
-				
-			}
-		}
-		else
-		{
-			for (int j = 1; j < 4; j++)
-			{
-
-
 				boneType = static_cast<Leap::Bone::Type>(j);
 				bone = (*fl).bone(boneType);
 				Leap::Matrix bonebasis = bone.basis();
@@ -1350,9 +1382,8 @@ void LeapClass::updateHand(Hand hand, handActor* actor, HandMode::Enum handmode)
 
 				actor->finger_joint_actor[i][j]->setKinematicTarget(PxTransform(leapToWorld(bone.center(), handmode), quat_hand));
 
-				if (j == 1)
+				if (j == 0)
 				{
-
 					Leap::Matrix localFingerBasis = prevBasis*bonebasis;
 					PxVec3 col1, col2, col3;
 
@@ -1368,19 +1399,88 @@ void LeapClass::updateHand(Hand hand, handActor* actor, HandMode::Enum handmode)
 
 					PxQuat quat = PxQuat(rotatemat*PxMat33(col1, col2, col3)*rotatemat);
 
+					actor->finger_joint[i][j]->setDrive(PxD6Drive::eSLERP, drivePos);
+					actor->finger_joint[i][j]->setDrivePosition(PxTransform(quat));
+				}
+				else if (j != 0)
+				{
+					actor->finger_joint[i][j]->setDrive(PxD6Drive::eTWIST, drive[j]);
+					float different = ((trackHandAngle[i][j - 1] - springHandAngle[i][j - 1]) * springTerm - dampingTerm*(w_s[i][j - 1] - w_t[i][j - 1])) / physxSpring;
+					if (handmode == HandMode::Normal || handmode == HandMode::Gogo)
+						actor->finger_joint[i][j]->setDrivePosition(PxTransform(PxQuat(springHandAngle[i][j - 1] + different - PxHalfPi, PxVec3(1, 0, 0))));
+					else if (handmode == HandMode::Mirror)
+						actor->finger_joint[i][j]->setDrivePosition(PxTransform(PxQuat(-springHandAngle[i][j - 1] - different + PxHalfPi, PxVec3(1, 0, 0))));
+
+					//actor->finger_joint[i][j]->setDrivePosition(PxTransform(PxQuat(trackHandAngle[i][j - 1] - PxHalfPi, PxVec3(1, 0, 0))));
+					if (j == 1)
+					{
+						actor->finger_joint[i][j]->setDrive(PxD6Drive::eTWIST, drive[j]);
+						actor->finger_joint[i][j]->setDrive(PxD6Drive::eSWING, drive[j]);
+						float different = ((trackHandAngle[i][j - 1] - springHandAngle[i][j - 1]) * springTerm - dampingTerm*(w_s[i][j - 1] - w_t[i][j - 1])) / physxSpring;
+						float different1 = (trackHandAbduct[i] - springHandAbduct[i]) * springTerm / physxSpring;
+						PxQuat a = PxQuat(springHandAngle[i][j - 1] + different - PxHalfPi, PxVec3(1, 0, 0));
+						PxQuat b = PxQuat(PxHalfPi - springHandAbduct[i] - different1, PxVec3(0, 1, 0));
+						if (hand.isLeft())
+							b = PxQuat(-PxHalfPi + springHandAbduct[i] + different1, PxVec3(0, 1, 0));
+
+						if (handmode == HandMode::Mirror)
+						{
+							a = PxQuat(-springHandAngle[i][j - 1] - different + PxHalfPi, PxVec3(1, 0, 0));
+							b = PxQuat(-PxHalfPi + springHandAbduct[i] + different1, PxVec3(0, 1, 0));
+							if (hand.isLeft())
+								b = PxQuat(PxHalfPi - springHandAbduct[i] - different1, PxVec3(0, 1, 0));
+						}
+
+						//PxQuat a = PxQuat(trackHandAngle[i][j - 1] - PxHalfPi, PxVec3(1, 0, 0));
+						//PxQuat b = PxQuat(PxHalfPi - trackHandAbduct[i], PxVec3(0, 1, 0));
+
+						actor->finger_joint[i][j]->setDrivePosition(PxTransform(b*a));
+					}
+				}
+				actor->leapJointPosition[i * 4 + j] = PxVec3(bone.prevJoint().x, bone.prevJoint().y, bone.prevJoint().z);
+			}
+		}
+		else
+		{
+			for (int j = 1; j < 4; j++)
+			{
+				boneType = static_cast<Leap::Bone::Type>(j);
+				bone = (*fl).bone(boneType);
+				Leap::Matrix bonebasis = bone.basis();
+
+				if (hand.isLeft())
+					bonebasis.xBasis = -bonebasis.xBasis;
+
+				actor->finger_joint_actor[i][j]->setKinematicTarget(PxTransform(leapToWorld(bone.center(), handmode), quat_hand));
+
+				if (j == 1)
+				{
+					Leap::Matrix localFingerBasis = prevBasis*bonebasis;
+					PxVec3 col1, col2, col3;
+
+					col1 = PxVec3(localFingerBasis.xBasis.x, localFingerBasis.xBasis.y, localFingerBasis.xBasis.z);
+					col2 = PxVec3(localFingerBasis.yBasis.x, localFingerBasis.yBasis.y, localFingerBasis.yBasis.z);
+					col3 = PxVec3(localFingerBasis.zBasis.x, localFingerBasis.zBasis.y, localFingerBasis.zBasis.z);
+					PxMat33 rotatemat;
+					if (handmode == HandMode::Normal || handmode == HandMode::Gogo)
+						rotatemat = PxMat33({ 1, 0, 0 }, { 0, 1, 0 }, { 0, 0, -1 });
+					else if (handmode == HandMode::Mirror)
+						rotatemat = PxMat33({ 1, 0, 0 }, { 0, 1, 0 }, { 0, 0, 1 });
+					//test = PxVec3(test.x, test.y, -test.z);
+
+					PxQuat quat = PxQuat(rotatemat*PxMat33(col1, col2, col3)*rotatemat);
 
 					actor->finger_joint[i][j]->setDrive(PxD6Drive::eSLERP, drivePos);
 					actor->finger_joint[i][j]->setDrivePosition(PxTransform(quat));
 				}
 				else if (j != 1)
 				{
-
 					actor->finger_joint[i][j]->setDrive(PxD6Drive::eTWIST, drive[j]);
-					float different = ((trackHandAngle[i][j - 1] - springHandAngle[i][j - 1]) * springTerm - dampingTerm*(w_s[i][j-1]-w_t[i][j-1]))/physxSpring;
-					
-					if(handmode == HandMode::Normal|| handmode == HandMode::Gogo)
+					float different = ((trackHandAngle[i][j - 1] - springHandAngle[i][j - 1]) * springTerm - dampingTerm*(w_s[i][j - 1] - w_t[i][j - 1])) / physxSpring;
+
+					if (handmode == HandMode::Normal || handmode == HandMode::Gogo)
 						actor->finger_joint[i][j]->setDrivePosition(PxTransform(PxQuat(springHandAngle[i][j - 1] + different - PxHalfPi, PxVec3(1, 0, 0))));
-					else if(handmode == HandMode::Mirror)
+					else if (handmode == HandMode::Mirror)
 						actor->finger_joint[i][j]->setDrivePosition(PxTransform(PxQuat(-springHandAngle[i][j - 1] - different + PxHalfPi, PxVec3(1, 0, 0))));
 					//actor->finger_joint[i][j]->setDrivePosition(PxTransform(PxQuat(trackHandAngle[i][j - 1] - PxHalfPi, PxVec3(1, 0, 0))));
 
@@ -1410,7 +1510,6 @@ void LeapClass::updateHand(Hand hand, handActor* actor, HandMode::Enum handmode)
 					}
 				}
 				actor->leapJointPosition[i * 4 + j] = PxVec3(bone.prevJoint().x, bone.prevJoint().y, bone.prevJoint().z);
-
 			}
 		}
 
@@ -1419,13 +1518,9 @@ void LeapClass::updateHand(Hand hand, handActor* actor, HandMode::Enum handmode)
 			actor->previousHandAngle[i][j - 1] = trackHandAngle[i][j - 1];
 			actor->previousSpringHandAngle[i][j - 1] = springHandAngle[i][j - 1];
 		}
-			
-
-	
 	}
 
 	actor->previousTime = (double)(hand.frame().timestamp() / 1000000.0);
-
 }
 
 void LeapClass::calculateTrackedHand(Hand hand)
@@ -1434,35 +1529,31 @@ void LeapClass::calculateTrackedHand(Hand hand)
 	int i = 0;
 	for (Leap::FingerList::const_iterator fl = fingers.begin(); fl != fingers.end(); fl++, i++)
 	{
+		Leap::Bone bone_0, bone_1;
+		Leap::Bone::Type boneType_0, boneType_1;
+		int j = 1;
+		if (i == 0)
+			j++;
 
-			Leap::Bone bone_0, bone_1;
-			Leap::Bone::Type boneType_0, boneType_1;
-			int j = 1;
-			if (i == 0)
-				j++;
+		for (; j < 4; j++)
+		{
+			boneType_0 = static_cast<Leap::Bone::Type>(j - 1);
+			bone_0 = (*fl).bone(boneType_0);
+			Leap::Matrix bonebasis_0 = bone_0.basis();
+			float distance_0 = bone_0.length();
+			boneType_1 = static_cast<Leap::Bone::Type>(j);
+			bone_1 = (*fl).bone(boneType_1);
+			Leap::Matrix bonebasis_1 = bone_1.basis();
+			float distance_1 = bone_1.length();
 
-			for (; j < 4; j++)
+			if (j == 1 || (i == 0 && j == 2))
 			{
-				boneType_0 = static_cast<Leap::Bone::Type>(j - 1);
-				bone_0 = (*fl).bone(boneType_0);
-				Leap::Matrix bonebasis_0 = bone_0.basis();
-				float distance_0 = bone_0.length();
-				boneType_1 = static_cast<Leap::Bone::Type>(j);
-				bone_1 = (*fl).bone(boneType_1);
-				Leap::Matrix bonebasis_1 = bone_1.basis();
-				float distance_1 = bone_1.length();
-
-				if (j == 1 || (i==0 && j==2))
-				{
-					trackHandAbduct[i] = calculateJointabductLeap(bonebasis_0, distance_0, bonebasis_1, distance_1);
-				}
-
-				trackHandAngle[i][j-1] = calculateJointangleLeap(bonebasis_0, distance_0, bonebasis_1, distance_1);
+				trackHandAbduct[i] = calculateJointabductLeap(bonebasis_0, distance_0, bonebasis_1, distance_1);
 			}
-		
 
+			trackHandAngle[i][j - 1] = calculateJointangleLeap(bonebasis_0, distance_0, bonebasis_1, distance_1);
+		}
 	}
-
 }
 
 float LeapClass::calculateJointangleLeap(Leap::Matrix basis_0, float joint_length_0, Leap::Matrix basis_1, float joint_length_1)
@@ -1480,7 +1571,7 @@ float LeapClass::calculateJointabductLeap(Leap::Matrix basis_0, float joint_leng
 {
 	Leap::Matrix inv = basis_0.rigidInverse();
 	Leap::Matrix local = inv*basis_1;
-	Leap::Vector v1 = Leap::Vector(local.zBasis.x, 0 , local.zBasis.z)*joint_length_1;
+	Leap::Vector v1 = Leap::Vector(local.zBasis.x, 0, local.zBasis.z)*joint_length_1;
 	Leap::Vector v0 = Leap::Vector(-1, 0, 0)*joint_length_0;
 
 	float angle = v1.angleTo(v0);
@@ -1495,9 +1586,8 @@ void LeapClass::calculateSpringHand(handActor* actor)
 		if (i == 0)
 			j++;
 
-		for ( ;j < 4; j++)
+		for (; j < 4; j++)
 		{
-			
 			//PxU32 nShapes = actor->finger_actor[i][j - 1]->getNbShapes();
 			//PxShape** shapes = new PxShape*[nShapes];
 
@@ -1520,7 +1610,7 @@ void LeapClass::calculateSpringHand(handActor* actor)
 			{
 				springHandAbduct[i] = calculateJointabductPhysx(basis_0, actor->halfHeight[i][j - 1] * 2, basis_1, actor->halfHeight[i][j] * 2);
 			}
-		
+
 			springHandAngle[i][j - 1] = calculateJointanglePhysx(basis_0, actor->halfHeight[i][j - 1] * 2, basis_1, actor->halfHeight[i][j] * 2);
 		}
 	}
@@ -1557,9 +1647,8 @@ void LeapClass::deleteHand(handActor* actor)
 	for (int i = 0; i < 5; i++)
 	{
 		int j = 0;
-		if(i==0)
-		 j = 1;
-
+		if (i == 0)
+			j = 1;
 
 		for (; j < 4; j++)
 		{
@@ -1571,6 +1660,12 @@ void LeapClass::deleteHand(handActor* actor)
 			actor->finger_joint[i][j]->release();
 		}
 	}
+	if (actor->grabActor != NULL)
+	{
+		actor->grabActor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, false);
+		actor->grabActor = NULL;
+	}
+
 
 	delete[] actor->leapJointPosition;
 	gScene->removeAggregate(*(actor->aggregate));
@@ -1603,7 +1698,7 @@ PxRigidDynamic* LeapClass::createJoint(Vector bone, PxRigidDynamic* finger_joint
 	return newActor;
 }
 
-PxRigidDynamic* LeapClass::createCylinder(PxReal radius, PxReal halfHeight, PxVec3 pos,PxQuat quat, PxAggregate* aggregate)
+PxRigidDynamic* LeapClass::createCylinder(PxReal radius, PxReal halfHeight, PxVec3 pos, PxQuat quat, PxAggregate* aggregate)
 {
 	if (halfHeight == 0)
 		halfHeight = 0.1;
@@ -1615,7 +1710,7 @@ PxRigidDynamic* LeapClass::createCylinder(PxReal radius, PxReal halfHeight, PxVe
 	PxRigidDynamic* actor = gPhysicsSDK->createRigidDynamic(transform);
 	PxShape* capsule = actor->createShape(geometry, *mMaterial);
 	capsule->setLocalPose(PxTransform(quat));
-//	actor->setLinearVelocity(PxVec3(0, 0, 0));
+	//	actor->setLinearVelocity(PxVec3(0, 0, 0));
 	actor->setSolverIterationCounts(32, 32);
 	if (!actor)
 		cerr << "create actor failed!" << endl;
@@ -1640,14 +1735,13 @@ void LeapClass::clearHand()
 	for (int i = 0; i < mHandList.size(); i++)
 		deleteHand(mHandList[i]);
 
-
 	mHandList.clear();
 }
 
 std::map<int, PxVec3> LeapClass::computeForce(std::map<int, PxRigidDynamic*> activeContact)
 {
 	std::map<int, PxVec3> forces;
-	for (map<int , PxRigidDynamic*>::iterator ii = activeContact.begin(); ii != activeContact.end(); ++ii)
+	for (map<int, PxRigidDynamic*>::iterator ii = activeContact.begin(); ii != activeContact.end(); ++ii)
 	{
 		Frame frame = controller.frame();
 		Hand hand = frame.hand((*ii).first);
@@ -1658,8 +1752,7 @@ std::map<int, PxVec3> LeapClass::computeForce(std::map<int, PxRigidDynamic*> act
 			if (hand.grabStrength() > 0.7 || hand.pinchStrength() > 0.7)
 			{
 				try {
-					
-					PxVec3 handPos = leapToWorld(hand.palmPosition(), HandMode::Normal );
+					PxVec3 handPos = leapToWorld(hand.palmPosition(), HandMode::Normal);
 					PxVec3 actorPos = (*ii).second->getGlobalPose().p;
 					PxVec3 d = handPos - actorPos;
 					Leap::Vector n = hand.basis().yBasis;
@@ -1674,17 +1767,14 @@ std::map<int, PxVec3> LeapClass::computeForce(std::map<int, PxRigidDynamic*> act
 				catch (exception ex)
 				{
 				}
-
 			}
 			else
 			{
 				forces[(*ii).first] = (PxVec3(0, 0, 0));
 			}
 		}
-
 	}
 	return forces;
-
 }
 
 PxVec3 LeapClass::getWristPosition(int id)
@@ -1703,7 +1793,6 @@ PxVec3 LeapClass::getWristPosition(int id)
 	{
 		return PxVec3(0, 0, 0);
 	}
-
 }
 
 void LeapClass::switchMirrorHand(int mode)
@@ -1729,12 +1818,13 @@ Leap::Vector LeapClass::PxVec3toLeapVec(PxVec3 pos)
 {
 	return Leap::Vector(pos.x, pos.y, pos.z);
 }
+
 PxVec3 LeapClass::LeapVectoPxVec3(Leap::Vector pos)
 {
 	return PxVec3(pos.x, pos.y, pos.z);
 }
 
-PxRigidDynamic* LeapClass::queryScene(PxTransform transform)
+PxRigidDynamic* LeapClass::queryScene(PxTransform transform, PxGeometry geometry)
 {
 	PxOverlapBuffer hit;            // [out] Overlap results
 	//PxGeometry overlapShape = PxBoxGeometry(10.0,10,10);  // [in] shape to test for overlaps
@@ -1742,7 +1832,7 @@ PxRigidDynamic* LeapClass::queryScene(PxTransform transform)
 	PxQueryFilterData filterData = PxQueryFilterData(PxQueryFlag::eDYNAMIC);
 	filterData.flags |= PxQueryFlag::eANY_HIT;
 	filterData.data.word0 = FilterGroup::eBox;
-	bool status = gScene->overlap(PxSphereGeometry(1), shapePose, hit,filterData);
+	bool status = gScene->overlap(geometry, shapePose, hit, filterData);
 	PxRigidDynamic* hitactor;
 	if (status)
 	{

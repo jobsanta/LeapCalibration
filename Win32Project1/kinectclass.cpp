@@ -12,19 +12,16 @@ KinectClass::KinectClass()
 	m_pDepthBuffer = new UINT16[cDepthWidth*cDepthHeight];
 
 	m_pDepthCoordinates = new DepthSpacePoint[cColorWidth * cColorHeight];
-
 }
 
 KinectClass::~KinectClass()
 {
-
 }
 
 HRESULT KinectClass::Initialize()
 {
 	HRESULT hr;
 	hr = CreateFirstConnected();
-
 
 	return hr;
 }
@@ -70,7 +67,6 @@ HRESULT KinectClass::Process()
 	IMultiSourceFrame* pMultiSourceFrame = NULL;
 	IDepthFrame*       pDepthFrame = NULL;
 	IColorFrame*       pColorFrame = NULL;
-
 
 	HRESULT hr = m_pMultiSourceFrameReader->AcquireLatestFrame(&pMultiSourceFrame);
 	// Get Depth
@@ -121,8 +117,6 @@ HRESULT KinectClass::Process()
 		UINT               nColorBufferSize = 0;
 		RGBQUAD            *pColorBuffer = NULL;
 
-
-
 		pDepthFrame->get_RelativeTime(&nDepthTime);
 		pDepthFrame->get_DepthMaxReliableDistance(&m_pMaxDistance);
 		pDepthFrame->get_DepthMinReliableDistance(&m_pMinDistance);
@@ -148,7 +142,6 @@ HRESULT KinectClass::Process()
 			hr = pColorFrame->get_RawColorImageFormat(&imageFormat);
 		}
 
-
 		//Copy color data to the heap
 		if (SUCCEEDED(hr))
 		{
@@ -168,13 +161,12 @@ HRESULT KinectClass::Process()
 			}
 		}
 
-
-	/*	if (SUCCEEDED(hr))
-		{
-			 ProcessFrame(nDepthTime, pDepthBuffer, nDepthWidth, nDepthHeight,
-				pColorBuffer, nColorWidth, nColorHeight,
-				nMinDistance, nMaxDistance);
-		}*/
+		/*	if (SUCCEEDED(hr))
+			{
+				 ProcessFrame(nDepthTime, pDepthBuffer, nDepthWidth, nDepthHeight,
+					pColorBuffer, nColorWidth, nColorHeight,
+					nMinDistance, nMaxDistance);
+			}*/
 
 		SafeRelease(pDepthFrameDescription);
 		SafeRelease(pColorFrameDescription);
@@ -239,13 +231,9 @@ void KinectClass::Shutdown()
 		m_pKinectSensor->Close();
 	}
 
-
-
 	SafeRelease(m_pKinectSensor);
 
 	SafeRelease(m_pMultiSourceFrameReader);
-
-
 }
 
 void KinectClass::ProcessFrame(INT64 nTime,

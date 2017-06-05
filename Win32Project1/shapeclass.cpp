@@ -20,9 +20,7 @@ bool ShapeClass::Initialize(ID3D11Device* device)
 	bool result;
 	result = BuildGeometryBuffers(device);
 	return result;
-
 }
-
 
 bool ShapeClass::BuildGeometryBuffers(ID3D11Device* device)
 {
@@ -35,7 +33,7 @@ bool ShapeClass::BuildGeometryBuffers(ID3D11Device* device)
 
 	GeometryGenerator geoGen;
 	geoGen.CreateBox(1.0f, 1.0f, 1.0f, box);
-	geoGen.CreateCylinder(0.5f,0.5f, 1.0f, 20, 20, cylinder);
+	geoGen.CreateCylinder(0.5f, 0.5f, 1.0f, 20, 20, cylinder);
 	geoGen.CreateGeosphere(0.5f, 40, sphere);
 	geoGen.CreateGrid(10, 10, 10, 10, grid);
 
@@ -54,20 +52,19 @@ bool ShapeClass::BuildGeometryBuffers(ID3D11Device* device)
 	// Cache the starting index for each object in the concatenated index buffer.
 	mBoxIndexOffset = 0;
 	mCylinderIndexOffset = mBoxIndexCount;
-	mSphereIndexOffset = mCylinderIndexCount+mBoxIndexCount;
+	mSphereIndexOffset = mCylinderIndexCount + mBoxIndexCount;
 	mGridIndexOffset = mSphereIndexOffset + mSphereIndexCount;
 
 	UINT totalVertexCount =
 		box.Vertices.size() +
-		cylinder.Vertices.size()+
-		sphere.Vertices.size()+
+		cylinder.Vertices.size() +
+		sphere.Vertices.size() +
 		grid.Vertices.size();
-		
 
 	UINT totalIndexCount =
 		mBoxIndexCount +
-		mCylinderIndexCount+
-		mSphereIndexCount+
+		mCylinderIndexCount +
+		mSphereIndexCount +
 		mGridIndexCount;
 
 	//
@@ -100,7 +97,6 @@ bool ShapeClass::BuildGeometryBuffers(ID3D11Device* device)
 		vertices[k].Normal = grid.Vertices[i].Normal;
 	}
 
-
 	D3D11_BUFFER_DESC vbd;
 	vbd.Usage = D3D11_USAGE_DEFAULT;
 	vbd.ByteWidth = sizeof(Vertex) * totalVertexCount;
@@ -115,11 +111,10 @@ bool ShapeClass::BuildGeometryBuffers(ID3D11Device* device)
 		return false;
 	}
 
-	
 	//
 	// Pack the indices of all the meshes into one index buffer.
 	//
-		std::vector<UINT> indices;
+	std::vector<UINT> indices;
 	indices.insert(indices.end(), box.Indices.begin(), box.Indices.end());
 	indices.insert(indices.end(), cylinder.Indices.begin(), cylinder.Indices.end());
 	indices.insert(indices.end(), sphere.Indices.begin(), sphere.Indices.end());
@@ -144,7 +139,6 @@ bool ShapeClass::BuildGeometryBuffers(ID3D11Device* device)
 	vertices.clear();
 	m_vertexCount = totalVertexCount;
 	m_indexCount = totalIndexCount;
-
 }
 
 void ShapeClass::ShutdownBuffers()
@@ -171,7 +165,6 @@ void ShapeClass::RenderBuffers(ID3D11Device* device)
 	unsigned int stride;
 	unsigned int offset;
 
-
 	// Set vertex buffer stride and offset.
 	stride = sizeof(Vertex);
 	offset = 0;
@@ -193,7 +186,6 @@ void ShapeClass::Render(ID3D11Device* device)
 {
 	// Put the vertex and index buffers on the graphics pipeline to prepare them for drawing.
 	RenderBuffers(device);
-
 }
 
 int ShapeClass::GetBoxIndexCount()

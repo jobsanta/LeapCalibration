@@ -4,7 +4,6 @@
 #ifndef _SHADOWSHADERCLASS_H_
 #define _SHADOWSHADERCLASS_H_
 
-
 //////////////
 // INCLUDES //
 //////////////
@@ -14,7 +13,6 @@
 #include <fstream>
 using namespace DirectX;
 using namespace std;
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class name: ShadowShaderClass
@@ -46,7 +44,7 @@ public:
 
 	bool Initialize(ID3D11Device*, HWND);
 	void Shutdown();
-	bool Render(ID3D11DeviceContext*, int,int,int, XMMATRIX, XMMATRIX, XMMATRIX, XMMATRIX, XMMATRIX, ID3D11ShaderResourceView*, XMFLOAT3,
+	bool Render(ID3D11DeviceContext*, int, int, int, XMMATRIX, XMMATRIX, XMMATRIX, XMMATRIX, XMMATRIX, ID3D11ShaderResourceView*, XMFLOAT3,
 		XMMATRIX lightViewMatrix2, XMMATRIX lightProjectionMatrix2,
 		ID3D11ShaderResourceView* depthMapTexture2);
 
@@ -58,7 +56,7 @@ private:
 	bool SetShaderParameters(ID3D11DeviceContext*, XMMATRIX, XMMATRIX, XMMATRIX, XMMATRIX, XMMATRIX, ID3D11ShaderResourceView*, XMFLOAT3,
 		XMMATRIX lightViewMatrix2, XMMATRIX lightProjectionMatrix2,
 		ID3D11ShaderResourceView* depthMapTexture2);
-	void RenderShader(ID3D11DeviceContext*, int,int,int);
+	void RenderShader(ID3D11DeviceContext*, int, int, int);
 
 private:
 	ID3D11VertexShader* m_vertexShader;

@@ -2,15 +2,11 @@
 
 Vision3DClass::Vision3DClass()
 {
-
 }
 
 Vision3DClass::~Vision3DClass()
 {
-
 }
-
-
 
 bool Vision3DClass::Initialize(ID3D11Device* g_D3D11Device)
 {
@@ -65,30 +61,28 @@ bool Vision3DClass::Initialize(ID3D11Device* g_D3D11Device)
 
 void Vision3DClass::Render(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pd3dDeviceContext, float cameraDistance)
 {
-	
-			float sep, conv;
-			if (NVAPI_OK != NvAPI_Stereo_SetConvergence(g_StereoHandle, cameraDistance))
-			{
-				MessageBoxA(NULL, "Couldn't set the convergence", "NvAPI_Stereo_SetConvergence failed", MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
-			}
-			if (NVAPI_OK != NvAPI_Stereo_GetSeparation(g_StereoHandle, &sep))
-			{
-				MessageBoxA(NULL, "Couldn't get the separation", "NvAPI_Stereo_GetSeparation failed", MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
-			}
-			if (NVAPI_OK != NvAPI_Stereo_GetConvergence(g_StereoHandle, &conv))
-			{
-				MessageBoxA(NULL, "Couldn't get the convergence", "NvAPI_Stereo_GetConvergence failed", MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
-	
-			}
-			if (sep * 0.01 != g_Separation || conv != g_Convergence)
-			{
-				g_Separation = sep * 0.01;
-				g_Convergence = conv;
-				//g_pStereoSeparation->SetFloat(g_Separation);
-				//g_pStereoConvergence->SetFloat(g_Convergence);
-	
-				g_StereoParamD3D11.updateStereoParamsMap(pd3dDevice, pd3dDeviceContext, g_EyeSeparation, g_Separation, g_Convergence);
-			}
+	float sep, conv;
+	if (NVAPI_OK != NvAPI_Stereo_SetConvergence(g_StereoHandle, cameraDistance))
+	{
+		MessageBoxA(NULL, "Couldn't set the convergence", "NvAPI_Stereo_SetConvergence failed", MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
+	}
+	if (NVAPI_OK != NvAPI_Stereo_GetSeparation(g_StereoHandle, &sep))
+	{
+		MessageBoxA(NULL, "Couldn't get the separation", "NvAPI_Stereo_GetSeparation failed", MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
+	}
+	if (NVAPI_OK != NvAPI_Stereo_GetConvergence(g_StereoHandle, &conv))
+	{
+		MessageBoxA(NULL, "Couldn't get the convergence", "NvAPI_Stereo_GetConvergence failed", MB_OK | MB_SETFOREGROUND | MB_TOPMOST);
+	}
+	if (sep * 0.01 != g_Separation || conv != g_Convergence)
+	{
+		g_Separation = sep * 0.01;
+		g_Convergence = conv;
+		//g_pStereoSeparation->SetFloat(g_Separation);
+		//g_pStereoConvergence->SetFloat(g_Convergence);
+
+		g_StereoParamD3D11.updateStereoParamsMap(pd3dDevice, pd3dDeviceContext, g_EyeSeparation, g_Separation, g_Convergence);
+	}
 }
 
 void Vision3DClass::Shutdown()

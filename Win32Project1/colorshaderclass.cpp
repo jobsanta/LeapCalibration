@@ -13,11 +13,9 @@ ColorShaderClass::ColorShaderClass()
 	m_matrixPerObject = 0;
 }
 
-
 ColorShaderClass::ColorShaderClass(const ColorShaderClass& other)
 {
 }
-
 
 ColorShaderClass::~ColorShaderClass()
 {
@@ -26,7 +24,6 @@ ColorShaderClass::~ColorShaderClass()
 bool ColorShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 {
 	bool result;
-
 
 	// Initialize the vertex and pixel shaders.
 	result = InitializeShader(device, hwnd, L"../Win32Project1/color.fx", L"../Win32Project1/color.fx");
@@ -46,12 +43,12 @@ void ColorShaderClass::Shutdown()
 	return;
 }
 
-bool ColorShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount,int indexOffset, int vertexOffset)
+bool ColorShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount, int indexOffset, int vertexOffset)
 {
 	bool result;
-		
+
 	// Now render the prepared buffers with the shader.
-	RenderShader(deviceContext, indexCount,indexOffset,vertexOffset);
+	RenderShader(deviceContext, indexCount, indexOffset, vertexOffset);
 
 	return true;
 }
@@ -68,12 +65,10 @@ bool ColorShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* 
 	D3D11_BUFFER_DESC matrixBufferDesc;
 	D3D11_BUFFER_DESC lightBufferDesc;
 
-
 	// Initialize the pointers this function will use to null.
 	errorMessage = 0;
 	vertexShaderBuffer = 0;
 	pixelShaderBuffer = 0;
-
 
 	// Compile the vertex shader code.
 	result = D3DCompileFromFile(vsFilename, NULL, NULL, "ColorVertexShader", "vs_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0,
@@ -113,7 +108,6 @@ bool ColorShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* 
 		return false;
 	}
 
-
 	// Create the vertex shader from the buffer.
 	result = device->CreateVertexShader(vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(), NULL, &m_vertexShader);
 	if (FAILED(result))
@@ -145,7 +139,6 @@ bool ColorShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* 
 	polygonLayout[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
 	polygonLayout[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	polygonLayout[1].InstanceDataStepRate = 0;
-
 
 	// Get a count of the elements in the layout.
 	numElements = sizeof(polygonLayout) / sizeof(polygonLayout[0]);
@@ -219,7 +212,6 @@ bool ColorShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* 
 	}
 
 	return true;
-
 }
 
 void ColorShaderClass::ShutdownShader()
@@ -231,7 +223,6 @@ void ColorShaderClass::ShutdownShader()
 		m_matrixPerframe = 0;
 	}
 
-	
 	// Release the light constant buffer.
 	if (m_matrixPerObject)
 	{
@@ -244,7 +235,6 @@ void ColorShaderClass::ShutdownShader()
 		m_sampleStateClamp->Release();
 		m_sampleStateClamp = 0;
 	}
-
 
 	// Release the layout.
 	if (m_layout)
@@ -276,7 +266,6 @@ void ColorShaderClass::OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND h
 	unsigned long long bufferSize, i;
 	ofstream fout;
 
-
 	// Get a pointer to the error message text buffer.
 	compileErrors = (char*)(errorMessage->GetBufferPointer());
 
@@ -287,7 +276,7 @@ void ColorShaderClass::OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND h
 	fout.open("shader-error.txt");
 
 	// Write out the error message.
-	for (i = 0; i<bufferSize; i++)
+	for (i = 0; i < bufferSize; i++)
 	{
 		fout << compileErrors[i];
 	}
@@ -305,14 +294,13 @@ void ColorShaderClass::OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND h
 	return;
 }
 
-bool ColorShaderClass::SetShaderPerFrame(ID3D11DeviceContext* deviceContext, ID3D11ShaderResourceView* depthMapTexture, XMFLOAT3 lightPosition, 
-	XMFLOAT4 ambientColor, XMFLOAT4 diffuseColor, XMFLOAT4 specularColor,float range, XMFLOAT3 attenuate)
+bool ColorShaderClass::SetShaderPerFrame(ID3D11DeviceContext* deviceContext, ID3D11ShaderResourceView* depthMapTexture, XMFLOAT3 lightPosition,
+	XMFLOAT4 ambientColor, XMFLOAT4 diffuseColor, XMFLOAT4 specularColor, float range, XMFLOAT3 attenuate)
 {
 	HRESULT result;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	cbPerFrame* dataPtr;
 	unsigned int bufferNumber;
-
 
 	// Lock the light constant buffer so it can be written to.
 	result = deviceContext->Map(m_matrixPerframe, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
@@ -333,7 +321,6 @@ bool ColorShaderClass::SetShaderPerFrame(ID3D11DeviceContext* deviceContext, ID3
 	dataPtr->range = range;
 	dataPtr->Attenuate = attenuate;
 
-
 	// Unlock the constant buffer.
 	deviceContext->Unmap(m_matrixPerframe, 0);
 
@@ -344,23 +331,19 @@ bool ColorShaderClass::SetShaderPerFrame(ID3D11DeviceContext* deviceContext, ID3
 	deviceContext->PSSetConstantBuffers(bufferNumber, 1, &m_matrixPerframe);
 
 	deviceContext->PSSetShaderResources(0, 1, &depthMapTexture);
-	
 
 	return true;
 }
 
-
 bool ColorShaderClass::SetShaderPerObject(ID3D11DeviceContext* deviceContext, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
-	XMMATRIX projectionMatrix, Material color,XMFLOAT3 camera)
+	XMMATRIX projectionMatrix, Material color, XMFLOAT3 camera)
 {
 	HRESULT result;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	cbPerObject* dataPtr;
 	unsigned int bufferNumber;
 
-
 	XMMATRIX world, view, proj, lightView, lightProj;
-
 
 	// Transpose the matrices to prepare them for the shader.
 	world = XMMatrixTranspose(worldMatrix);
@@ -395,12 +378,10 @@ bool ColorShaderClass::SetShaderPerObject(ID3D11DeviceContext* deviceContext, XM
 	deviceContext->VSSetConstantBuffers(bufferNumber, 1, &m_matrixPerObject);
 	deviceContext->PSSetConstantBuffers(bufferNumber, 1, &m_matrixPerObject);
 
-
-
 	return true;
 }
 
-void ColorShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int indexCount,int indexOffset, int vertexOffset)
+void ColorShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int indexCount, int indexOffset, int vertexOffset)
 {
 	// Set the vertex input layout.
 	deviceContext->IASetInputLayout(m_layout);

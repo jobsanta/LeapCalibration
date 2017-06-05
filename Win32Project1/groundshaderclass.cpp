@@ -14,11 +14,9 @@ GroundShaderClass::GroundShaderClass()
 	m_lightBuffer2 = 0;
 }
 
-
 GroundShaderClass::GroundShaderClass(const GroundShaderClass& other)
 {
 }
-
 
 GroundShaderClass::~GroundShaderClass()
 {
@@ -27,7 +25,6 @@ GroundShaderClass::~GroundShaderClass()
 bool GroundShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 {
 	bool result;
-
 
 	// Initialize the vertex and pixel shaders.
 	result = InitializeShader(device, hwnd, L"../Win32Project1/ground.fx", L"../Win32Project1/ground.fx");
@@ -47,23 +44,22 @@ void GroundShaderClass::Shutdown()
 	return;
 }
 
-bool GroundShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount,int indexOffset, int vertexOffset, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
-	XMMATRIX projectionMatrix, XMMATRIX lightViewMatrix, XMMATRIX lightProjectionMatrix,  ID3D11ShaderResourceView* depthMapTexture
+bool GroundShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount, int indexOffset, int vertexOffset, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
+	XMMATRIX projectionMatrix, XMMATRIX lightViewMatrix, XMMATRIX lightProjectionMatrix, ID3D11ShaderResourceView* depthMapTexture
 	, XMFLOAT3 lightPosition, XMFLOAT4 ambientColor, XMFLOAT4 diffuseColor)
 {
 	bool result;
 
-
 	// Set the shader parameters that it will use for rendering.
 	result = SetShaderParameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix, lightViewMatrix,
-		lightProjectionMatrix,depthMapTexture,lightPosition, ambientColor, diffuseColor);
+		lightProjectionMatrix, depthMapTexture, lightPosition, ambientColor, diffuseColor);
 	if (!result)
 	{
 		return false;
 	}
 
 	// Now render the prepared buffers with the shader.
-	RenderShader(deviceContext, indexCount,indexOffset,vertexOffset);
+	RenderShader(deviceContext, indexCount, indexOffset, vertexOffset);
 
 	return true;
 }
@@ -81,12 +77,10 @@ bool GroundShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR*
 	D3D11_BUFFER_DESC lightBufferDesc;
 	D3D11_BUFFER_DESC lightBufferDesc2;
 
-
 	// Initialize the pointers this function will use to null.
 	errorMessage = 0;
 	vertexShaderBuffer = 0;
 	pixelShaderBuffer = 0;
-
 
 	// Compile the vertex shader code.
 	result = D3DCompileFromFile(vsFilename, NULL, NULL, "ColorVertexShader", "vs_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0,
@@ -126,7 +120,6 @@ bool GroundShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR*
 		return false;
 	}
 
-
 	// Create the vertex shader from the buffer.
 	result = device->CreateVertexShader(vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(), NULL, &m_vertexShader);
 	if (FAILED(result))
@@ -151,7 +144,6 @@ bool GroundShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR*
 	polygonLayout[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	polygonLayout[0].InstanceDataStepRate = 0;
 
-
 	polygonLayout[1].SemanticName = "NORMAL";
 	polygonLayout[1].SemanticIndex = 0;
 	polygonLayout[1].Format = DXGI_FORMAT_R32G32B32_FLOAT;
@@ -159,7 +151,6 @@ bool GroundShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR*
 	polygonLayout[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
 	polygonLayout[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	polygonLayout[1].InstanceDataStepRate = 0;
-
 
 	// Get a count of the elements in the layout.
 	numElements = sizeof(polygonLayout) / sizeof(polygonLayout[0]);
@@ -248,7 +239,6 @@ bool GroundShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR*
 	}
 
 	return true;
-
 }
 
 void GroundShaderClass::ShutdownShader()
@@ -260,7 +250,6 @@ void GroundShaderClass::ShutdownShader()
 		m_matrixBuffer = 0;
 	}
 
-	
 	// Release the light constant buffer.
 	if (m_lightBuffer)
 	{
@@ -278,7 +267,6 @@ void GroundShaderClass::ShutdownShader()
 		m_sampleStateClamp->Release();
 		m_sampleStateClamp = 0;
 	}
-
 
 	// Release the layout.
 	if (m_layout)
@@ -310,7 +298,6 @@ void GroundShaderClass::OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND 
 	unsigned long long bufferSize, i;
 	ofstream fout;
 
-
 	// Get a pointer to the error message text buffer.
 	compileErrors = (char*)(errorMessage->GetBufferPointer());
 
@@ -321,7 +308,7 @@ void GroundShaderClass::OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND 
 	fout.open("shader-error.txt");
 
 	// Write out the error message.
-	for (i = 0; i<bufferSize; i++)
+	for (i = 0; i < bufferSize; i++)
 	{
 		fout << compileErrors[i];
 	}
@@ -350,9 +337,7 @@ bool GroundShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, 
 	LightBufferType2* dataPtr3;
 	unsigned int bufferNumber;
 
-
 	XMMATRIX world, view, proj, lightView, lightProj;
-
 
 	// Transpose the matrices to prepare them for the shader.
 	world = XMMatrixTranspose(worldMatrix);
@@ -434,7 +419,7 @@ bool GroundShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, 
 	return true;
 }
 
-void GroundShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int indexCount,int indexOffset, int vertexOffset)
+void GroundShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int indexCount, int indexOffset, int vertexOffset)
 {
 	// Set the vertex input layout.
 	deviceContext->IASetInputLayout(m_layout);

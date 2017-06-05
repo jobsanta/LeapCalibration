@@ -3,7 +3,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "verticalblurshaderclass.h"
 
-
 VerticalBlurShaderClass::VerticalBlurShaderClass()
 {
 	m_vertexShader = 0;
@@ -14,32 +13,27 @@ VerticalBlurShaderClass::VerticalBlurShaderClass()
 	m_screenSizeBuffer = 0;
 }
 
-
 VerticalBlurShaderClass::VerticalBlurShaderClass(const VerticalBlurShaderClass& other)
 {
 }
-
 
 VerticalBlurShaderClass::~VerticalBlurShaderClass()
 {
 }
 
-
 bool VerticalBlurShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 {
 	bool result;
 
-
 	// Initialize the vertex and pixel shaders.
 	result = InitializeShader(device, hwnd, L"../Win32Project1/verticalblur.fx", L"../Win32Project1/verticalblur.fx");
-	if(!result)
+	if (!result)
 	{
 		return false;
 	}
 
 	return true;
 }
-
 
 void VerticalBlurShaderClass::Shutdown()
 {
@@ -49,16 +43,14 @@ void VerticalBlurShaderClass::Shutdown()
 	return;
 }
 
-
-bool VerticalBlurShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix, 
-									 XMMATRIX projectionMatrix, ID3D11ShaderResourceView* texture, float screenHeight)
+bool VerticalBlurShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
+	XMMATRIX projectionMatrix, ID3D11ShaderResourceView* texture, float screenHeight)
 {
 	bool result;
 
-
 	// Set the shader parameters that it will use for rendering.
 	result = SetShaderParameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix, texture, screenHeight);
-	if(!result)
+	if (!result)
 	{
 		return false;
 	}
@@ -69,7 +61,6 @@ bool VerticalBlurShaderClass::Render(ID3D11DeviceContext* deviceContext, int ind
 	return true;
 }
 
-
 bool VerticalBlurShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* vsFilename, WCHAR* psFilename)
 {
 	HRESULT result;
@@ -78,23 +69,22 @@ bool VerticalBlurShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, 
 	ID3D10Blob* pixelShaderBuffer;
 	D3D11_INPUT_ELEMENT_DESC polygonLayout[2];
 	unsigned int numElements;
-    D3D11_SAMPLER_DESC samplerDesc;
+	D3D11_SAMPLER_DESC samplerDesc;
 	D3D11_BUFFER_DESC matrixBufferDesc;
 	D3D11_BUFFER_DESC screenSizeBufferDesc;
-
 
 	// Initialize the pointers this function will use to null.
 	errorMessage = 0;
 	vertexShaderBuffer = 0;
 	pixelShaderBuffer = 0;
 
-    // Compile the vertex shader code.
-	result = D3DCompileFromFile(vsFilename, NULL, NULL, "VerticalBlurVertexShader", "vs_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, 
-								   &vertexShaderBuffer, &errorMessage);
-	if(FAILED(result))
+	// Compile the vertex shader code.
+	result = D3DCompileFromFile(vsFilename, NULL, NULL, "VerticalBlurVertexShader", "vs_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0,
+		&vertexShaderBuffer, &errorMessage);
+	if (FAILED(result))
 	{
 		// If the shader failed to compile it should have writen something to the error message.
-		if(errorMessage)
+		if (errorMessage)
 		{
 			OutputShaderErrorMessage(errorMessage, hwnd, vsFilename);
 		}
@@ -107,13 +97,13 @@ bool VerticalBlurShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, 
 		return false;
 	}
 
-    // Compile the pixel shader code.
-	result = D3DCompileFromFile(psFilename, NULL, NULL, "VerticalBlurPixelShader", "ps_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, 
-								   &pixelShaderBuffer, &errorMessage);
-	if(FAILED(result))
+	// Compile the pixel shader code.
+	result = D3DCompileFromFile(psFilename, NULL, NULL, "VerticalBlurPixelShader", "ps_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0,
+		&pixelShaderBuffer, &errorMessage);
+	if (FAILED(result))
 	{
 		// If the shader failed to compile it should have writen something to the error message.
-		if(errorMessage)
+		if (errorMessage)
 		{
 			OutputShaderErrorMessage(errorMessage, hwnd, psFilename);
 		}
@@ -126,16 +116,16 @@ bool VerticalBlurShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, 
 		return false;
 	}
 
-    // Create the vertex shader from the buffer.
-    result = device->CreateVertexShader(vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(), NULL, &m_vertexShader);
-	if(FAILED(result))
+	// Create the vertex shader from the buffer.
+	result = device->CreateVertexShader(vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(), NULL, &m_vertexShader);
+	if (FAILED(result))
 	{
 		return false;
 	}
 
-    // Create the pixel shader from the buffer.
-    result = device->CreatePixelShader(pixelShaderBuffer->GetBufferPointer(), pixelShaderBuffer->GetBufferSize(), NULL, &m_pixelShader);
-	if(FAILED(result))
+	// Create the pixel shader from the buffer.
+	result = device->CreatePixelShader(pixelShaderBuffer->GetBufferPointer(), pixelShaderBuffer->GetBufferSize(), NULL, &m_pixelShader);
+	if (FAILED(result))
 	{
 		return false;
 	}
@@ -159,12 +149,12 @@ bool VerticalBlurShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, 
 	polygonLayout[1].InstanceDataStepRate = 0;
 
 	// Get a count of the elements in the layout.
-    numElements = sizeof(polygonLayout) / sizeof(polygonLayout[0]);
+	numElements = sizeof(polygonLayout) / sizeof(polygonLayout[0]);
 
 	// Create the vertex input layout.
-	result = device->CreateInputLayout(polygonLayout, numElements, vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(), 
-		                               &m_layout);
-	if(FAILED(result))
+	result = device->CreateInputLayout(polygonLayout, numElements, vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(),
+		&m_layout);
+	if (FAILED(result))
 	{
 		return false;
 	}
@@ -177,53 +167,53 @@ bool VerticalBlurShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, 
 	pixelShaderBuffer = 0;
 
 	// Create a texture sampler state description.
-    samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-    samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-    samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-    samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-    samplerDesc.MipLODBias = 0.0f;
-    samplerDesc.MaxAnisotropy = 1;
-    samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-    samplerDesc.BorderColor[0] = 0;
+	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.MipLODBias = 0.0f;
+	samplerDesc.MaxAnisotropy = 1;
+	samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+	samplerDesc.BorderColor[0] = 0;
 	samplerDesc.BorderColor[1] = 0;
 	samplerDesc.BorderColor[2] = 0;
 	samplerDesc.BorderColor[3] = 0;
-    samplerDesc.MinLOD = 0;
-    samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	samplerDesc.MinLOD = 0;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
 	// Create the texture sampler state.
-    result = device->CreateSamplerState(&samplerDesc, &m_sampleState);
-	if(FAILED(result))
+	result = device->CreateSamplerState(&samplerDesc, &m_sampleState);
+	if (FAILED(result))
 	{
 		return false;
 	}
 
 	// Setup the description of the dynamic matrix constant buffer that is in the vertex shader.
-    matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 	matrixBufferDesc.ByteWidth = sizeof(MatrixBufferType);
-    matrixBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-    matrixBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-    matrixBufferDesc.MiscFlags = 0;
+	matrixBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	matrixBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	matrixBufferDesc.MiscFlags = 0;
 	matrixBufferDesc.StructureByteStride = 0;
 
 	// Create the constant buffer pointer so we can access the vertex shader constant buffer from within this class.
 	result = device->CreateBuffer(&matrixBufferDesc, NULL, &m_matrixBuffer);
-	if(FAILED(result))
+	if (FAILED(result))
 	{
 		return false;
 	}
 
 	// Setup the description of the dynamic screen size constant buffer that is in the vertex shader.
-    screenSizeBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	screenSizeBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 	screenSizeBufferDesc.ByteWidth = sizeof(ScreenSizeBufferType);
-    screenSizeBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-    screenSizeBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-    screenSizeBufferDesc.MiscFlags = 0;
+	screenSizeBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	screenSizeBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	screenSizeBufferDesc.MiscFlags = 0;
 	screenSizeBufferDesc.StructureByteStride = 0;
 
 	// Create the constant buffer pointer so we can access the vertex shader constant buffer from within this class.
 	result = device->CreateBuffer(&screenSizeBufferDesc, NULL, &m_screenSizeBuffer);
-	if(FAILED(result))
+	if (FAILED(result))
 	{
 		return false;
 	}
@@ -231,46 +221,45 @@ bool VerticalBlurShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, 
 	return true;
 }
 
-
 void VerticalBlurShaderClass::ShutdownShader()
 {
 	// Release the screen size constant buffer.
-	if(m_screenSizeBuffer)
+	if (m_screenSizeBuffer)
 	{
 		m_screenSizeBuffer->Release();
 		m_screenSizeBuffer = 0;
 	}
 
 	// Release the matrix constant buffer.
-	if(m_matrixBuffer)
+	if (m_matrixBuffer)
 	{
 		m_matrixBuffer->Release();
 		m_matrixBuffer = 0;
 	}
 
 	// Release the sampler state.
-	if(m_sampleState)
+	if (m_sampleState)
 	{
 		m_sampleState->Release();
 		m_sampleState = 0;
 	}
 
 	// Release the layout.
-	if(m_layout)
+	if (m_layout)
 	{
 		m_layout->Release();
 		m_layout = 0;
 	}
 
 	// Release the pixel shader.
-	if(m_pixelShader)
+	if (m_pixelShader)
 	{
 		m_pixelShader->Release();
 		m_pixelShader = 0;
 	}
 
 	// Release the vertex shader.
-	if(m_vertexShader)
+	if (m_vertexShader)
 	{
 		m_vertexShader->Release();
 		m_vertexShader = 0;
@@ -279,13 +268,11 @@ void VerticalBlurShaderClass::ShutdownShader()
 	return;
 }
 
-
 void VerticalBlurShaderClass::OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND hwnd, WCHAR* shaderFilename)
 {
 	char* compileErrors;
 	unsigned long bufferSize, i;
 	ofstream fout;
-
 
 	// Get a pointer to the error message text buffer.
 	compileErrors = (char*)(errorMessage->GetBufferPointer());
@@ -297,7 +284,7 @@ void VerticalBlurShaderClass::OutputShaderErrorMessage(ID3D10Blob* errorMessage,
 	fout.open("shader-error.txt");
 
 	// Write out the error message.
-	for(i=0; i<bufferSize; i++)
+	for (i = 0; i < bufferSize; i++)
 	{
 		fout << compileErrors[i];
 	}
@@ -315,16 +302,14 @@ void VerticalBlurShaderClass::OutputShaderErrorMessage(ID3D10Blob* errorMessage,
 	return;
 }
 
-
-bool VerticalBlurShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, XMMATRIX worldMatrix, XMMATRIX viewMatrix, 
-												  XMMATRIX projectionMatrix, ID3D11ShaderResourceView* texture, float screenHeight)
+bool VerticalBlurShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
+	XMMATRIX projectionMatrix, ID3D11ShaderResourceView* texture, float screenHeight)
 {
 	HRESULT result;
-    D3D11_MAPPED_SUBRESOURCE mappedResource;
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	MatrixBufferType* dataPtr;
 	unsigned int bufferNumber;
 	ScreenSizeBufferType* dataPtr2;
-
 
 	XMMATRIX world, view, proj;
 
@@ -335,7 +320,7 @@ bool VerticalBlurShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceCon
 
 	// Lock the matrix constant buffer so it can be written to.
 	result = deviceContext->Map(m_matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-	if(FAILED(result))
+	if (FAILED(result))
 	{
 		return false;
 	}
@@ -349,17 +334,17 @@ bool VerticalBlurShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceCon
 	dataPtr->projection = proj;
 
 	// Unlock the constant buffer.
-    deviceContext->Unmap(m_matrixBuffer, 0);
+	deviceContext->Unmap(m_matrixBuffer, 0);
 
 	// Set the position of the constant buffer in the vertex shader.
 	bufferNumber = 0;
 
 	// Now set the constant buffer in the vertex shader with the updated values.
-    deviceContext->VSSetConstantBuffers(bufferNumber, 1, &m_matrixBuffer);
+	deviceContext->VSSetConstantBuffers(bufferNumber, 1, &m_matrixBuffer);
 
 	// Lock the screen size constant buffer so it can be written to.
 	result = deviceContext->Map(m_screenSizeBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-	if(FAILED(result))
+	if (FAILED(result))
 	{
 		return false;
 	}
@@ -372,13 +357,13 @@ bool VerticalBlurShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceCon
 	dataPtr2->padding = XMFLOAT3(0.0f, 0.0f, 0.0f);
 
 	// Unlock the constant buffer.
-    deviceContext->Unmap(m_screenSizeBuffer, 0);
+	deviceContext->Unmap(m_screenSizeBuffer, 0);
 
 	// Set the position of the constant buffer in the vertex shader.
 	bufferNumber = 1;
 
 	// Now set the constant buffer in the vertex shader with the updated values.
-    deviceContext->VSSetConstantBuffers(bufferNumber, 1, &m_screenSizeBuffer);
+	deviceContext->VSSetConstantBuffers(bufferNumber, 1, &m_screenSizeBuffer);
 
 	// Set shader texture resource in the pixel shader.
 	deviceContext->PSSetShaderResources(0, 1, &texture);
@@ -386,15 +371,14 @@ bool VerticalBlurShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceCon
 	return true;
 }
 
-
 void VerticalBlurShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int indexCount)
 {
 	// Set the vertex input layout.
 	deviceContext->IASetInputLayout(m_layout);
 
-    // Set the vertex and pixel shaders that will be used to render this triangle.
-    deviceContext->VSSetShader(m_vertexShader, NULL, 0);
-    deviceContext->PSSetShader(m_pixelShader, NULL, 0);
+	// Set the vertex and pixel shaders that will be used to render this triangle.
+	deviceContext->VSSetShader(m_vertexShader, NULL, 0);
+	deviceContext->PSSetShader(m_pixelShader, NULL, 0);
 
 	// Set the sampler state in the pixel shader.
 	deviceContext->PSSetSamplers(0, 1, &m_sampleState);

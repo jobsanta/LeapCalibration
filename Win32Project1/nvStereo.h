@@ -17,38 +17,37 @@
 
 namespace nv
 {
-    class StereoParametersD3D9
-    {
-    public:
-        /********************************* TYPES **********************************/
+	class StereoParametersD3D9
+	{
+	public:
+		/********************************* TYPES **********************************/
 
-        /******************************* ATTRIBUTES *******************************/
+		/******************************* ATTRIBUTES *******************************/
 
+		/******************************** METHODS *********************************/
 
-        /******************************** METHODS *********************************/
+		// Create / Destroy
+		StereoParametersD3D9();
+		virtual ~StereoParametersD3D9();
 
-        // Create / Destroy
-        StereoParametersD3D9();
-        virtual ~StereoParametersD3D9();
+		// Create the graphics objects
+		void createGraphics(IDirect3DDevice9* pd3dDevice);
+		void destroyGraphics();
 
-        // Create the graphics objects
-        void createGraphics( IDirect3DDevice9* pd3dDevice );
-        void destroyGraphics();
-        
-        // Update the stereo parameters data
-        // Call this function everytime the stereo Separation or the stereo Convergence changes
-        void updateStereoParamsMap( IDirect3DDevice9* pd3dDevice, float eyeSeparation, float separation, float convergence );
+		// Update the stereo parameters data
+		// Call this function everytime the stereo Separation or the stereo Convergence changes
+		void updateStereoParamsMap(IDirect3DDevice9* pd3dDevice, float eyeSeparation, float separation, float convergence);
 
-        IDirect3DTexture9* getStereoParamMapTexture() { return m_StereoParamsMap; }
+		IDirect3DTexture9* getStereoParamMapTexture() { return m_StereoParamsMap; }
 
-    protected:
+	protected:
 
-        /******************************* ATTRIBUTES *******************************/
+		/******************************* ATTRIBUTES *******************************/
 
-        IDirect3DTexture9*              m_StereoParamsMap;
+		IDirect3DTexture9*              m_StereoParamsMap;
 
-        /******************************** METHODS *********************************/
-    };
+		/******************************** METHODS *********************************/
+	};
 }
 
 //--------------------------------------------------------------------------------------
@@ -58,46 +57,43 @@ namespace nv
 //Declared Directx 11 here to avoid compiler confusion
 #include "d3d11.h"
 
-
 #include "d3d10.h"
 
 namespace nv
 {
-    class StereoParametersD3D10
-    {
-    public:
-        /********************************* TYPES **********************************/
+	class StereoParametersD3D10
+	{
+	public:
+		/********************************* TYPES **********************************/
 
-        /******************************* ATTRIBUTES *******************************/
+		/******************************* ATTRIBUTES *******************************/
 
+		/******************************** METHODS *********************************/
 
-        /******************************** METHODS *********************************/
+		// Create / Destroy
+		StereoParametersD3D10();
+		virtual ~StereoParametersD3D10();
 
-        // Create / Destroy
-        StereoParametersD3D10();
-        virtual ~StereoParametersD3D10();
+		// Create the graphics objects
+		void createGraphics(ID3D10Device* pd3dDevice);
+		void destroyGraphics();
 
-        // Create the graphics objects
-        void createGraphics( ID3D10Device* pd3dDevice );
-        void destroyGraphics();
-        
-        // Update the stereo parameters data
-        // Call this function everytime the stereo Separation or the stereo Convergence changes
-        void updateStereoParamsMap( ID3D10Device* pd3dDevice, float eyeSeparation, float separation, float convergence );
+		// Update the stereo parameters data
+		// Call this function everytime the stereo Separation or the stereo Convergence changes
+		void updateStereoParamsMap(ID3D10Device* pd3dDevice, float eyeSeparation, float separation, float convergence);
 
-        ID3D10ShaderResourceView* getStereoParamMapSRV() { return m_StereoParamsMapSRV; }
+		ID3D10ShaderResourceView* getStereoParamMapSRV() { return m_StereoParamsMapSRV; }
 
-    protected:
+	protected:
 
-        /******************************* ATTRIBUTES *******************************/
+		/******************************* ATTRIBUTES *******************************/
 
-        ID3D10Texture2D*                m_StereoParamsMap;
-        ID3D10ShaderResourceView*       m_StereoParamsMapSRV;
+		ID3D10Texture2D*                m_StereoParamsMap;
+		ID3D10ShaderResourceView*       m_StereoParamsMapSRV;
 
-        /******************************** METHODS *********************************/
-    };
+		/******************************** METHODS *********************************/
+	};
 }
-
 
 namespace nv
 {
@@ -107,7 +103,6 @@ namespace nv
 		/********************************* TYPES **********************************/
 
 		/******************************* ATTRIBUTES *******************************/
-
 
 		/******************************** METHODS *********************************/
 
@@ -137,4 +132,3 @@ namespace nv
 }
 
 #endif
-

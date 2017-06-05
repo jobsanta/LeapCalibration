@@ -2,7 +2,6 @@
 // Filename: shadow.vs
 ////////////////////////////////////////////////////////////////////////////////
 
-
 /////////////
 // GLOBALS //
 /////////////
@@ -20,9 +19,7 @@ cbuffer MatrixBuffer
 	matrix lightProjectionMatrix;
 	matrix lightViewMatrix2;
 	matrix lightProjectionMatrix2;
-
 };
-
 
 //////////////////////
 // CONSTANT BUFFERS //
@@ -32,7 +29,6 @@ cbuffer LightBuffer2
 	float3 lightPosition;
 	float padding;
 };
-
 
 //////////////
 // TYPEDEFS //
@@ -52,7 +48,6 @@ struct PixelInputType
 	float4 lightViewPosition2 : TEXCOORD3;
 	float3 lightPos2 : TEXCOORD4;
 };
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Vertex Shader
@@ -82,7 +77,6 @@ PixelInputType ShadowVertexShader(VertexInputType input)
 	output.lightViewPosition2 = mul(output.lightViewPosition2, lightProjectionMatrix2);
 
 	// Store the texture coordinates for the pixel shader.
-
 
 	// Calculate the normal vector against the world matrix only.
 	output.normal = mul(input.normal, (float3x3)worldMatrix);
@@ -120,7 +114,6 @@ float2 projectTexCoord;
 float depthValue;
 float lightDepthValue;
 float lightIntensity;
-
 
 // Set the bias value for fixing the floating point precision issues.
 bias = 0.001f;

@@ -23,7 +23,7 @@ using namespace std;
 class PhysxClass : public PxSimulationEventCallback
 {
 public:
-	const PxReal FLOOR_LEVEL = 0.5f;
+	const PxReal FLOOR_LEVEL = 1.0f;
 public:
 
 	PhysxClass();
@@ -44,7 +44,6 @@ public:
 	bool getTargetStatus();
 	void clearTargetStatus();
 
-
 	void removeActor(PxRigidActor* actor);
 	void moveBackWall(float z_offset);
 	void moveFloor(float y_offset);
@@ -56,7 +55,7 @@ public:
 	void clearContact();
 	void setHandActor(std::vector<handActor> HandList);
 
-	virtual void							onTrigger(PxTriggerPair* pairs, PxU32 count) ;
+	virtual void							onTrigger(PxTriggerPair* pairs, PxU32 count);
 	virtual void							onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs);
 	virtual void							onConstraintBreak(PxConstraintInfo*, PxU32) {}
 	virtual void							onWake(PxActor**, PxU32) {}
@@ -65,7 +64,6 @@ public:
 	bool gGrabFound;
 	bool gTargetHit;
 	int gTouchId;
-
 
 private:
 
@@ -92,7 +90,7 @@ private:
 	PxRigidStatic* moveAbleWall;
 	PxRigidStatic* moveAbleFrontWall;
 	PxRigidStatic* moveAbleFloor;
-	
+
 	std::vector<handActor> mHandList;
 	PxRigidDynamic* activeActor;
 	PxRigidDynamic* activeHand;
@@ -103,6 +101,4 @@ private:
 
 	vector<PxRigidActor*> boxes;
 	vector<PxRigidActor*> spheres;
-
-	
 };

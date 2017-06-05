@@ -4,14 +4,12 @@
 #ifndef _TERRAINCLASS_H_
 #define _TERRAINCLASS_H_
 
-
 //////////////
 // INCLUDES //
 //////////////
 #include <d3d11.h>
 #include <directxmath.h>
 using namespace DirectX;
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class name: TerrainClass

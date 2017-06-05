@@ -14,11 +14,9 @@ CameraClass::CameraClass()
 	m_rotationZ = 0.0f;
 }
 
-
 CameraClass::CameraClass(const CameraClass& other)
 {
 }
-
 
 CameraClass::~CameraClass()
 {
@@ -31,7 +29,6 @@ void CameraClass::SetPosition(float x, float y, float z)
 	m_positionZ = z;
 	return;
 }
-
 
 void CameraClass::SetRotation(float x, float y, float z)
 {
@@ -46,7 +43,6 @@ XMFLOAT3 CameraClass::GetPosition()
 	return XMFLOAT3(m_positionX, m_positionY, m_positionZ);
 }
 
-
 XMFLOAT3 CameraClass::GetRotation()
 {
 	return XMFLOAT3(m_rotationX, m_rotationY, m_rotationZ);
@@ -58,7 +54,6 @@ void CameraClass::Render(XMFLOAT3 lookAt)
 	XMVECTOR upVector, positionVector, lookAtVector;
 	float yaw, pitch, roll;
 	XMMATRIX rotationMatrix;
-
 
 	// Setup the vector that points upwards.
 	up.x = 0.0f;
@@ -108,13 +103,11 @@ void CameraClass::GetViewMatrix(XMMATRIX& viewMatrix)
 	return;
 }
 
-
 void CameraClass::RenderBaseViewMatrix()
 {
 	XMFLOAT3 up, position, lookAt;
 	float radians;
 	XMVECTOR upVector, positionVector, lookAtVector;
-
 
 	// Setup the vector that points upwards.
 	up.x = 0.0f;
@@ -143,7 +136,6 @@ void CameraClass::RenderBaseViewMatrix()
 
 	return;
 }
-
 
 void CameraClass::GetBaseViewMatrix(XMMATRIX& viewMatrix)
 {

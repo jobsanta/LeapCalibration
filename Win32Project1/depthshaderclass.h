@@ -4,7 +4,6 @@
 #ifndef _DEPTHSHADERCLASS_H_
 #define _DEPTHSHADERCLASS_H_
 
-
 //////////////
 // INCLUDES //
 //////////////
@@ -14,7 +13,6 @@
 #include <fstream>
 using namespace DirectX;
 using namespace std;
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class name: DepthShaderClass
@@ -45,7 +43,7 @@ private:
 	void OutputShaderErrorMessage(ID3D10Blob*, HWND, WCHAR*);
 
 	bool SetShaderParameters(ID3D11DeviceContext*, XMMATRIX, XMMATRIX, XMMATRIX, XMFLOAT3);
-	void RenderShader(ID3D11DeviceContext*, int,int,int);
+	void RenderShader(ID3D11DeviceContext*, int, int, int);
 
 private:
 	ID3D11VertexShader* m_vertexShader;

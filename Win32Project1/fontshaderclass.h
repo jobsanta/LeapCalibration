@@ -4,7 +4,6 @@
 #ifndef _FONTSHADERCLASS_H_
 #define _FONTSHADERCLASS_H_
 
-
 //////////////
 // INCLUDES //
 //////////////
@@ -14,7 +13,6 @@
 #include <fstream>
 using namespace std;
 using namespace DirectX;
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class name: FontShaderClass

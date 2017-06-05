@@ -2,14 +2,12 @@
 // Filename: horizontalblur.vs
 ////////////////////////////////////////////////////////////////////////////////
 
-
 /////////////
 // GLOBALS //
 /////////////
 
 Texture2D shaderTexture;
 SamplerState SampleType;
-
 
 cbuffer MatrixBuffer
 {
@@ -23,7 +21,6 @@ cbuffer ScreenSizeBuffer
 	float screenWidth;
 	float3 padding;
 };
-
 
 //////////////
 // TYPEDEFS //
@@ -49,7 +46,6 @@ struct PixelInputType
 	float2 texCoord9 : TEXCOORD9;
 };
 
-
 ////////////////////////////////////////////////////////////////////////////////
 // Vertex Shader
 ////////////////////////////////////////////////////////////////////////////////
@@ -57,7 +53,6 @@ PixelInputType HorizontalBlurVertexShader(VertexInputType input)
 {
 	PixelInputType output;
 	float texelSize;
-
 
 	// Change the position vector to be 4 units for proper matrix calculations.
 	input.position.w = 1.0f;
@@ -95,7 +90,6 @@ float4 HorizontalBlurPixelShader(PixelInputType input) : SV_TARGET
 	float weight0, weight1, weight2, weight3, weight4;
 float normalization;
 float4 color;
-
 
 // Create the weights that each neighbor pixel will contribute to the blur.
 weight0 = 1.0f;

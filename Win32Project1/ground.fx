@@ -6,10 +6,8 @@
 // GLOBALS //
 /////////////
 
-
 Texture2D shadowTexture : register(t0);
 SamplerState SampleTypeClamp : register(s0);
-
 
 cbuffer MatrixBuffer
 {
@@ -22,7 +20,6 @@ cbuffer LightBuffer
 {
 	float4 ambientColor;
 	float4 diffuseColor;
-
 };
 
 cbuffer LightBuffer2
@@ -30,7 +27,6 @@ cbuffer LightBuffer2
 	float3 lightPosition;
 	float padding;
 };
-
 
 //////////////
 // TYPEDEFS //
@@ -40,7 +36,6 @@ struct VertexInputType
 	float4 position : POSITION;
 	float3 normal : NORMAL;
 };
-
 
 struct PixelInputType
 {
@@ -71,7 +66,7 @@ PixelInputType ColorVertexShader(VertexInputType input)
 	output.viewPosition = output.position;
 
 	// Store the texture coordinates for the pixel shader.
-	output.color = float4(1.0,1.0,1.0,1.0);
+	output.color = float4(1.0, 1.0, 1.0, 1.0);
 
 	// Calculate the normal vector against the world matrix only.
 	output.normal = mul(input.normal, (float3x3)worldMatrix);
@@ -115,7 +110,6 @@ if (lightIntensity > 0.0f)
 	// Saturate the light color.
 	color = saturate(color);
 }
-
 
 // Calculate the projected texture coordinates to be used with the shadow texture.
 projectTexCoord.x = input.viewPosition.x / input.viewPosition.w / 2.0f + 0.5f;

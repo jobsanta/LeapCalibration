@@ -14,11 +14,9 @@ PointCloudShaderClass::PointCloudShaderClass()
 	depthHeight = 0;
 }
 
-
 PointCloudShaderClass::PointCloudShaderClass(const PointCloudShaderClass& other)
 {
 }
-
 
 PointCloudShaderClass::~PointCloudShaderClass()
 {
@@ -28,7 +26,7 @@ bool PointCloudShaderClass::Initialize(ID3D11Device* device, HWND hwnd, int dept
 {
 	bool result;
 
-	mCam.SetLens(0.25f*XM_PI,1280.0/800.0, 1.0f, 1000.0f);
+	mCam.SetLens(0.25f*XM_PI, 1280.0 / 800.0, 1.0f, 1000.0f);
 
 	// Initialize the vertex and pixel shaders.
 	result = InitializeShader(device, hwnd, L"../Win32Project1/pointcloud.fx", L"../Win32Project1/pointcloud.fx", depthWidth, depthHeight);
@@ -49,12 +47,11 @@ void PointCloudShaderClass::Shutdown()
 }
 
 bool PointCloudShaderClass::Render(ID3D11DeviceContext* deviceContext, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
-	XMMATRIX projectionMatrix,XMFLOAT3 camera)
+	XMMATRIX projectionMatrix, XMFLOAT3 camera)
 {
 	bool result;
 
-	SetShaderParameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix,camera);
-
+	SetShaderParameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix, camera);
 
 	// Now render the prepared buffers with the shader.
 	RenderShader(deviceContext);
@@ -104,7 +101,6 @@ bool PointCloudShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WC
 
 	LoadShaders(device);
 
-
 	// Create the vertex buffer
 	D3D11_BUFFER_DESC bd = { 0 };
 	bd.Usage = D3D11_USAGE_DEFAULT;
@@ -142,7 +138,6 @@ bool PointCloudShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WC
 	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	device->CreateSamplerState(&sampDesc, &m_pColorSampler);
 
-
 	// Initialize the projection matrix
 	m_projection = XMMatrixPerspectiveFovLH(XM_PIDIV4, 1280 / static_cast<FLOAT>(800), 0.1f, 100.f);
 
@@ -169,8 +164,6 @@ bool PointCloudShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WC
 	rasterDesc.MultisampleEnable = false;
 	rasterDesc.AntialiasedLineEnable = false;
 
-	
-
 	device->CreateRasterizerState(&rasterDesc, &pState);
 
 	context->RSSetState(pState);
@@ -178,7 +171,6 @@ bool PointCloudShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WC
 	//pState->Release();
 
 	return true;
-
 }
 
 void PointCloudShaderClass::ShutdownShader()
@@ -190,7 +182,6 @@ void PointCloudShaderClass::ShutdownShader()
 		m_pCBChangesEveryFrame = 0;
 	}
 
-	
 	// Release the light constant buffer.
 	if (m_pGeometryShader)
 	{
@@ -225,7 +216,6 @@ void PointCloudShaderClass::ShutdownShader()
 		m_pColorSampler = 0;
 	}
 
-
 	// Release the layout.
 	if (m_layout)
 	{
@@ -256,7 +246,6 @@ void PointCloudShaderClass::OutputShaderErrorMessage(ID3D10Blob* errorMessage, H
 	unsigned long long bufferSize, i;
 	ofstream fout;
 
-
 	// Get a pointer to the error message text buffer.
 	compileErrors = (char*)(errorMessage->GetBufferPointer());
 
@@ -267,7 +256,7 @@ void PointCloudShaderClass::OutputShaderErrorMessage(ID3D10Blob* errorMessage, H
 	fout.open("shader-error.txt");
 
 	// Write out the error message.
-	for (i = 0; i<bufferSize; i++)
+	for (i = 0; i < bufferSize; i++)
 	{
 		fout << compileErrors[i];
 	}
@@ -286,7 +275,7 @@ void PointCloudShaderClass::OutputShaderErrorMessage(ID3D10Blob* errorMessage, H
 }
 
 bool PointCloudShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
-	XMMATRIX projectionMatrix,XMFLOAT3 camera)
+	XMMATRIX projectionMatrix, XMFLOAT3 camera)
 {
 	HRESULT result;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
@@ -319,7 +308,6 @@ bool PointCloudShaderClass::UpdateSubResource(ID3D11DeviceContext* device, FLOAT
 	if (FAILED(result)) { return false; }
 	memcpy(msT.pData, depthDest, sizeof(FLOAT)*depthWidth*depthHeight * 3);
 	device->Unmap(m_pDepthTexture2D, NULL);
-
 
 	result = device->Map(m_pColorTexture2D, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &msT);
 	if (FAILED(result)) { return false; }
@@ -355,8 +343,6 @@ void PointCloudShaderClass::RenderShader(ID3D11DeviceContext* deviceContext)
 	deviceContext->Draw(depthWidth * depthHeight, 0);
 
 	deviceContext->GSSetShader(0, NULL, 0);
-
-
 
 	return;
 }

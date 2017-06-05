@@ -52,15 +52,14 @@
 // GLOBALS //
 /////////////
 
-
 using namespace Eigen;
 
 const bool FULL_SCREEN = false;
 const bool VSYNC_ENABLED = false;
 const bool SHADOW_ENABLED = true;
-const bool POINT_CLOUD_ENABLED = true;
+const bool POINT_CLOUD_ENABLED = false;
 const bool CORRECT_PERPECTIVE = true;
-const float SCREEN_DEPTH = 100.0f;
+const float SCREEN_DEPTH = 50.0f;
 const float SCREEN_NEAR = 1.0f;
 
 const int SHADOWMAP_WIDTH = 1024;
@@ -81,7 +80,6 @@ const XMFLOAT4 HANDCOLOR(0, 1.0, 0.5, 1.0f);
 const XMFLOAT3 LEFT(-3.0, 0.0, 0.0);
 const XMFLOAT3 RIGHT(3.0, 0.0, 0.0);
 const XMFLOAT3 TOP(-3.0, 3.4, 0.0);
-
 
 const int NUM_POINT = 32;
 
@@ -111,20 +109,19 @@ public:
 	bool m_RenderHand;
 	bool m_RenderMirrorHand;
 
-
 	void toggleGOGO();
 private:
 	bool Render();
 	void RenderActor(int mode);
 	void RenderHand(int mode);
 	void RenderText(bool, Point3f*);
-	void RenderTextureBox(int mode,PxRigidActor* box,
+	void RenderTextureBox(int mode, PxRigidActor* box,
 		ID3D11ShaderResourceView* texture, float width, float height, float depth);
-	void RenderColorBox(int mode,PxRigidActor* box,
+	void RenderColorBox(int mode, PxRigidActor* box,
 		XMFLOAT4 color, float width, float height, float depth);
-	void RenderPalm(int mode,PxRigidActor* box, float alpha, float width, float height, float depth);
-	void RenderSphere(int mode,PxRigidActor* sphere, float radius);
-	void RenderCylinder(int mode,PxRigidActor* cylinder, float alpha,float height, float radius);
+	void RenderPalm(int mode, PxRigidActor* box, float alpha, float width, float height, float depth);
+	void RenderSphere(int mode, PxRigidActor* sphere, float radius);
+	void RenderCylinder(int mode, PxRigidActor* cylinder, float alpha, float height, float radius);
 	void RenderDebugSphere(int mode, PxVec3, float radius, XMFLOAT4 color);
 	void RenderColorSphere(int mode, PxRigidActor* sphere, float radius, XMFLOAT4 color);
 	void RenderTerrian(int rendermode, int gamemode = 0);
@@ -141,14 +138,8 @@ private:
 	bool UpSampleTexture();
 	void GameFrame();
 
-	
-
 	void WriteFile();
 	void ReadFile();
-
-
-
-
 
 private:
 
@@ -156,7 +147,7 @@ private:
 	PxVec3 unpts3[NUM_POINT];
 	bool calibrateMode;
 	int gameMode;
-	int handMode; 
+	int handMode;
 	int lastGameMode;
 
 	D3DClass* m_Direct3D;
@@ -178,7 +169,7 @@ private:
 	ShapeClass* m_Shape;
 	KinectClass* m_Kinect;
 	TrackerClass* m_Tracker;
-	RenderTextureClass* m_RenderTexture,*m_RenderTexture2;
+	RenderTextureClass* m_RenderTexture, *m_RenderTexture2;
 	RenderTextureClass *m_BlackWhiteRenderTexture, *m_DownSampleTexure;
 	RenderTextureClass *m_HorizontalBlurTexture, *m_VerticalBlurTexture, *m_UpSampleTexure;
 	DepthShaderClass* m_DepthShader;
@@ -188,10 +179,8 @@ private:
 	HorizontalBlurShaderClass* m_HorizontalBlurShader;
 	VerticalBlurShaderClass* m_VerticalBlurShader;
 	PointCloudShaderClass* m_PointCloudShader;
-	
 
 	XMMATRIX zoffset_matrix;
-
 
 	vector<PxRigidActor*> boxes;
 	vector<PxRigidActor*> spheres;
@@ -199,7 +188,6 @@ private:
 	vector<PxRigidActor*> folders;
 	vector<PxRigidActor*> targets;
 	vector<PxRigidActor*> obstacles;
-
 
 	std::unique_ptr<DirectX::SpriteBatch> spriteBatch;
 	std::unique_ptr<DirectX::SpriteFont> m_font;
@@ -231,7 +219,6 @@ private:
 	std::chrono::steady_clock::time_point switchZoneStart;
 	std::chrono::steady_clock::time_point switchZoneNow;
 
-
 	DirectX::SimpleMath::Matrix m_world;
 	DirectX::SimpleMath::Matrix m_view;
 	DirectX::SimpleMath::Matrix m_proj;
@@ -240,26 +227,25 @@ private:
 	std::unique_ptr<DirectX::IEffectFactory> m_fxFactory;
 	std::unique_ptr<DirectX::Model> m_model;
 
-	 XMFLOAT4 targetColor;
-	 XMFLOAT4 handColor;
-	 XMMATRIX floor_trans;
-	 XMMATRIX floor_scale;
+	XMFLOAT4 targetColor;
+	XMFLOAT4 handColor;
+	XMMATRIX floor_trans;
+	XMMATRIX floor_scale;
 
-	 FLOAT* rgbDest;
-	 FLOAT* depthDest;
+	FLOAT* rgbDest;
+	FLOAT* depthDest;
 
-	 void checkObjectPos(PxRigidActor* actor);
+	void checkObjectPos(PxRigidActor* actor);
 
-	 Material mhandMaterial;
-	 Material mboxMaterial;
-	 Material msphereMaterial;
-	 Material mfloorMaterial;
-	 Material medgeMaterial;
+	Material mhandMaterial;
+	Material mboxMaterial;
+	Material msphereMaterial;
+	Material mfloorMaterial;
+	Material medgeMaterial;
 
-
-	 XMFLOAT3 attenuate;
-	 float lightRange;
-	 bool gogoMode;
+	XMFLOAT3 attenuate;
+	float lightRange;
+	bool gogoMode;
 };
 
 #endif

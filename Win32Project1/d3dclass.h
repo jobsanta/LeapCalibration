@@ -1,4 +1,3 @@
-
 ////////////////////////////////////////////////////////////////////////////////
 // Filename: d3dclass.h
 ////////////////////////////////////////////////////////////////////////////////
@@ -79,7 +78,6 @@ private:
 	XMMATRIX m_worldMatrix;
 	XMMATRIX m_orthoMatrix;
 	D3D11_VIEWPORT m_viewport;
-	
 
 	XMMATRIX GeneralizedPerspectiveProjection(XMFLOAT3 pa, XMFLOAT3 pb, XMFLOAT3 pc, XMFLOAT3 pe, float fn, float ff);
 	float MvectorDot(XMVECTOR v1, XMVECTOR v2);

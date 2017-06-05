@@ -19,7 +19,6 @@ public:
 	void Shutdown();
 	void Render(ID3D11Device*);
 
-
 	int GetBoxIndexOffset();
 	int GetBoxVertexOffset();
 	int GetBoxIndexCount();

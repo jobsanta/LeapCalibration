@@ -3,16 +3,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "lightclass.h"
 
-
 LightClass::LightClass()
 {
 }
 
-
 LightClass::LightClass(const LightClass& other)
 {
 }
-
 
 LightClass::~LightClass()
 {
@@ -23,7 +20,6 @@ void LightClass::SetAmbientColor(float red, float green, float blue, float alpha
 	m_ambientColor = XMFLOAT4(red, green, blue, alpha);
 	return;
 }
-
 
 void LightClass::SetDiffuseColor(float red, float green, float blue, float alpha)
 {
@@ -36,8 +32,6 @@ void LightClass::SetSpecularColor(float red, float green, float blue, float alph
 	m_specularColor = XMFLOAT4(red, green, blue, alpha);
 	return;
 }
-
-
 
 void LightClass::SetPosition(float x, float y, float z)
 {
@@ -67,7 +61,6 @@ XMFLOAT4 LightClass::GetSpecularColor()
 {
 	return m_specularColor;
 }
-
 
 XMFLOAT3 LightClass::GetPositions()
 {
@@ -106,7 +99,6 @@ void LightClass::GenerateMirrorMatrix()
 	XMFLOAT3 m_MirrorPosition = m_position;
 	m_MirrorPosition.z = -m_MirrorPosition.z;
 
-
 	upVector = XMLoadFloat3(&up);
 	positionVector = XMLoadFloat3(&m_MirrorPosition);
 	lookAtVector = XMLoadFloat3(&m_lookAt);
@@ -120,7 +112,6 @@ void LightClass::GenerateMirrorMatrix()
 void LightClass::GenerateProjectionMatrix(float screenDepth, float screenNear)
 {
 	float fieldOfView, screenAspect;
-
 
 	// Setup field of view and screen aspect for a square light source.
 	fieldOfView = (float)XM_PI / 2.0f;
@@ -143,8 +134,6 @@ void LightClass::GetMirrorMatrix(XMMATRIX& viewMatrix)
 	viewMatrix = m_mirrorMatrix;
 	return;
 }
-
-
 
 void LightClass::GetProjectionMatrix(XMMATRIX& projectionMatrix)
 {

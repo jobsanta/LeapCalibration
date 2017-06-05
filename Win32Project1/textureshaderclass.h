@@ -4,7 +4,6 @@
 #ifndef _TEXTURESHADERCLASS_H_
 #define _TEXTURESHADERCLASS_H_
 
-
 //////////////
 // INCLUDES //
 //////////////
@@ -15,7 +14,6 @@
 
 using namespace DirectX;
 using namespace std;
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class name: TextureShaderClass

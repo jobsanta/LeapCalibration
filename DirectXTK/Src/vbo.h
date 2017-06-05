@@ -19,20 +19,17 @@
 
 #pragma once
 
-
 namespace VBO
 {
 #pragma pack(push,1)
 
-    struct header_t
-    {
-        uint32_t numVertices;
-        uint32_t numIndices;
-    };
+	struct header_t
+	{
+		uint32_t numVertices;
+		uint32_t numIndices;
+	};
 
 #pragma pack(pop)
-
 }; // namespace
 
 static_assert(sizeof(VBO::header_t) == 8, "VBO header size mismatch");
-

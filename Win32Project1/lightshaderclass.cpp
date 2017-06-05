@@ -3,7 +3,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "lightshaderclass.h"
 
-
 LightShaderClass::LightShaderClass()
 {
 	//m_effect = 0;
@@ -28,32 +27,27 @@ LightShaderClass::LightShaderClass()
 	m_lightBuffer2 = 0;
 }
 
-
 LightShaderClass::LightShaderClass(const LightShaderClass& other)
 {
 }
-
 
 LightShaderClass::~LightShaderClass()
 {
 }
 
-
 bool LightShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 {
 	bool result;
 
-
 	// Initialize the shader that will be used to draw the triangle.
 	result = InitializeShader(device, hwnd, L"../Win32Project1/light.fx", L"../Win32Project1/light.fx");
-	if(!result)
+	if (!result)
 	{
 		return false;
 	}
 
 	return true;
 }
-
 
 void LightShaderClass::Shutdown()
 {
@@ -63,8 +57,7 @@ void LightShaderClass::Shutdown()
 	return;
 }
 
-
-void LightShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, 
+void LightShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projectionMatrix,
 	ID3D11ShaderResourceView* texture, ID3D11ShaderResourceView* shadowTexture, XMFLOAT3 lightPosition, XMFLOAT4 ambientColor, XMFLOAT4 diffuseColor, XMFLOAT3 cameraDistance, float z_offset)
 {
 	// Set the shader parameters that it will use for rendering.
@@ -76,7 +69,6 @@ void LightShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount
 	return;
 }
 
-
 bool LightShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* vsfilename, WCHAR* psfilename)
 {
 	HRESULT result;
@@ -85,7 +77,7 @@ bool LightShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* 
 	ID3DBlob* pixelShaderBuffer;
 	D3D11_INPUT_ELEMENT_DESC polygonLayout[3];
 	unsigned int numElements;
-    D3D11_SAMPLER_DESC samplerDesc;
+	D3D11_SAMPLER_DESC samplerDesc;
 	D3D11_BUFFER_DESC matrixBufferDesc;
 	D3D11_BUFFER_DESC lightBufferDesc;
 	D3D11_BUFFER_DESC lightBufferDesc2;
@@ -97,10 +89,10 @@ bool LightShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* 
 
 	// Load the shader in from the file.
 	result = D3DCompileFromFile(vsfilename, NULL, NULL, "LightVertexShader", "vs_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, &vertexShaderBuffer, &errorMessage);
-	if(FAILED(result))
+	if (FAILED(result))
 	{
 		// If the shader failed to compile it should have writen something to the error message.
-		if(errorMessage)
+		if (errorMessage)
 		{
 			OutputShaderErrorMessage(errorMessage, hwnd, vsfilename);
 		}
@@ -142,7 +134,6 @@ bool LightShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* 
 		return false;
 	}
 
-
 	// Now setup the layout of the data that goes into the shader.
 	// This setup needs to match the VertexType stucture in the ModelClass and in the shader.
 	polygonLayout[0].SemanticName = "POSITION";
@@ -170,11 +161,11 @@ bool LightShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* 
 	polygonLayout[2].InstanceDataStepRate = 0;
 
 	// Get a count of the elements in the layout.
-    numElements = sizeof(polygonLayout) / sizeof(polygonLayout[0]);
+	numElements = sizeof(polygonLayout) / sizeof(polygonLayout[0]);
 
 	// Create the input layout.
-    result = device->CreateInputLayout(polygonLayout, numElements, vertexShaderBuffer->GetBufferPointer(),vertexShaderBuffer->GetBufferSize(), &m_layout);
-	if(FAILED(result))
+	result = device->CreateInputLayout(polygonLayout, numElements, vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(), &m_layout);
+	if (FAILED(result))
 	{
 		return false;
 	}
@@ -211,7 +202,6 @@ bool LightShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* 
 	{
 		return false;
 	}
-
 
 	// Setup the description of the dynamic matrix constant buffer that is in the vertex shader.
 	matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
@@ -262,7 +252,6 @@ bool LightShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* 
 	return true;
 }
 
-
 void LightShaderClass::ShutdownShader()
 {
 	// Release the light constant buffer.
@@ -297,7 +286,6 @@ void LightShaderClass::ShutdownShader()
 		m_sampleStateClamp = 0;
 	}
 
-
 	// Release the layout.
 	if (m_layout)
 	{
@@ -322,13 +310,11 @@ void LightShaderClass::ShutdownShader()
 	return;
 }
 
-
 void LightShaderClass::OutputShaderErrorMessage(ID3DBlob* errorMessage, HWND hwnd, WCHAR* shaderFilename)
 {
 	char* compileErrors;
 	unsigned long bufferSize, i;
 	ofstream fout;
-
 
 	// Get a pointer to the error message text buffer.
 	compileErrors = (char*)(errorMessage->GetBufferPointer());
@@ -340,7 +326,7 @@ void LightShaderClass::OutputShaderErrorMessage(ID3DBlob* errorMessage, HWND hwn
 	fout.open("shader-error.txt");
 
 	// Write out the error message.
-	for(i=0; i<bufferSize; i++)
+	for (i = 0; i < bufferSize; i++)
 	{
 		fout << compileErrors[i];
 	}
@@ -358,9 +344,8 @@ void LightShaderClass::OutputShaderErrorMessage(ID3DBlob* errorMessage, HWND hwn
 	return;
 }
 
-
-bool LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, 
-	 ID3D11ShaderResourceView* texture,
+bool LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projectionMatrix,
+	ID3D11ShaderResourceView* texture,
 	ID3D11ShaderResourceView* shadowTexture, XMFLOAT3 lightPosition, XMFLOAT4 ambientColor, XMFLOAT4 diffuseColor, XMFLOAT3 cameraDistance, float z_offset)
 {
 	HRESULT result;
@@ -371,7 +356,6 @@ bool LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, X
 	LightBufferType2* dataPtr3;
 
 	XMMATRIX world, view, proj, lightView, lightProj;
-
 
 	// Transpose the matrices to prepare them for the shader.
 	world = XMMatrixTranspose(worldMatrix);
@@ -459,14 +443,10 @@ bool LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, X
 	return true;
 }
 
-
 void LightShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int indexCount)
 {
-	
-
 	// Set the input layout.
 	deviceContext->IASetInputLayout(m_layout);
-	
 
 	deviceContext->VSSetShader(m_vertexShader, NULL, 0);
 	deviceContext->PSSetShader(m_pixelShader, NULL, 0);
@@ -475,7 +455,7 @@ void LightShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int inde
 	deviceContext->PSSetSamplers(0, 1, &m_sampleStateClamp);
 	deviceContext->PSSetSamplers(1, 1, &m_sampleStateWrap);
 
-    // Go through each pass in the technique (should be just one currently) and render the triangles.
+	// Go through each pass in the technique (should be just one currently) and render the triangles.
 	deviceContext->DrawIndexed(indexCount, 0, 0);
 
 	return;

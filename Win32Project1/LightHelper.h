@@ -11,7 +11,7 @@
 #include <DirectXMath.h>
 
 using namespace DirectX;
-// Note: Make sure structure alignment agrees with HLSL structure padding rules. 
+// Note: Make sure structure alignment agrees with HLSL structure padding rules.
 //   Elements are packed into 4D vectors with the restriction that an element
 //   cannot straddle a 4D vector boundary.
 

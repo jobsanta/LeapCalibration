@@ -4,7 +4,6 @@
 #ifndef _RENDERTEXTURECLASS_H_
 #define _RENDERTEXTURECLASS_H_
 
-
 //////////////
 // INCLUDES //
 //////////////
@@ -41,8 +40,6 @@ private:
 	D3D11_VIEWPORT m_viewport;
 	XMMATRIX m_projectionMatrix;
 	XMMATRIX m_orthoMatrix;
-
-
 };
 
 #endif

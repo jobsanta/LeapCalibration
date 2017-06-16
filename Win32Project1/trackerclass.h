@@ -31,6 +31,7 @@ public:
 	float handMeasurement(PxVec3);
 	void handVisualize(vector<handActor*> hand);
 
+	void transformWorldToKinectDepthImage(Leap::Vector wrist, FLOAT * distDest);
 	void estimateAffineTransform();
 	void setAffineLtoK(Mat affine);
 	void setAffineKtoL(Mat affine);
@@ -74,7 +75,7 @@ private:
 	Point3f applyAffineTransform_KtoL(Point3f worldPoint);
 	Point3f applyAffineTransform_LtoK(Point3f worldPoint);
 	Point3f* smoothPoint(Point3f*);
-	void drawFinger(PxVec3* leapJointPosition, Mat depthImage);
+	void drawFinger(std::vector<PxVec3> leapJointPosition, Mat depthImage);
 
 	vector<Point3f> kinectPoints;
 	vector<Point3f> leapPoints;
@@ -85,6 +86,7 @@ private:
 	cv::Mat aff_ltok;
 	cv::Mat aff_ktol;
 	cv::Mat wp;
+	Point3f* precompute;
 
 	float affktol[3][4];
 	//cv::Mat icp_t;

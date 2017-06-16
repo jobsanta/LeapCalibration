@@ -126,7 +126,10 @@ void SystemClass::Run()
 bool SystemClass::Frame()
 {
 	bool result;
+	int mouseX, mouseY;
 	m_Input->Frame();
+	m_Input->GetMouseLocation(mouseX, mouseY);
+
 
 	// Check if the user pressed escape and wants to exit the application.
 	if (m_Input->IsEscapePressed() == true)
@@ -138,6 +141,7 @@ bool SystemClass::Frame()
 	{
 		m_Graphics->StartCalibrate();
 	}
+
 	if (m_Input->IsQPressed() == true)
 	{
 		//	m_Graphics->CalculateCalibration();
@@ -151,20 +155,27 @@ bool SystemClass::Frame()
 
 	if (m_Input->IsOnePressed() == true)
 	{
-		m_Graphics->StartGameMode(1);
+		m_Graphics->StartGameMode(4);
 	}
+
 	if (m_Input->IsLessPressed() == true)
 	{
 		m_Graphics->m_RenderMirrorHand = !m_Graphics->m_RenderMirrorHand;
 	}
+
 	if (m_Input->IsTwoPressed() == true)
 	{
-		m_Graphics->StartGameMode(2);
+		m_Graphics->StartGameMode(5);
 	}
 
 	if (m_Input->IsThreePressed() == true)
 	{
-		m_Graphics->StartGameMode(3);
+		m_Graphics->StartGameMode(6);
+	}
+
+	if (m_Input->IsFourPressed() == true)
+	{
+		m_Graphics->setPointCloud();
 	}
 
 	//if (m_Input->IsCPressed() == true)
@@ -175,55 +186,91 @@ bool SystemClass::Frame()
 	{
 		m_Graphics->CreateBox();
 	}
+
 	if (m_Input->IsOPressed() == true)
 	{
 		m_Graphics->CreateSphere();
 	}
+
 	if (m_Input->IsIPressed() == true)
 	{
 		m_Graphics->CreateCylinder();
 	}
+
 	if (m_Input->IsCPressed() == true)
 	{
 		m_Graphics->m_RenderHand = !m_Graphics->m_RenderHand;
 	}
+
+	if (m_Input->IsSpacePressed() == true)
+	{
+		m_Graphics->CaptureBoxPosition();
+	}
+
+
 	if (m_Input->IsMPressed() == true)
 	{
 		m_Graphics->ChangeMirrorHand();
 	}
 
-	if (m_Input->IsDownPressed() == true)
+	if (m_Input->IsNumpad2Pressed() == true)
 	{
 		m_Graphics->ChangeZvalue(-0.025);
 	}
 
-	if (m_Input->IsUpPressed() == true)
+	if (m_Input->IsNumpad8Pressed() == true)
 	{
 		m_Graphics->ChangeZvalue(0.025);
 	}
-	//if (m_Input->IsLeftPressed() == true)
-	//{
-	//	m_Graphics->ChangeFOV(-0.01);
-	//}
-	//if (m_Input->IsRightPressed() == true)
-	//{
-	//	m_Graphics->ChangeFOV(0.01);
-	//}
+
+	if (m_Input->IsNumpad1Pressed() == true)
+	{
+		m_Graphics->RotateActorZ(0.01);
+	}
+
+	if (m_Input->IsNumpad3Pressed() == true)
+	{
+		m_Graphics->RotateActorZ(-.01);
+	}
+	
+	if (m_Input->IsNumpad7Pressed() == true)
+	{
+		m_Graphics->RotateActorX(0.01);
+	}
+	if (m_Input->IsNumpad9Pressed() == true)
+	{
+		m_Graphics->RotateActorX(-.01);
+	}
+	
+	if (m_Input->IsNumpad4Pressed() == true)
+	{
+		m_Graphics->RotateActorY(0.01);
+	}
+	if (m_Input->IsNumpad6Pressed() == true)
+	{
+		m_Graphics->RotateActorY(-.01);
+	}
+
 	if (m_Input->IsPageDownPressed() == true)
 	{
 		m_Graphics->ChangeSize(-0.05);
 	}
+
 	if (m_Input->IsPageUpPressed() == true)
 	{
 		m_Graphics->ChangeSize(+0.05);
 	}
 
+	m_Graphics->setAltPressed(m_Input->IsaltPressed());
 	// Do the frame processing for the graphics object.
-	result = m_Graphics->Frame();
+
+	result = m_Graphics->Frame(mouseX, mouseY, m_Input->IsLeftMouseButtonDown());
 	if (!result)
 	{
 		return false;
 	}
+
+
 
 	return true;
 }

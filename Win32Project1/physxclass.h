@@ -14,11 +14,14 @@
 #include <iostream>
 #include <map>
 
+
 #include <Windows.h>
 #include "leapclass.h"
 
 using namespace physx;
 using namespace std;
+
+
 
 class PhysxClass : public PxSimulationEventCallback
 {

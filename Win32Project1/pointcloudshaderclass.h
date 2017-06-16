@@ -39,7 +39,7 @@ public:
 	bool Initialize(ID3D11Device*, HWND, int, int);
 	void Shutdown();
 	bool Render(ID3D11DeviceContext*, XMMATRIX, XMMATRIX, XMMATRIX, XMFLOAT3);
-	bool UpdateSubResource(ID3D11DeviceContext*, FLOAT*, FLOAT*);
+	bool UpdateSubResource(ID3D11DeviceContext*, FLOAT*, FLOAT*, FLOAT*);
 
 private:
 	bool InitializeShader(ID3D11Device*, HWND, WCHAR*, WCHAR*, int, int);
@@ -66,6 +66,12 @@ private:
 
 	ID3D11Texture2D*                    m_pColorTexture2D;
 	ID3D11ShaderResourceView*           m_pColorTextureRV;
+
+	ID3D11Texture2D*                    m_pDistTexture2D;
+	ID3D11ShaderResourceView*           m_pDistTextureRV;
+
+
+
 	ID3D11RasterizerState* pState = NULL;
 	XMMATRIX                            m_projection;
 	float                               m_xyScale;

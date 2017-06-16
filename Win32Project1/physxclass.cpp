@@ -1,5 +1,5 @@
 #include "physxclass.h"
-
+#include "leapclass.h"
 //Defining a custome filter shader
 PxFilterFlags customFilterShader(PxFilterObjectAttributes attributes0, PxFilterData filterData0,
 	PxFilterObjectAttributes attributes1, PxFilterData filterData1,
@@ -33,18 +33,6 @@ PxFilterFlags customFilterShader(PxFilterObjectAttributes attributes0, PxFilterD
 
 	return PxFilterFlag::eKILL;
 }
-
-struct FilterGroup
-{
-	enum Enum
-	{
-		eHand = (1 << 0),
-		eWall = (1 << 1),
-		eFinger = (1 << 4),
-		eBox = (1 << 2),
-		eTarget = (1 << 3),
-	};
-};
 
 long long PhysxClass::milliseconds_now() {
 	static LARGE_INTEGER s_frequency;
@@ -180,34 +168,52 @@ bool PhysxClass::Initialize()
 	setupFiltering(moveAbleFloor, FilterGroup::eWall, FilterGroup::eBox | FilterGroup::eTarget);
 	gScene->addActor(*moveAbleFloor);
 
-	pose = PxTransform(PxVec3(-2.5f, FLOOR_LEVEL, 0.0f), PxQuat(0.0, PxVec3(0.0f, 1.0f, 0.0f)));
+	pose = PxTransform(PxVec3(-2.0f, FLOOR_LEVEL, 0.0f), PxQuat(0.0, PxVec3(0.0f, 1.0f, 0.0f)));
 	PxRigidStatic* plane = gPhysicsSDK->createRigidStatic(pose);
 	shape = plane->createShape(PxPlaneGeometry(), *mMaterial);
 
 	setupFiltering(plane, FilterGroup::eWall, FilterGroup::eBox | FilterGroup::eTarget);
 	gScene->addActor(*plane);
 
-	pose = PxTransform(PxVec3(2.5f, FLOOR_LEVEL, 0.0f), PxQuat(PxPi, PxVec3(0.0f, 1.0f, 0.0f)));
+	pose = PxTransform(PxVec3(2.0f, FLOOR_LEVEL, 0.0f), PxQuat(PxPi, PxVec3(0.0f, 1.0f, 0.0f)));
 	plane = gPhysicsSDK->createRigidStatic(pose);
 	shape = plane->createShape(PxPlaneGeometry(), *mMaterial);
 
 	setupFiltering(plane, FilterGroup::eWall, FilterGroup::eBox | FilterGroup::eTarget);
 	gScene->addActor(*plane);
 
-	pose = PxTransform(PxVec3(0.0f, 0.0f, 5.0f), PxQuat(PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f)));
+	pose = PxTransform(PxVec3(0.0f, 0.0f, 3.0f), PxQuat(PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f)));
 	moveAbleWall = gPhysicsSDK->createRigidStatic(pose);
 	shape = moveAbleWall->createShape(PxPlaneGeometry(), *mMaterial);
 
 	setupFiltering(moveAbleWall, FilterGroup::eWall, FilterGroup::eBox | FilterGroup::eTarget);
 	gScene->addActor(*moveAbleWall);
 
-	pose = PxTransform(PxVec3(0.0f, 0.0f, -5.0f), PxQuat(-PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f)));
+	pose = PxTransform(PxVec3(0.0f, 0.0f, -3.0f), PxQuat(-PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f)));
 	moveAbleFrontWall = gPhysicsSDK->createRigidStatic(pose);
 	shape = moveAbleFrontWall->createShape(PxPlaneGeometry(), *mMaterial);
 
 	setupFiltering(moveAbleFrontWall, FilterGroup::eWall, FilterGroup::eBox | FilterGroup::eTarget);
 	gScene->addActor(*moveAbleFrontWall);
 
+	static const PxVec3 convexVerts[] = { PxVec3(-2.0,5,0),PxVec3(2.0,5,0),PxVec3(2.0,0,1.75),PxVec3(-2.0,0,1.75),PxVec3(2.0,0,-1.75),
+		PxVec3(-2.0,0,-1.75) };
+	PxConvexMeshDesc convexDesc;
+	convexDesc.points.count = 6;
+	convexDesc.points.stride = sizeof(PxVec3);
+	convexDesc.points.data = convexVerts;
+	convexDesc.flags = PxConvexFlag::eCOMPUTE_CONVEX;
+
+	PxDefaultMemoryOutputStream buf;
+	PxConvexMeshCookingResult::Enum result;
+	if (!gCooking->cookConvexMesh(convexDesc, buf, &result))
+		return NULL;
+	PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
+	PxConvexMesh* convexMesh = gPhysicsSDK->createConvexMesh(input);
+	PxRigidStatic* aConvexActor = gPhysicsSDK->createRigidStatic(PxTransform::createIdentity());
+	PxShape* aConvexShape = aConvexActor->createShape(PxConvexMeshGeometry(convexMesh), *mMaterial);
+	setupFiltering(aConvexActor, FilterGroup::eWall, FilterGroup::eBox | FilterGroup::eTarget);
+	gScene->addActor(*aConvexActor);
 	//PxTriangleMesh* cup = createTriangleMesh("cup._obj");
 	//PxMeshScale scale(PxVec3(1,1,1), PxQuat(PxIdentity));
 	//PxTriangleMeshGeometry geom(cup, scale);
@@ -329,14 +335,6 @@ PxRigidDynamic* PhysxClass::createBox(PxVec3 dimension, PxVec3 pose, PxQuat quat
 	//actor->setMassSpaceInertiaTensor(PxVec3(1.0, 1.0, 1.0));
 	setupFiltering(actor, FilterGroup::eBox, FilterGroup::eBox | FilterGroup::eFinger | FilterGroup::eWall | FilterGroup::eHand | FilterGroup::eTarget);
 	actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
-	PxU32 nShapes = actor->getNbShapes();
-	PxShape** shapes = new PxShape*[nShapes];
-
-	actor->getShapes(shapes, nShapes);
-	int* test = (int*)malloc(sizeof(int));
-	*test = 0;
-	shapes[0]->userData = test;
-	*(int*)shapes[0]->userData = 0;
 	gScene->addActor(*actor);
 
 	return actor;
@@ -582,47 +580,47 @@ void PhysxClass::onContact(const PxContactPairHeader& pairHeader,
 					gTargetHit = true;
 				}
 			}
-			else if (filterData_1.word0 == FilterGroup::eBox && filterData_2.word0 == FilterGroup::eFinger ||
-				filterData_1.word0 == FilterGroup::eFinger && filterData_2.word0 == FilterGroup::eBox)
-			{
-				if (curContactPair.flags & PxContactPairFlag::eACTOR_PAIR_HAS_FIRST_TOUCH)
-				{
-					if (!(curContactPair.flags & PxContactPairFlag::eDELETED_SHAPE_0) && !(curContactPair.flags & PxContactPairFlag::eREMOVED_SHAPE_0))
-					{
-						if (pairs->shapes[0]->getGeometryType() == PxGeometryType::eBOX)
-						{
-							if ((int*)pairs->shapes[0]->userData == NULL)
-							{
-								int* test = (int*)malloc(sizeof(int));
-								pairs->shapes[0]->userData = test;
-								*((int*)pairs->shapes[0]->userData) = 0;
-							}
-							else
-							{
-								*((int*)pairs->shapes[0]->userData) += 1;
-							}
-						}
-					}
-					if (!(curContactPair.flags & PxContactPairFlag::eDELETED_SHAPE_1) && !(curContactPair.flags & PxContactPairFlag::eREMOVED_SHAPE_1))
-					{
-						if (pairs->shapes[1]->getGeometryType() == PxGeometryType::eBOX)
-						{
-							if ((int*)pairs->shapes[1]->userData == NULL)
-							{
-								int* test = (int*)malloc(sizeof(int));
-								pairs->shapes[1]->userData = test;
-								*((int*)pairs->shapes[1]->userData) = 0;
-							}
-							else
-							{
-								*((int*)pairs->shapes[1]->userData) += 1;
-							}
-						}
-					}
-				}
-			}
+			//else if (filterData_1.word0 == FilterGroup::eBox && filterData_2.word0 == FilterGroup::eFinger ||
+			//	filterData_1.word0 == FilterGroup::eFinger && filterData_2.word0 == FilterGroup::eBox)
+			//{
+			//	if (curContactPair.flags & PxContactPairFlag::eACTOR_PAIR_HAS_FIRST_TOUCH)
+			//	{
+			//		if (!(curContactPair.flags & PxContactPairFlag::eDELETED_SHAPE_0) && !(curContactPair.flags & PxContactPairFlag::eREMOVED_SHAPE_0))
+			//		{
+			//			if (pairs->shapes[0]->getGeometryType() == PxGeometryType::eBOX)
+			//			{
+			//				if ((int*)pairs->shapes[0]->userData == NULL)
+			//				{
+			//					int* test = (int*)malloc(sizeof(int));
+			//					pairs->shapes[0]->userData = test;
+			//					*((int*)pairs->shapes[0]->userData) = 0;
+			//				}
+			//				else
+			//				{
+			//					*((int*)pairs->shapes[0]->userData) += 1;
+			//				}
+			//			}
+			//		}
+			//		if (!(curContactPair.flags & PxContactPairFlag::eDELETED_SHAPE_1) && !(curContactPair.flags & PxContactPairFlag::eREMOVED_SHAPE_1))
+			//		{
+			//			if (pairs->shapes[1]->getGeometryType() == PxGeometryType::eBOX)
+			//			{
+			//				if ((int*)pairs->shapes[1]->userData == NULL)
+			//				{
+			//					int* test = (int*)malloc(sizeof(int));
+			//					pairs->shapes[1]->userData = test;
+			//					*((int*)pairs->shapes[1]->userData) = 0;
+			//				}
+			//				else
+			//				{
+			//					*((int*)pairs->shapes[1]->userData) += 1;
+			//				}
+			//			}
+			//		}
+			//	}
+			//}
 		}
-		else if (curContactPair.events & PxPairFlag::eNOTIFY_TOUCH_LOST)
+	/*	else if (curContactPair.events & PxPairFlag::eNOTIFY_TOUCH_LOST)
 		{
 			if (!(curContactPair.flags & PxContactPairFlag::eDELETED_SHAPE_0) && !(curContactPair.flags & PxContactPairFlag::eREMOVED_SHAPE_0) &&
 				!(curContactPair.flags & PxContactPairFlag::eDELETED_SHAPE_1) && !(curContactPair.flags & PxContactPairFlag::eREMOVED_SHAPE_1))
@@ -664,7 +662,7 @@ void PhysxClass::onContact(const PxContactPairHeader& pairHeader,
 					}
 				}
 			}
-		}
+		}*/
 	}
 }
 void PhysxClass::moveFrontWall(float z)

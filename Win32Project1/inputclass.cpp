@@ -390,6 +390,34 @@ bool InputClass::IsThreePressed()
 	return false;
 }
 
+bool InputClass::IsFourPressed()
+{
+	// Do a bitwise and on the keyboard state to check if the escape key is currently being pressed.
+	if ((!(m_keyboardState[DIK_4] & 0x80)) && (DIK_4 == pressKey))
+	{
+		pressKey = 0;
+		return true;
+	}
+	if (m_keyboardState[DIK_4] & 0x80)
+		pressKey = DIK_4;
+
+	return false;
+}
+
+bool InputClass::IsSpacePressed()
+{
+	// Do a bitwise and on the keyboard state to check if the escape key is currently being pressed.
+	if ((!(m_keyboardState[DIK_SPACE] & 0x80)) && (DIK_SPACE == pressKey))
+	{
+		pressKey = 0;
+		return true;
+	}
+	if (m_keyboardState[DIK_SPACE] & 0x80)
+		pressKey = DIK_SPACE;
+
+	return false;
+}
+
 bool InputClass::IsUpPressed()
 {
 	if (m_keyboardState[DIK_UP] & 0x80)
@@ -441,6 +469,7 @@ bool InputClass::IsPageUpPressed()
 
 	return false;
 }
+
 bool InputClass::IsPageDownPressed()
 {
 	// Do a bitwise and on the keyboard state to check if the escape key is currently being pressed.
@@ -454,6 +483,99 @@ bool InputClass::IsPageDownPressed()
 
 	return false;
 }
+
+
+bool InputClass::IsNumpad1Pressed()
+{
+	// Do a bitwise and on the keyboard state to check if the escape key is currently being pressed.
+	if (m_keyboardState[DIK_NUMPAD1] & 0x80)
+		return true;
+
+	return false;
+}
+
+bool InputClass::IsNumpad2Pressed()
+{
+	// Do a bitwise and on the keyboard state to check if the escape key is currently being pressed.
+	if (m_keyboardState[DIK_NUMPAD2] & 0x80)
+		return true;
+
+	return false;
+}
+
+bool InputClass::IsNumpad3Pressed()
+{
+	// Do a bitwise and on the keyboard state to check if the escape key is currently being pressed.
+	if (m_keyboardState[DIK_NUMPAD3] & 0x80)
+		return true;
+	return false;
+}
+
+bool InputClass::IsNumpad4Pressed()
+{
+	// Do a bitwise and on the keyboard state to check if the escape key is currently being pressed.
+	if (m_keyboardState[DIK_NUMPAD4] & 0x80)
+		return true;
+
+	return false;
+}
+
+bool InputClass::IsNumpad6Pressed()
+{
+	// Do a bitwise and on the keyboard state to check if the escape key is currently being pressed.
+	if (m_keyboardState[DIK_NUMPAD6] & 0x80)
+		return true;
+
+	return false;
+}
+
+bool InputClass::IsNumpad7Pressed()
+{
+	// Do a bitwise and on the keyboard state to check if the escape key is currently being pressed.
+	if (m_keyboardState[DIK_NUMPAD7] & 0x80)
+		return true;
+
+	return false;
+}
+
+bool InputClass::IsNumpad8Pressed()
+{
+	// Do a bitwise and on the keyboard state to check if the escape key is currently being pressed.
+	if (m_keyboardState[DIK_NUMPAD8] & 0x80)
+		return true;
+
+	return false;
+}
+
+bool InputClass::IsNumpad9Pressed()
+{
+	// Do a bitwise and on the keyboard state to check if the escape key is currently being pressed.
+	if (m_keyboardState[DIK_NUMPAD9] & 0x80)
+		return true;
+
+	return false;
+}
+
+bool InputClass::IsaltPressed()
+{
+	// Do a bitwise and on the keyboard state to check if the escape key is currently being pressed.
+	if (m_keyboardState[DIK_LALT] & 0x80)
+		return true;
+
+	return false;
+}
+
+bool InputClass::IsLeftMouseButtonDown()
+{
+	// Check if the left mouse button is currently pressed.
+	if (m_mouseState.rgbButtons[0] & 0x80)
+	{
+		return true;
+	}
+
+	return false;
+}
+
 
 void InputClass::GetMouseLocation(int& mouseX, int& mouseY)
 {

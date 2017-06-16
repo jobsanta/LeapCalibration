@@ -54,10 +54,12 @@
 
 using namespace Eigen;
 
-const bool FULL_SCREEN = false;
+const std::string logfile = "P2";
+
+const bool FULL_SCREEN = true;
 const bool VSYNC_ENABLED = false;
 const bool SHADOW_ENABLED = true;
-const bool POINT_CLOUD_ENABLED = false;
+
 const bool CORRECT_PERPECTIVE = true;
 const float SCREEN_DEPTH = 50.0f;
 const float SCREEN_NEAR = 1.0f;
@@ -89,18 +91,27 @@ const int NUM_POINT = 32;
 class GraphicsClass
 {
 public:
+
 	GraphicsClass();
 	GraphicsClass(const GraphicsClass&);
 	~GraphicsClass();
 
+	void ReadPath();
+
+	void setPointCloud();
+
 	bool Initialize(int, int, HWND);
 	void Shutdown();
-	bool Frame();
+	bool Frame(int mousex, int mousey, bool LeftMouseDown);
+
 	void StopCalibrate(bool);
 	void StartCalibrate();
 	void StartGameMode(int);
+	void setAltPressed(bool);
 	void ChangeZvalue(float);
-	void ChangeFOV(float);
+	void RotateActorZ(float);
+	void RotateActorX(float);
+	void RotateActorY(float);
 	void ChangeSize(float);
 	void ChangeMirrorHand();
 	void CreateBox();
@@ -108,8 +119,9 @@ public:
 	void CreateCylinder();
 	bool m_RenderHand;
 	bool m_RenderMirrorHand;
-
+	PxRigidDynamic* TestIntersection(int mouseX, int mouseY);
 	void toggleGOGO();
+	void CaptureBoxPosition();
 private:
 	bool Render();
 	void RenderActor(int mode);
@@ -117,6 +129,9 @@ private:
 	void RenderText(bool, Point3f*);
 	void RenderTextureBox(int mode, PxRigidActor* box,
 		ID3D11ShaderResourceView* texture, float width, float height, float depth);
+	void RenderTargetBox(int mode, XMMATRIX transform, ID3D11ShaderResourceView * texture, float width, float height, float depth);
+	void RenderAxis(XMMATRIX transform);
+
 	void RenderColorBox(int mode, PxRigidActor* box,
 		XMFLOAT4 color, float width, float height, float depth);
 	void RenderPalm(int mode, PxRigidActor* box, float alpha, float width, float height, float depth);
@@ -130,6 +145,7 @@ private:
 	XMMATRIX PxtoXMMatrix(PxTransform input);
 	bool RenderSceneToTexture();
 	bool RenderSceneToTexture2();
+	bool RenderSceneToTexture3();
 	bool RenderBlackAndWhiteShadows();
 	bool DownSampleTexture();
 	bool RenderHorizontalBlurToTexture();
@@ -141,12 +157,15 @@ private:
 	void WriteFile();
 	void ReadFile();
 
-private:
 
+
+private:
+	bool POINT_CLOUD_ENABLED;
 	PxVec3 pts3[NUM_POINT];
 	PxVec3 unpts3[NUM_POINT];
 	bool calibrateMode;
 	int gameMode;
+	bool altpressed;
 	int handMode;
 	int lastGameMode;
 
@@ -169,7 +188,7 @@ private:
 	ShapeClass* m_Shape;
 	KinectClass* m_Kinect;
 	TrackerClass* m_Tracker;
-	RenderTextureClass* m_RenderTexture, *m_RenderTexture2;
+	RenderTextureClass* m_RenderTexture, *m_RenderTexture2, *m_RenderTexture3;
 	RenderTextureClass *m_BlackWhiteRenderTexture, *m_DownSampleTexure;
 	RenderTextureClass *m_HorizontalBlurTexture, *m_VerticalBlurTexture, *m_UpSampleTexure;
 	DepthShaderClass* m_DepthShader;
@@ -195,6 +214,9 @@ private:
 
 	vector<handActor*> mHandlist;
 	vector<handActor*> mMirrorHandlist;
+
+	PxTransform actorstartPos;
+	PxTransform handStartPos;
 
 	int captureIndex;
 	int m_screenHeight;
@@ -234,8 +256,15 @@ private:
 
 	FLOAT* rgbDest;
 	FLOAT* depthDest;
+	FLOAT* distDest;
 
 	void checkObjectPos(PxRigidActor* actor);
+
+
+
+	void ViewUnProject(int xi, int yi, float depth, PxVec3 & v);
+
+	void ViewProject(int xi, int yi, float zi, PxVec3 & v);
 
 	Material mhandMaterial;
 	Material mboxMaterial;
@@ -243,9 +272,26 @@ private:
 	Material mfloorMaterial;
 	Material medgeMaterial;
 
+
+	int mouseX;
+	int mouseY;
 	XMFLOAT3 attenuate;
 	float lightRange;
 	bool gogoMode;
+	
+
+	PxRigidDynamic* pickActor;
+	PxTransform actorStartPosition;
+	PxTransform actorOffset;
+
+	PxTransform boxEndPosition[50];
+	PxTransform logPosition[5];
+	int logCount;
+	long long logTime[5];
+	int randomOffset;
+
+
+
 };
 
 #endif

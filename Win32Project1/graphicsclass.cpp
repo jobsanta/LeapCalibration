@@ -7,6 +7,7 @@ using namespace SimpleMath;
 
 GraphicsClass::GraphicsClass()
 {
+	POINT_CLOUD_ENABLED = false;
 	m_Direct3D = 0;
 	m_Camera = 0;
 	m_boxes = 0;
@@ -50,6 +51,13 @@ GraphicsClass::GraphicsClass()
 
 	rgbDest = new FLOAT[512 * 424 * 4];
 	depthDest = new FLOAT[512 * 424 * 3];
+	distDest = new FLOAT[512 * 424 * 3];
+
+	for (int i = 0; i < 512 * 424 * 3; i++)
+	{
+			distDest[i] = 0;
+	}
+
 
 	mhandMaterial.Ambient = XMFLOAT4(0.0f, 0.7, 0.3, 1.0);
 	mhandMaterial.Diffuse = XMFLOAT4(0.0f, 0.7, 0.3, 1.0);
@@ -75,8 +83,13 @@ GraphicsClass::GraphicsClass()
 	attenuate = XMFLOAT3(0, 0.1, 0);
 	lightRange = 40;
 
+
 	gogoMode = false;
+
+	pickActor = NULL;
+
 }
+
 
 GraphicsClass::GraphicsClass(const GraphicsClass& other)
 {
@@ -84,6 +97,30 @@ GraphicsClass::GraphicsClass(const GraphicsClass& other)
 
 GraphicsClass::~GraphicsClass()
 {
+}
+
+void GraphicsClass::ReadPath()
+{
+	ifstream fin;
+	fin.open("path.txt");
+	if (fin.is_open())
+	{
+		for (int i = 0; i < 50;i++)
+		{
+			float x, y, z, xa, ya, za, theta;
+			fin >> x >> y >> z >> xa >> ya >> za >> theta;
+			PxVec3 u = PxVec3(xa, ya, za);
+			u = u.getNormalized();
+
+			boxEndPosition[i] = PxTransform(PxVec3(x, y, z), PxQuat(theta, u));
+		}
+
+	}
+}
+
+void GraphicsClass::setPointCloud()
+{
+	POINT_CLOUD_ENABLED = !POINT_CLOUD_ENABLED;
 }
 
 bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
@@ -201,6 +238,20 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 
 	// Initialize the render to texture object.
 	result = m_RenderTexture2->Initialize(m_Direct3D->GetDevice(), SHADOWMAP_WIDTH, SHADOWMAP_HEIGHT, SCREEN_DEPTH, SCREEN_NEAR);
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the render to texture object.", L"Error", MB_OK);
+		return false;
+	}
+
+	m_RenderTexture3 = new RenderTextureClass;
+	if (!m_RenderTexture3)
+	{
+		return false;
+	}
+
+	// Initialize the render to texture object.
+	result = m_RenderTexture3->Initialize(m_Direct3D->GetDevice(), SHADOWMAP_WIDTH, SHADOWMAP_HEIGHT, SCREEN_DEPTH, SCREEN_NEAR);
 	if (!result)
 	{
 		MessageBox(hwnd, L"Could not initialize the render to texture object.", L"Error", MB_OK);
@@ -573,6 +624,10 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		return false;
 	}
 
+	RenderSceneToTexture3();
+	ReadPath();
+	m_Leap->setNoLoseGrip(false);
+
 	return true;
 }
 
@@ -587,6 +642,7 @@ void GraphicsClass::StopCalibrate(bool writeMode)
 	for (int i = 0; i < targets.size(); i++)
 		m_physx->removeActor(targets[i]);
 
+	if (gameMode != 4 || gameMode != 5 || gameMode != 6)
 	for (int i = 0; i < boxes.size(); i++)
 		m_physx->removeActor(boxes[i]);
 
@@ -594,6 +650,7 @@ void GraphicsClass::StopCalibrate(bool writeMode)
 		m_physx->removeActor(obstacles[i]);
 
 	spheres.clear();
+	if (gameMode != 4 || gameMode != 5 || gameMode != 6)
 	boxes.clear();
 	targets.clear();
 	obstacles.clear();
@@ -687,6 +744,38 @@ void GraphicsClass::StartGameMode(int mode)
 				boxes.push_back(box);
 			}
 		}
+		else if (gameMode == 4)
+		{
+			logCount = 0;
+			gogoMode = false;
+			m_Leap->setHandMode(gogoMode);
+			
+			randomOffset = (rand() % 10)*5;
+			PxRigidActor* box = m_physx->createBox(BOX_SIZE, PxVec3(0,0,-2),PxQuat::createIdentity());
+			boxes.push_back(box);
+		}
+		else if (gameMode == 5)
+		{
+			logCount = 0;
+			gogoMode = true;
+			m_Leap->setHandMode(gogoMode);
+			m_Leap->setNoLoseGrip(true);
+			randomOffset = (rand() % 10) * 5;
+			PxRigidActor* box = m_physx->createBox(BOX_SIZE, PxVec3(0, 0, -2), PxQuat::createIdentity());
+			((PxRigidDynamic*)box)->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
+			boxes.push_back(box);
+		}
+		else if (gameMode == 6)
+		{
+			logCount = 0;
+			gogoMode = false;
+			m_Leap->setHandMode(gogoMode);
+			m_Leap->setNoLoseGrip(true);
+			randomOffset = (rand() % 10) * 5;
+			PxRigidActor* box = m_physx->createBox(BOX_SIZE, PxVec3(0, 0, -2), PxQuat::createIdentity());
+			((PxRigidDynamic*)box)->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
+			boxes.push_back(box);
+		}
 
 		start = std::chrono::steady_clock::now();
 		smallStart = std::chrono::steady_clock::now();
@@ -725,23 +814,28 @@ void GraphicsClass::StartCalibrate()
 	}
 }
 
-void GraphicsClass::ChangeFOV(float value)
+void GraphicsClass::RotateActorZ(float value)
 {
-	if (calibrateMode)
-	{
-		globalFOV += value;
-		m_Direct3D->ChangeFOV(globalFOV, m_screenWidth, m_screenHeight, SCREEN_NEAR, SCREEN_DEPTH);
-	}
+	PxQuat q = PxQuat(value, PxVec3(0, 0, 1));
+	actorOffset.q = q*actorOffset.q;
+}
+
+void GraphicsClass::RotateActorX(float value)
+{
+	PxQuat q = PxQuat(value, PxVec3(1, 0, 0));
+	actorOffset.q = q*actorOffset.q;
+}
+
+void GraphicsClass::RotateActorY(float value)
+{
+	PxQuat q = PxQuat(value, PxVec3(0, 1, 0));
+	actorOffset.q = q*actorOffset.q;
 }
 
 void GraphicsClass::ChangeZvalue(float value)
 {
-	if (calibrateMode)
-	{
-		globalZ += value;
-
+		actorOffset.p.z += value;
 		//m_physx->moveBackWall(globalZ);
-	}
 }
 
 void GraphicsClass::ChangeSize(float value)
@@ -833,7 +927,7 @@ void GraphicsClass::RenderHand(int mode)
 				//for (int k = 0; k < 5; k++)
 				//{
 				//	Leap::Vector px = Leap::Vector( mHandlist[i]->leapJointPosition[j * 4 + k].x, mHandlist[i]->leapJointPosition[j * 4 + k].y, mHandlist[i]->leapJointPosition[j * 4 + k].z);
-				//	RenderDebugSphere(mode, m_Leap->leapToWorld(px), 0.05, handColor);
+				//	RenderDebugSphere(mode, m_Leap->leapToWorld(px,HandMode::Normal), 0.05, handColor);
 				//}
 
 				//for (int k = 0; k < 5; k++)
@@ -968,6 +1062,142 @@ void GraphicsClass::RenderTextureBox(int mode, PxRigidActor* box,
 	m_LightShader->Render(m_Direct3D->GetDeviceContext(), m_boxes->GetIndexCount(), s*mat, viewMatrix, projectionMatrix, m_UpSampleTexure->GetShaderResourceView(),
 		NULL, m_Light->GetPositions(), m_Light->GetAmbientColor(), m_Light->GetDiffuseColor(), m_Camera->GetPosition(), globalZ);
 }
+
+void GraphicsClass::RenderTargetBox(int mode, XMMATRIX transform, ID3D11ShaderResourceView* texture, float width, float height, float depth)
+{
+	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
+	XMMATRIX lightViewMatrix, lightViewMatrix2, lightProjectionMatrix;
+
+	m_Direct3D->GetWorldMatrix(worldMatrix);
+	m_Camera->GetViewMatrix(viewMatrix);
+	m_Direct3D->GetProjectionMatrix(projectionMatrix);
+	m_Light->GetViewMatrix(lightViewMatrix);
+	m_Light->GetProjectionMatrix(lightProjectionMatrix);
+	m_Light->GetMirrorMatrix(lightViewMatrix2);
+
+		XMMATRIX mat;
+		XMMATRIX s = XMMatrixScaling(width * 2, height * 2, depth * 2);
+		mat = s*transform;
+
+		Material tempMat;
+		tempMat = mboxMaterial;
+		tempMat.Diffuse.z = 1.0f;
+		tempMat.Diffuse.w = 0.5f;
+
+		m_Shape->Render(m_Direct3D->GetDevice());
+
+
+		m_ColorShader->SetShaderPerObject(m_Direct3D->GetDeviceContext(), mat, viewMatrix, projectionMatrix, tempMat, m_Camera->GetPosition());
+
+		m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(),
+				m_Shape->GetBoxVertexOffset());
+		
+
+}
+
+void GraphicsClass::RenderAxis(XMMATRIX transform)
+{
+	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
+	XMMATRIX lightViewMatrix, lightViewMatrix2, lightProjectionMatrix;
+
+	m_Direct3D->GetWorldMatrix(worldMatrix);
+	m_Camera->GetViewMatrix(viewMatrix);
+	m_Direct3D->GetProjectionMatrix(projectionMatrix);
+	m_Light->GetViewMatrix(lightViewMatrix);
+	m_Light->GetProjectionMatrix(lightProjectionMatrix);
+	m_Light->GetMirrorMatrix(lightViewMatrix2);
+
+	XMMATRIX xmat = XMMatrixScaling(0.3, 0.01, 0.01)*XMMatrixTranslation(0.15,0,0)*transform;
+	XMMATRIX ymat = XMMatrixScaling(0.01, 0.3, 0.01)*XMMatrixTranslation(0.0, 0.15, 0)*transform;
+	XMMATRIX zmat = XMMatrixScaling(0.01, 0.01, 0.3)*XMMatrixTranslation(0, 0, 0.15)*transform;
+	Material tempMatx = mboxMaterial;
+	tempMatx.Diffuse.x = 1.0f;
+	tempMatx.Diffuse.y = 0.0f;
+	tempMatx.Diffuse.z = 0.0f;
+
+	Material tempMaty = mboxMaterial;
+	tempMaty.Diffuse.x = 0.0f;
+	tempMaty.Diffuse.y = 1.0f;
+	tempMaty.Diffuse.z = 0.0f;
+	Material tempMatz = mboxMaterial;
+	tempMatz.Diffuse.x = 0.0f;
+	tempMatz.Diffuse.y = 0.0f;
+	tempMatz.Diffuse.z = 1.0f;
+
+
+	m_ColorShader->SetShaderPerObject(m_Direct3D->GetDeviceContext(), xmat, viewMatrix, projectionMatrix, tempMatx, m_Camera->GetPosition());
+
+	m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(),
+		m_Shape->GetBoxVertexOffset());
+
+	m_ColorShader->SetShaderPerObject(m_Direct3D->GetDeviceContext(), ymat, viewMatrix, projectionMatrix, tempMaty, m_Camera->GetPosition());
+
+	m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(),
+		m_Shape->GetBoxVertexOffset());
+
+	m_ColorShader->SetShaderPerObject(m_Direct3D->GetDeviceContext(), zmat, viewMatrix, projectionMatrix, tempMatz, m_Camera->GetPosition());
+
+	m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(),
+		m_Shape->GetBoxVertexOffset());
+
+
+}
+
+void GraphicsClass::CaptureBoxPosition()
+{
+	if (gameMode == 4 || gameMode == 5 || gameMode == 6)
+	{
+		end = std::chrono::steady_clock::now();
+		long long mils = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+		logPosition[logCount] = boxes[0]->getGlobalPose();
+		logTime[logCount] = mils;
+		logCount++;
+
+		if (pickActor != NULL)
+		{
+			pickActor = NULL;
+		}
+
+		
+		start = std::chrono::steady_clock::now();	
+
+		if (logCount >= 5)
+		{
+
+			ofstream fout;
+			std::string file = logfile;
+			if (gameMode == 4)
+				file = file + "_mouse.txt";
+			else if (gameMode == 5)
+				file = file + "_gogo.txt";
+			else if (gameMode == 6)
+				file = file + "_mirror.txt";
+			fout.open(file);
+			if (fout.is_open())
+			{
+				for (int i = 0; i < 5; i++)
+				{
+					fout << randomOffset+i << " " << logTime[i] << " "
+						<< logPosition[i].p.x << " "
+						<< logPosition[i].p.y << " "
+						<< logPosition[i].p.z << " "
+						<< logPosition[i].q.x << " "
+						<< logPosition[i].q.y << " "
+						<< logPosition[i].q.z << " "
+						<< logPosition[i].q.w << endl;
+				}
+				fout.close();
+			}
+			gameMode = 0;
+			m_Leap->setNoLoseGrip(false);
+			((PxRigidDynamic*)boxes[0])->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, false);
+			//StopCalibrate(false);
+
+
+		}
+	}
+}
+
 
 void GraphicsClass::RenderColorBox(int mode, PxRigidActor* box,
 	XMFLOAT4 color, float width, float height, float depth)
@@ -1552,6 +1782,14 @@ void GraphicsClass::Shutdown()
 		m_RenderTexture2 = 0;
 	}
 
+	if (m_RenderTexture3)
+	{
+		m_RenderTexture3->Shutdown();
+		delete m_RenderTexture3;
+		m_RenderTexture3 = 0;
+	}
+
+
 	if (m_groundShader)
 	{
 		m_groundShader->Shutdown();
@@ -1764,12 +2002,48 @@ void GraphicsClass::Shutdown()
 	return;
 }
 
-bool GraphicsClass::Frame()
+bool GraphicsClass::Frame(int x, int y, bool leftMouse)
 {
 	bool result;
+	mouseX = x;
+	mouseY = y;
 
 	// Update the position of the light.
 	m_Light->SetPosition(3, 7.0f, -8);
+
+	if (leftMouse && gameMode != 5 && gameMode != 6)
+	{
+		if (pickActor == NULL)
+		{
+			pickActor = TestIntersection(mouseX, mouseY);
+			if (pickActor != NULL)
+			{
+				pickActor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
+				actorStartPosition = pickActor->getGlobalPose();
+				actorOffset.p = PxVec3(0, 0, 0);
+				actorOffset.q = PxQuat::createIdentity();
+			}
+		}
+		else
+		{
+			PxTransform t = actorStartPosition;
+			PxVec3 p;
+			ViewProject(t.p.x, t.p.y, t.p.z+actorOffset.p.z, p);
+			ViewUnProject(x, y, p.z, t.p);
+			t.q = actorOffset.q*t.q;
+			pickActor->setKinematicTarget(t);
+
+		}
+
+	}
+	else
+	{
+		if (pickActor != NULL)
+		{
+			pickActor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, false);
+			pickActor = NULL;
+		}
+	}
 	// Update the position of the light.
 	// Render the graphics scene.
 	result = Render();
@@ -1779,6 +2053,11 @@ bool GraphicsClass::Frame()
 	}
 
 	return true;
+}
+
+void GraphicsClass::setAltPressed(bool alt)
+{
+	altpressed = alt;
 }
 
 void GraphicsClass::GameFrame()
@@ -1945,6 +2224,49 @@ void GraphicsClass::GameFrame()
 			StopCalibrate(false);
 		}
 	}
+	else if (gameMode == 5 || gameMode ==6)
+	{
+		if (mHandlist.size() > 0)
+		{
+			PxTransform t = mHandlist[0]->handTransform;
+			PxTransform h = t;
+
+			if (actorstartPos.isValid() == false)
+			{
+				actorstartPos.p = t.p;
+				actorstartPos.q = PxQuat::createIdentity();
+				PxVec3 roffset = h.q.rotate(PxVec3(0, -0.5, 0));
+				PxTransform f = PxTransform(actorstartPos.p + roffset, actorstartPos.q);
+				((PxRigidDynamic*)boxes[0])->setKinematicTarget(f);
+			}
+			if (handStartPos.isValid() == false )
+			{
+				handStartPos = mHandlist[0]->handTransform;
+			}
+			if (altpressed)
+			{
+				PxTransform test = ((PxRigidDynamic*)boxes[0])->getGlobalPose();
+				actorstartPos.q = test.q;
+				handStartPos.q = h.q;
+			}
+			else
+			{
+				PxVec3 roffset = h.q.rotate(PxVec3(0, -0.5, 0));
+				PxQuat diff = handStartPos.q *h.q.getConjugate();
+				PxTransform f = PxTransform(actorstartPos.p + (h.p - handStartPos.p) + roffset, diff.getConjugate()* actorstartPos.q);
+				((PxRigidDynamic*)boxes[0])->setKinematicTarget(f);
+			}
+		}
+		else
+		{
+			actorstartPos = PxTransform();
+			handStartPos = PxTransform();
+		}
+	
+
+
+		
+	}
 }
 
 bool GraphicsClass::Render()
@@ -1958,6 +2280,21 @@ bool GraphicsClass::Render()
 	bool Head_Error = false;
 
 	hr = m_Kinect->Process();
+	m_Direct3D->GetWorldMatrix(worldMatrix);
+	m_Camera->GetViewMatrix(viewMatrix);
+	m_Direct3D->GetProjectionMatrix(projectionMatrix);
+	m_Direct3D->GetOrthoMatrix(othoMatrix);
+
+	XMStoreFloat4x4(&proj, projectionMatrix);
+	XMStoreFloat4x4(&view, viewMatrix);
+
+	memset(depthDest, 0, 512 * 424 * 3);
+
+	m_Leap->processFrame(m_Camera->GetPosition().x, m_Camera->GetPosition().y, m_Camera->GetPosition().z, 0, view, proj, handlength);
+	mHandlist = m_Leap->getHandActor();
+
+
+	
 	if (SUCCEEDED(hr))
 	{
 		hr = m_Tracker->Process(m_Kinect->getDepthWidth(), m_Kinect->getDepthHeight(), m_Kinect->getColorWidth(), m_Kinect->getColorHeight(),
@@ -1968,10 +2305,15 @@ bool GraphicsClass::Render()
 			head_pos = m_Tracker->goggleDetection();
 			if (POINT_CLOUD_ENABLED)
 			{
-				m_Tracker->getPointCloudData(depthDest, !gogoMode);
+				//for (int i = 0; i < mHandlist.size();i++)
+				//{
+				//	m_Tracker->transformWorldToKinectDepthImage(mHandlist[i]->wristPosition,distDest);
+				//}
+
+				m_Tracker->getPointCloudData(depthDest, true);
 				m_Tracker->getColorPointCloudData(rgbDest);
 
-				m_PointCloudShader->UpdateSubResource(m_Direct3D->GetDeviceContext(), depthDest, rgbDest);
+				m_PointCloudShader->UpdateSubResource(m_Direct3D->GetDeviceContext(), depthDest, rgbDest,distDest);
 			}
 
 			if (calibrateMode)
@@ -2022,15 +2364,7 @@ bool GraphicsClass::Render()
 		m_Camera->Render(XMFLOAT3(0, 1.5, 0));
 
 	// Get the world, view, and projection matrices from the camera and d3d objects.
-	m_Direct3D->GetWorldMatrix(worldMatrix);
-	m_Camera->GetViewMatrix(viewMatrix);
-	m_Direct3D->GetProjectionMatrix(projectionMatrix);
-	m_Direct3D->GetOrthoMatrix(othoMatrix);
 
-	XMStoreFloat4x4(&proj, projectionMatrix);
-	XMStoreFloat4x4(&view, viewMatrix);
-
-	m_Leap->processFrame(m_Camera->GetPosition().x, m_Camera->GetPosition().y, m_Camera->GetPosition().z, 0, view, proj, handlength);
 	//std::vector<int> tobedeleted;
 	//for (int i = 0; i < m_Leap->deleteBoxes.size(); i++)
 	//{
@@ -2155,12 +2489,30 @@ bool GraphicsClass::Render()
 	RenderHand(3);
 	RenderTerrian(3);
 
+
+	if (gameMode == 4 || gameMode ==5 || gameMode ==6)
+	{
+		m_ColorShader->SetShaderPerFrame(m_Direct3D->GetDeviceContext(), m_RenderTexture3->GetShaderResourceView(),
+			m_Light->GetPositions(), m_Light->GetAmbientColor(), m_Light->GetDiffuseColor(), m_Light->GetSpecularColor(),
+			lightRange, attenuate);
+		XMMATRIX mat = PxtoXMMatrix(boxEndPosition[randomOffset+logCount]);
+
+		RenderTargetBox(0, mat, m_RenderTexture3->GetShaderResourceView(), BOX_SIZE.x, BOX_SIZE.y, BOX_SIZE.z);
+	}
+
+
+
+
+
+
 	m_Direct3D->TurnOffAlphaBlending();
 
 	RenderText(Head_Error, head_pos);
 
 	//RenderTextureBox(0, 0, 0, 1, 1, 1);
 	//	m_model->Draw(m_Direct3D->GetDeviceContext(), *m_states, m_world, m_view, m_proj);
+
+
 
 	if (POINT_CLOUD_ENABLED)
 		RenderPointCloud();
@@ -2185,15 +2537,31 @@ void GraphicsClass::RenderText(bool Head_Error, Point3f* head_pos)
 	spriteBatch->Begin();
 	std::vector<handActor*> handactor = m_Leap->getHandActor();
 
+		std::wstring mouse = L"+";
+		m_font->DrawString(spriteBatch.get(), mouse.c_str(), XMFLOAT2(mouseX, mouseY), Colors::Red);
+	
+
 	if (Head_Error)
 	{
-		m_font->DrawString(spriteBatch.get(), L"Multiple Red Detected!", XMFLOAT2(100, 100), Colors::Red);
+		m_font->DrawString(spriteBatch.get(), L"Multiple Red Detected!", XMFLOAT2(100, 50), Colors::Red);
 	}
 	if (head_pos != nullptr)
 	{
 		std::wstring s = L"X: " + std::to_wstring(head_pos->x) + L"Y: " + std::to_wstring(head_pos->y) + L"Z: " + std::to_wstring(head_pos->z);
-		m_font->DrawString(spriteBatch.get(), s.c_str(), XMFLOAT2(100, 100), Colors::Red);
+		m_font->DrawString(spriteBatch.get(), s.c_str(), XMFLOAT2(100, 50), Colors::Red);
 	}
+	if (!gogoMode )
+	{
+		std::wstring s = L"Go go: false";
+		m_font->DrawString(spriteBatch.get(), s.c_str(), XMFLOAT2(100, 100), Colors::Green);
+	}
+	else if (gogoMode)
+	{
+		std::wstring s = L"Go go: true";
+		m_font->DrawString(spriteBatch.get(), s.c_str(), XMFLOAT2(100, 100), Colors::Green);
+	}
+
+
 	if (calibrateMode)
 	{
 		if (handactor.size() > 0)
@@ -2272,6 +2640,11 @@ void GraphicsClass::RenderText(bool Head_Error, Point3f* head_pos)
 		std::wstring s = L"Timer : " + std::to_wstring(countDownTimer);
 		m_font->DrawString(spriteBatch.get(), s.c_str(), XMFLOAT2(100, 200), Colors::GreenYellow);
 	}
+	else if (gameMode == 4 || gameMode == 5 || gameMode == 6)
+	{
+		std::wstring s = L"Box No. : " + std::to_wstring(logCount+1);
+		m_font->DrawString(spriteBatch.get(), s.c_str(), XMFLOAT2(100, 200), Colors::GreenYellow);
+	}
 
 	spriteBatch->End();
 
@@ -2339,6 +2712,26 @@ bool GraphicsClass::RenderSceneToTexture2()
 
 
 	}
+
+	// Reset the render target back to the original back buffer and not the render to texture anymore.
+	m_Direct3D->SetBackBufferRenderTarget();
+
+	// Reset the viewport back to the original.
+	m_Direct3D->ResetViewport();
+
+	return true;
+}
+
+bool GraphicsClass::RenderSceneToTexture3()
+{
+	bool result;
+
+	// Set the render target to be the render to texture.
+	m_RenderTexture3->SetRenderTarget(m_Direct3D->GetDeviceContext());
+
+
+	m_RenderTexture3->ClearRenderTarget(m_Direct3D->GetDeviceContext(), 1.0f, 1.0f, 1.0f, 1.0f);
+
 
 	// Reset the render target back to the original back buffer and not the render to texture anymore.
 	m_Direct3D->SetBackBufferRenderTarget();
@@ -2638,7 +3031,7 @@ void GraphicsClass::ReadFile()
 void GraphicsClass::toggleGOGO()
 {
 	gogoMode = !gogoMode;
-	m_Leap->setHandMode();
+	m_Leap->setHandMode(gogoMode);
 }
 
 void GraphicsClass::checkObjectPos(PxRigidActor* actor)
@@ -2656,3 +3049,74 @@ void GraphicsClass::checkObjectPos(PxRigidActor* actor)
 		}
 	}
 }
+
+PxRigidDynamic* GraphicsClass::TestIntersection(int mouseX, int mouseY)
+{
+
+	PxVec3 origin;
+	PxVec3 dir;
+	PxReal maxDistance = 30;
+	PxRaycastBuffer hit;
+	ViewUnProject(mouseX, mouseY, 0.0f, origin);
+	ViewUnProject(mouseX, mouseY, 1.0f, dir);
+	dir = dir - origin;
+	dir = dir.getNormalized();
+
+
+	PxQueryFilterData filterData = PxQueryFilterData(PxQueryFlag::eDYNAMIC);
+	filterData.data.word0 = FilterGroup::eBox;
+
+	PxRigidDynamic* hitactor;
+	bool status = m_physx->getScene()->raycast(origin, dir, maxDistance, hit, PxHitFlags(PxHitFlag::eDEFAULT), filterData);
+	if (status)
+	{
+		return (PxRigidDynamic*)hit.block.actor;
+
+	}
+	return NULL;
+
+}
+
+
+void GraphicsClass::ViewUnProject(int xi, int yi, float depth, PxVec3 &v)
+{
+
+	//yi = m_screenHeight - yi - 1;
+	XMMATRIX projectionMatrix, viewMatrix,worldMatrix;
+	worldMatrix = XMMatrixIdentity();
+	m_Direct3D->GetProjectionMatrix(projectionMatrix);
+	m_Camera->GetViewMatrix(viewMatrix);
+
+	XMVECTOR xv = XMLoadFloat3(&XMFLOAT3(xi,yi,depth));
+	
+	XMVECTOR vi = XMVector3Unproject(xv, 0, 0, m_screenWidth, m_screenHeight, 0.0f, 1.0f, projectionMatrix, viewMatrix, worldMatrix);
+
+	XMFLOAT3 vs;
+	XMStoreFloat3(&vs, vi);
+
+	v.x = vs.x;
+	v.y = vs.y;
+	v.z = vs.z;
+}
+
+void GraphicsClass::ViewProject(int xi, int yi, float zi, PxVec3 &v)
+{
+
+	//yi = m_screenHeight - yi - 1;
+	XMMATRIX projectionMatrix, viewMatrix, worldMatrix;
+	worldMatrix = XMMatrixIdentity();
+	m_Direct3D->GetProjectionMatrix(projectionMatrix);
+	m_Camera->GetViewMatrix(viewMatrix);
+
+	XMVECTOR xv = XMLoadFloat3(&XMFLOAT3(xi, yi, zi));
+
+	XMVECTOR vi = XMVector3Project(xv, 0, 0, m_screenWidth, m_screenHeight, 0.0f, 1.0f, projectionMatrix, viewMatrix, worldMatrix);
+
+	XMFLOAT3 vs;
+	XMStoreFloat3(&vs, vi);
+
+	v.x = vs.x;
+	v.y = vs.y;
+	v.z = vs.z;
+}
+

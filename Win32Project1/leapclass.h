@@ -26,14 +26,30 @@ using namespace physx;
 using namespace DirectX;
 using namespace Eigen;
 
-#define SWITCHTIME 1.0f
+#define SWITCHTIME 0.8f
 #define SWITCHRANGE 1.8f
 
 //static const float particleSize = 0.075f;
 //static const float particleRadius = 0.075f;
 #ifndef HA
 #define HA
-const bool OFFAXIS = false;
+const bool OFFAXIS = true;
+
+#ifndef GROUP
+#define GROUP
+struct FilterGroup
+{
+	enum Enum
+	{
+		eHand = (1 << 0),
+		eWall = (1 << 1),
+		eFinger = (1 << 4),
+		eBox = (1 << 2),
+		eTarget = (1 << 3),
+	};
+};
+
+#endif
 
 struct HandMode
 {
@@ -51,17 +67,13 @@ struct handActor
 	int id;
 	bool isRef;
 	PxRigidDynamic* palm;
-	//PxRigidDynamic* palmJoint[4];
 	PxRigidDynamic* finger_actor[5][4];
-	PxRigidDynamic* finger_joint_actor[5][4];
-	PxRigidDynamic* finger_tip[5];
-	PxRigidDynamic* finger_tip_achor[5];
-	PxDistanceJoint* finger_tip_joint[5];
 	PxD6Joint* finger_joint[5][4];
 	PxReal halfHeight[5][4];
 	PxReal fingerWidth[5][4];
 	float previousHandAngle[5][3];
 	float previousSpringHandAngle[5][3];
+
 	double previousTime;
 	bool isInMirror;
 	bool isInTransit;
@@ -76,13 +88,14 @@ struct handActor
 	PxAggregate* aggregate;
 
 	PxRigidDynamic* grabActor;
+	int grabType;
 	PxTransform grabActorStartPos;
 	PxTransform grabHandStartPos;
-
-	PxVec3* leapJointPosition;
-	PxVec3* leapJointPosition2;
+	Leap::Vector wristPosition;
+	std::vector<PxVec3> leapJointPosition;
 	PxVec3* fingerTipPosition;
 	bool* isExtended;
+	PxTransform handTransform;
 };
 
 class LeapClass {
@@ -98,7 +111,6 @@ public:
 	void InitPhysx(PxPhysics* sdk, PxScene* scene);
 	vector<PxRigidActor*> getProxyParticle();
 	vector<PxRigidActor*> getProxyJoint();
-	//PxRigidActor* getPalm();
 	std::vector<handActor*> getHandActor();
 	std::vector<handActor*> getMirrorHandActor();
 	bool captureFingerTip(float * x, float *y, float*z);
@@ -117,7 +129,8 @@ public:
 	std::vector<PxRigidActor*> deleteBoxes;
 	void clearBoxes();
 	bool getRightHandMirror();
-	void setHandMode();
+	void setHandMode(bool);
+	void setNoLoseGrip(bool);
 
 private:
 	Controller controller;
@@ -135,12 +148,11 @@ private:
 	float x_head, y_head, z_head;
 
 	std::vector<handActor*> mHandList;
-	//	std::vector<handActor> mMirrorHandList;
 
 	PxRigidDynamic* CreateSphere(const PxVec3& pos, const PxReal radius, const PxReal density);
 	PxRigidDynamic* CreateBox(PxVec3 dimension, PxVec3 pose, PxQuat quat);
-	//void createJoint(Leap::Vector bone);
-	void createHand(Hand hand, bool goinUp, bool isInTransit, float factor, HandMode::Enum handMode, PxRigidDynamic* grabActor);
+
+	void createHand(Hand hand, bool goinUp, bool isInTransit, float factor, HandMode::Enum handMode, PxRigidDynamic* grabActor,int grabType);
 
 	void updateHand(Hand hand, handActor* actor, HandMode::Enum handmode);
 	void deleteHand(handActor* actor);
@@ -156,8 +168,6 @@ private:
 	Leap::Vector PxVec3toLeapVec(PxVec3 pos);
 	PxVec3 LeapVectoPxVec3(Leap::Vector pos);
 	PxRigidDynamic * queryScene(PxTransform transform, PxGeometry geometry);
-	//float x_scale;
-	//float y_scale;
 
 	void calculateTrackedHand(Hand hand);
 	void calculateSpringHand(handActor* hand);
@@ -175,6 +185,8 @@ private:
 
 	bool leftHandMirrored;
 	bool rightHandMirrored;
+
+	bool nolosegripmode;
 
 	vector<PxRigidActor*> boxes;
 

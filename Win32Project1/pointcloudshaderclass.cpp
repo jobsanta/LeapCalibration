@@ -99,6 +99,25 @@ bool PointCloudShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WC
 
 	device->CreateShaderResourceView(m_pColorTexture2D, NULL, &m_pColorTextureRV);
 
+	// Create color texture
+	D3D11_TEXTURE2D_DESC distantTexDesc = { 0 };
+	distantTexDesc.Width = m_depthWidth;
+	distantTexDesc.Height = m_depthHeight;
+	distantTexDesc.MipLevels = 1;
+	distantTexDesc.ArraySize = 1;
+	distantTexDesc.Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	distantTexDesc.SampleDesc.Count = 1;
+	distantTexDesc.SampleDesc.Quality = 0;
+	distantTexDesc.Usage = D3D11_USAGE_DYNAMIC;
+	distantTexDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	distantTexDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	distantTexDesc.MiscFlags = 0;
+
+	device->CreateTexture2D(&distantTexDesc, NULL, &m_pDistTexture2D);
+
+	device->CreateShaderResourceView(m_pDistTexture2D, NULL, &m_pDistTextureRV);
+
+
 	LoadShaders(device);
 
 	// Create the vertex buffer
@@ -199,6 +218,18 @@ void PointCloudShaderClass::ShutdownShader()
 		m_pColorTextureRV = 0;
 	}
 
+	if (m_pDistTexture2D)
+	{
+		m_pDistTexture2D->Release();
+		m_pDistTexture2D = 0;
+	}
+	if (m_pDistTextureRV)
+	{
+		m_pDistTextureRV->Release();
+		m_pDistTextureRV = 0;
+	}
+
+
 	if (m_pDepthTexture2D)
 	{
 		m_pDepthTexture2D->Release();
@@ -280,10 +311,10 @@ bool PointCloudShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceConte
 	HRESULT result;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 
-	mCam.UpdateViewMatrix();
-	XMMATRIX view = mCam.View();
-	XMMATRIX proj = mCam.Proj();
-	XMMATRIX viewProj = mCam.ViewProj();
+	//mCam.UpdateViewMatrix();
+	//XMMATRIX view = mCam.View();
+	//XMMATRIX proj = mCam.Proj();
+	//XMMATRIX viewProj = mCam.ViewProj();
 
 	CBChangesEveryFrame cb;
 	cb.View = XMMatrixTranspose(viewMatrix);
@@ -295,7 +326,7 @@ bool PointCloudShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceConte
 	return true;
 }
 
-bool PointCloudShaderClass::UpdateSubResource(ID3D11DeviceContext* device, FLOAT* depthDest, FLOAT* rgbDest)
+bool PointCloudShaderClass::UpdateSubResource(ID3D11DeviceContext* device, FLOAT* depthDest, FLOAT* rgbDest, FLOAT* distDest)
 {
 	D3D11_MAPPED_SUBRESOURCE msT;
 	HRESULT result;
@@ -314,6 +345,11 @@ bool PointCloudShaderClass::UpdateSubResource(ID3D11DeviceContext* device, FLOAT
 
 	memcpy(msT.pData, rgbDest, sizeof(float)*depthWidth*depthHeight * 4);
 	device->Unmap(m_pColorTexture2D, NULL);
+
+	result = device->Map(m_pDistTexture2D, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &msT);
+	if (FAILED(result)) { return false; }
+	memcpy(msT.pData, distDest, sizeof(float)*depthWidth*depthHeight * 3);
+	device->Unmap(m_pDistTexture2D, NULL);
 
 	return true;
 }
@@ -335,6 +371,7 @@ void PointCloudShaderClass::RenderShader(ID3D11DeviceContext* deviceContext)
 	deviceContext->GSSetConstantBuffers(0, 1, &m_pCBChangesEveryFrame);
 	deviceContext->GSSetShaderResources(0, 1, &m_pDepthTextureRV);
 	deviceContext->GSSetShaderResources(1, 1, &m_pColorTextureRV);
+	deviceContext->GSSetShaderResources(2, 1, &m_pDistTextureRV);
 	deviceContext->GSSetSamplers(0, 1, &m_pColorSampler);
 
 	deviceContext->PSSetShader(m_pPixelShader, NULL, 0);

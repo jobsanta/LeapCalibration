@@ -43,6 +43,15 @@ public:
 	bool IsUpPressed();
 	bool IsDownPressed();
 	bool IsPageDownPressed();
+	bool IsNumpad1Pressed();
+	bool IsNumpad2Pressed();
+	bool IsNumpad3Pressed();
+	bool IsNumpad4Pressed();
+	bool IsNumpad6Pressed();
+	bool IsNumpad7Pressed();
+	bool IsNumpad8Pressed();
+	bool IsNumpad9Pressed();
+	bool IsaltPressed();
 	bool IsPageUpPressed();
 	bool IsIPressed();
 	bool IsMPressed();
@@ -52,9 +61,13 @@ public:
 	bool IsOnePressed();
 	bool IsTwoPressed();
 	bool IsThreePressed();
+	bool IsFourPressed();
+
+	bool IsSpacePressed();
 
 	bool IsLeftPressed();
 	bool IsRightPressed();
+	bool IsLeftMouseButtonDown();
 	void GetMouseLocation(int&, int&);
 
 private:

@@ -6,6 +6,7 @@
 
 Texture2D<float3>    txDepth  : register(t0);
 Texture2D<float4> txColor  : register(t1);
+Texture2D<float3> txDist : register(t2);
 SamplerState      samColor : register(s0);
 
 //--------------------------------------------------------------------------------------
@@ -86,11 +87,12 @@ void GS(point GS_INPUT particles[1], uint primID : SV_PrimitiveID, inout Triangl
 	int3 baseLookupCoords = int3(primID % DepthWidth, primID / DepthWidth, 0);
 
 	float3 pos = txDepth.Load(baseLookupCoords);
+	float3 dist = txDist.Load(baseLookupCoords);
 
 	// set the base world position here so we don't have to do it per vertex
 	// convert x and y lookup coords to world space meters
 	float4 WorldPos;
-	WorldPos.xyz = pos;
+	WorldPos.xyz = pos+dist;
 	WorldPos.w = 1.0;
 
 	// convert to camera space
@@ -101,7 +103,7 @@ void GS(point GS_INPUT particles[1], uint primID : SV_PrimitiveID, inout Triangl
 
 	//// determine how large to make the point sprite - scale it up a little to fill in holes
 	//// also make it larger if it is further away to prevent aliasing artifacts
-	static const float4 PointSpriteScaleFactor = float4(1.0 / DepthWidth, 1.0 / DepthHeight, 0.0, 0.0) * 2;
+	static const float4 PointSpriteScaleFactor = float4(1.0 / DepthWidth, 1.0 / DepthHeight, 0.0, 0.0) * 4;
 	float4 quadOffsetScalingFactorInViewspace = PointSpriteScaleFactor * pos.z;
 
 	[unroll]

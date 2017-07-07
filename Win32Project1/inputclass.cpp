@@ -404,6 +404,33 @@ bool InputClass::IsFourPressed()
 	return false;
 }
 
+bool InputClass::IsFivePressed()
+{
+	// Do a bitwise and on the keyboard state to check if the escape key is currently being pressed.
+	if ((!(m_keyboardState[DIK_5] & 0x80)) && (DIK_5 == pressKey))
+	{
+		pressKey = 0;
+		return true;
+	}
+	if (m_keyboardState[DIK_5] & 0x80)
+		pressKey = DIK_5;
+
+	return false;
+}
+
+bool InputClass::IsSixPressed()
+{
+	if ((!(m_keyboardState[DIK_6] & 0x80)) && (DIK_6 == pressKey))
+	{
+		pressKey = 0;
+		return true;
+	}
+	if (m_keyboardState[DIK_6] & 0x80)
+		pressKey = DIK_6;
+
+	return false;
+}
+
 bool InputClass::IsSpacePressed()
 {
 	// Do a bitwise and on the keyboard state to check if the escape key is currently being pressed.
@@ -559,7 +586,7 @@ bool InputClass::IsNumpad9Pressed()
 bool InputClass::IsaltPressed()
 {
 	// Do a bitwise and on the keyboard state to check if the escape key is currently being pressed.
-	if (m_keyboardState[DIK_LALT] & 0x80)
+	if (m_keyboardState[DIK_LCONTROL] & 0x80)
 		return true;
 
 	return false;

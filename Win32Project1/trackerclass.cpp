@@ -34,7 +34,7 @@ void TrackerClass::getPointCloudData(float* dest, bool mirror)
 	float* fdest = (float*)dest;
 	for (int i = 0; i < nDepthHeight*nDepthWidth; i++) {
 		point = cameraToWorldSpace(depthToCamera_points[i]);
-		if (affine_set && point.x > -3 && point.x < 3 && point.y > 0 && point.y < 3 && point.z <0 && point.z>-6 )
+		if (affine_set && point.x > -3 && point.x < 3 && point.y > 0 && point.y < 3 && point.z <0 && point.z>-6)
 			point = precompute[int(point.x*100+300)*180000+int(point.y*100)*600+int(-point.z*100)];
 			
 

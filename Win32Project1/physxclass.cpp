@@ -168,36 +168,36 @@ bool PhysxClass::Initialize()
 	setupFiltering(moveAbleFloor, FilterGroup::eWall, FilterGroup::eBox | FilterGroup::eTarget);
 	gScene->addActor(*moveAbleFloor);
 
-	pose = PxTransform(PxVec3(-2.0f, FLOOR_LEVEL, 0.0f), PxQuat(0.0, PxVec3(0.0f, 1.0f, 0.0f)));
+	pose = PxTransform(PxVec3(-3.0f, FLOOR_LEVEL, 0.0f), PxQuat(0.0, PxVec3(0.0f, 1.0f, 0.0f)));
 	PxRigidStatic* plane = gPhysicsSDK->createRigidStatic(pose);
 	shape = plane->createShape(PxPlaneGeometry(), *mMaterial);
 
 	setupFiltering(plane, FilterGroup::eWall, FilterGroup::eBox | FilterGroup::eTarget);
 	gScene->addActor(*plane);
 
-	pose = PxTransform(PxVec3(2.0f, FLOOR_LEVEL, 0.0f), PxQuat(PxPi, PxVec3(0.0f, 1.0f, 0.0f)));
+	pose = PxTransform(PxVec3(3.0f, FLOOR_LEVEL, 0.0f), PxQuat(PxPi, PxVec3(0.0f, 1.0f, 0.0f)));
 	plane = gPhysicsSDK->createRigidStatic(pose);
 	shape = plane->createShape(PxPlaneGeometry(), *mMaterial);
 
 	setupFiltering(plane, FilterGroup::eWall, FilterGroup::eBox | FilterGroup::eTarget);
 	gScene->addActor(*plane);
 
-	pose = PxTransform(PxVec3(0.0f, 0.0f, 3.0f), PxQuat(PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f)));
+	pose = PxTransform(PxVec3(0.0f, 0.0f, 4.0f), PxQuat(PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f)));
 	moveAbleWall = gPhysicsSDK->createRigidStatic(pose);
 	shape = moveAbleWall->createShape(PxPlaneGeometry(), *mMaterial);
 
 	setupFiltering(moveAbleWall, FilterGroup::eWall, FilterGroup::eBox | FilterGroup::eTarget);
 	gScene->addActor(*moveAbleWall);
 
-	pose = PxTransform(PxVec3(0.0f, 0.0f, -3.0f), PxQuat(-PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f)));
+	pose = PxTransform(PxVec3(0.0f, 0.0f, -4.0f), PxQuat(-PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f)));
 	moveAbleFrontWall = gPhysicsSDK->createRigidStatic(pose);
 	shape = moveAbleFrontWall->createShape(PxPlaneGeometry(), *mMaterial);
 
 	setupFiltering(moveAbleFrontWall, FilterGroup::eWall, FilterGroup::eBox | FilterGroup::eTarget);
 	gScene->addActor(*moveAbleFrontWall);
 
-	static const PxVec3 convexVerts[] = { PxVec3(-2.0,5,0),PxVec3(2.0,5,0),PxVec3(2.0,0,1.75),PxVec3(-2.0,0,1.75),PxVec3(2.0,0,-1.75),
-		PxVec3(-2.0,0,-1.75) };
+	static const PxVec3 convexVerts[] = { PxVec3(-2.0,5,0),PxVec3(2.0,5,0),PxVec3(2.0,0,1),PxVec3(-2.0,0,1),PxVec3(2.0,0,-1),
+		PxVec3(-2.0,0,-1) };
 	PxConvexMeshDesc convexDesc;
 	convexDesc.points.count = 6;
 	convexDesc.points.stride = sizeof(PxVec3);
@@ -270,6 +270,8 @@ bool PhysxClass::Initialize()
 	//	spheres.push_back(actor);
 	//}
 	start_time = milliseconds_now();
+
+
 
 	return true;
 }

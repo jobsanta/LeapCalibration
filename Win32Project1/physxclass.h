@@ -27,6 +27,7 @@ class PhysxClass : public PxSimulationEventCallback
 {
 public:
 	const PxReal FLOOR_LEVEL = 1.0f;
+
 public:
 
 	PhysxClass();

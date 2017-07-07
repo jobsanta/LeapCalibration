@@ -54,9 +54,9 @@
 
 using namespace Eigen;
 
-const std::string logfile = "P2";
+const std::string logfile = "Pa19";
 
-const bool FULL_SCREEN = true;
+const bool FULL_SCREEN = false;
 const bool VSYNC_ENABLED = false;
 const bool SHADOW_ENABLED = true;
 
@@ -115,6 +115,7 @@ public:
 	void ChangeSize(float);
 	void ChangeMirrorHand();
 	void CreateBox();
+	void Createfolder();
 	void CreateSphere();
 	void CreateCylinder();
 	bool m_RenderHand;
@@ -125,10 +126,12 @@ public:
 private:
 	bool Render();
 	void RenderActor(int mode);
+	void RenderTexActor(int mode);
 	void RenderHand(int mode);
 	void RenderText(bool, Point3f*);
 	void RenderTextureBox(int mode, PxRigidActor* box,
 		ID3D11ShaderResourceView* texture, float width, float height, float depth);
+	void RenderTexture(int mode, PxTransform transform, ID3D11ShaderResourceView * texture, float width, float height, float depth);
 	void RenderTargetBox(int mode, XMMATRIX transform, ID3D11ShaderResourceView * texture, float width, float height, float depth);
 	void RenderAxis(XMMATRIX transform);
 
@@ -181,6 +184,7 @@ private:
 	ColorShaderClass* m_ColorShader;
 	TextureShaderClass* m_TextureShader;
 	TextureClass* m_Target_Texture;
+	TextureClass* m_folder_texture[19];
 	TerrainClass* m_Terrain;
 	TextClass* m_Text;
 	LeapClass* m_Leap;
@@ -207,6 +211,8 @@ private:
 	vector<PxRigidActor*> folders;
 	vector<PxRigidActor*> targets;
 	vector<PxRigidActor*> obstacles;
+
+	vector<PxJoint*> joints;
 
 	std::unique_ptr<DirectX::SpriteBatch> spriteBatch;
 	std::unique_ptr<DirectX::SpriteFont> m_font;
@@ -271,6 +277,8 @@ private:
 	Material msphereMaterial;
 	Material mfloorMaterial;
 	Material medgeMaterial;
+	Material mtextureMaterial;
+	Material mtextMaterial;
 
 
 	int mouseX;
@@ -290,6 +298,9 @@ private:
 	long long logTime[5];
 	int randomOffset;
 
+	PxRigidStatic* pollActor;
+	PxRigidStatic* pollActor2;
+	bool showContent;
 
 
 };

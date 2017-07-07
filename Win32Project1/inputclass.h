@@ -62,6 +62,8 @@ public:
 	bool IsTwoPressed();
 	bool IsThreePressed();
 	bool IsFourPressed();
+	bool IsFivePressed();
+	bool IsSixPressed();
 
 	bool IsSpacePressed();
 

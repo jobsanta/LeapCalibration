@@ -482,7 +482,7 @@ PxVec3 LeapClass::leapToWorld(Leap::Vector bone_center, HandMode::Enum handmode)
 	{
 		converted.z = -bone_center.z / 100.f - 2.9;
 		if (OFFAXIS)
-			normalized_y = normalized_y - 3.0f;
+			normalized_y = normalized_y - 2.0f;
 		PxVec3 head(x_head, normalized_y, z_head);
 		PxVec3 r = converted - head;
 		float R_r = r.magnitude();
@@ -606,7 +606,7 @@ void LeapClass::createHand(Hand hand, bool goinUp, bool isInTransit, float handL
 
 	newHand->wristPosition = hand.wristPosition();
 	newHand->isInTransit = isInTransit;
-	newHand->alphaValue = 1.0f;
+	newHand->alphaValue = 0.5f;
 	newHand->toBeDelete = false;
 	newHand->goingUp = goinUp;
 	newHand->grabActor = grab;
@@ -1210,7 +1210,7 @@ void LeapClass::updateHand(Hand hand, handActor* actor, HandMode::Enum handmode)
 		{
 			if (actor->grabType == 0 || actor->grabType == 2)
 			{
-				PxRigidDynamic* temp = queryScene(PxTransform(tipPos[0]), PxSphereGeometry(0.1f));
+				PxRigidDynamic* temp = queryScene(PxTransform(tipPos[0]), PxSphereGeometry(1));
 				if (temp != NULL)
 				{
 					PxVec3 center = PxVec3(0, 0, 0);
@@ -1219,7 +1219,7 @@ void LeapClass::updateHand(Hand hand, handActor* actor, HandMode::Enum handmode)
 					int count = 1;
 					for (int i = 1; i < 5; i++)
 					{
-						if (queryScene(PxTransform(tipPos[i]), PxSphereGeometry(0.1f)) != NULL)
+						if (queryScene(PxTransform(tipPos[i]), PxSphereGeometry(1)) != NULL)
 						{
 							center += tipPos[i];
 							count++;
@@ -1227,7 +1227,7 @@ void LeapClass::updateHand(Hand hand, handActor* actor, HandMode::Enum handmode)
 						}
 
 					}
-					if (count > 1)
+					if (count >= 1)
 					{
 						//detect first pinch
 						float st = hand.pinchStrength();
@@ -1254,7 +1254,7 @@ void LeapClass::updateHand(Hand hand, handActor* actor, HandMode::Enum handmode)
 				int count = 1;
 				for (int i = 1; i < 5; i++)
 				{
-					if (queryScene(PxTransform(tipPos[i]), PxSphereGeometry(0.1f)) != NULL)
+					if (queryScene(PxTransform(tipPos[i]), PxSphereGeometry(0.5)) != NULL)
 					{
 						center += tipPos[i];
 						graspFinger[i] = true;
@@ -1262,13 +1262,13 @@ void LeapClass::updateHand(Hand hand, handActor* actor, HandMode::Enum handmode)
 					}
 				}
 
-				if (count == 1 && !actor->goingUp)
-				{
-					//release actor
-					actor->grabType = 0;
-				}
-				else if (count > 1)
-				{
+				//if (count == 1 && !actor->goingUp)
+				//{
+				//	//release actor
+				//	actor->grabType = 0;
+				//}
+				//else if (count > 1)
+				//{
 					//still pinch move actor
 					PxQuat diff = actor->grabHandStartPos.q *quat_hand.getConjugate();
 					center = (center + thumb) / count;
@@ -1278,7 +1278,7 @@ void LeapClass::updateHand(Hand hand, handActor* actor, HandMode::Enum handmode)
 					actor->pinchStrength[0] = st;
 					actor->grabActor->userData = static_cast<float*>(actor->pinchStrength);
 					actor->grabActor->setKinematicTarget(PxTransform(actor->grabActorStartPos.p + (center - actor->grabHandStartPos.p), diff.getConjugate()* actor->grabActorStartPos.q));
-				}
+				//}
 			}
 		}
 
@@ -1465,6 +1465,7 @@ void LeapClass::updateHand(Hand hand, handActor* actor, HandMode::Enum handmode)
 							PxQuat q = PxQuat(rotatemat*PxMat33(trans.q.getBasisVector0(), trans.q.getBasisVector1(), trans.q.getBasisVector2())*rotatemat);
 							trans.q = q;
 							touchActor->setKinematicTarget(trans);
+							actor->grabActor->userData = NULL;
 							actor->grabType = 0;
 							//actor->grabActorStartPos = trans;
 							//PxVec3 center = palmPos + LeapVectoPxVec3(hand.palmNormal()) / 2.0f;

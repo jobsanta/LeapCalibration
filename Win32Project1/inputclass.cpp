@@ -431,6 +431,19 @@ bool InputClass::IsSixPressed()
 	return false;
 }
 
+bool InputClass::IsSevenPressed()
+{
+	if ((!(m_keyboardState[DIK_7] & 0x80)) && (DIK_7 == pressKey))
+	{
+		pressKey = 0;
+		return true;
+	}
+	if (m_keyboardState[DIK_7] & 0x80)
+		pressKey = DIK_7;
+
+	return false;
+}
+
 bool InputClass::IsSpacePressed()
 {
 	// Do a bitwise and on the keyboard state to check if the escape key is currently being pressed.

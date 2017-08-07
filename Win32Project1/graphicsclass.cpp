@@ -3,7 +3,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "graphicsclass.h"
 
-using namespace SimpleMath;
+//using namespace SimpleMath;
 
 GraphicsClass::GraphicsClass()
 {
@@ -92,16 +92,16 @@ GraphicsClass::GraphicsClass()
 	mtextMaterial.Specular = XMFLOAT4(1.0, 1.0, 1.0, 96.0f);
 
 
-	attenuate = XMFLOAT3(0, 0.1, 0);
+	attenuate = XMFLOAT3(0, 0.05, 0);
 	lightRange = 40;
 
 
 	gogoMode = false;
 
 	pickActor = NULL;
+	globe = NULL;
 
 }
-
 
 GraphicsClass::GraphicsClass(const GraphicsClass& other)
 {
@@ -485,6 +485,124 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		}
 	}
 
+	m_content_texture[0] = new TextureClass;
+	if (!m_content_texture[0])
+	{
+		return false;
+	}
+	std::wstring file = L"../Win32Project1/data/3D.DDs";
+	// Initialize the model object.
+	result = m_content_texture[0]->Initialize(m_Direct3D->GetDevice(), file.c_str());
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the target texture object.", L"Error", MB_OK);
+		return false;
+	}
+
+	m_maptarget_texture = new TextureClass;
+	if (!m_content_texture[0])
+	{
+		return false;
+	}
+	file = L"../Win32Project1/data/target.DDs";
+	// Initialize the model object.
+	result = m_maptarget_texture->Initialize(m_Direct3D->GetDevice(), file.c_str());
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the target texture object.", L"Error", MB_OK);
+		return false;
+	}
+
+
+	m_content_texture[1] = new TextureClass;
+	if (!m_content_texture[1])
+	{
+		return false;
+	}
+	file = L"../Win32Project1/data/folder17.DDs";
+	// Initialize the model object.
+	result = m_content_texture[1]->Initialize(m_Direct3D->GetDevice(), file.c_str());
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the target texture object.", L"Error", MB_OK);
+		return false;
+	}
+
+
+	m_content_texture[2] = new TextureClass;
+	if (!m_content_texture[2])
+	{
+		return false;
+	}
+	file = L"../Win32Project1/data/photo.DDs";
+	// Initialize the model object.
+	result = m_content_texture[2]->Initialize(m_Direct3D->GetDevice(), file.c_str());
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the target texture object.", L"Error", MB_OK);
+		return false;
+	}
+
+
+
+
+	m_earth_texture = new TextureClass;
+	if (!m_earth_texture)
+	{
+		return false;
+	}
+	file = L"../Win32Project1/data/earthmap1k.DDs";
+	// Initialize the model object.
+	result = m_earth_texture->Initialize(m_Direct3D->GetDevice(), file.c_str());
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the target texture object.", L"Error", MB_OK);
+		return false;
+	}
+
+	m_map_texture[0] = new TextureClass;
+	if (!m_earth_texture)
+	{
+		return false;
+	}
+	file = L"../Win32Project1/data/map3.DDs";
+	// Initialize the model object.
+	result = m_map_texture[0]->Initialize(m_Direct3D->GetDevice(), file.c_str());
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the target texture object.", L"Error", MB_OK);
+		return false;
+	}
+
+	m_map_texture[1] = new TextureClass;
+	if (!m_earth_texture)
+	{
+		return false;
+	}
+	file = L"../Win32Project1/data/map2.DDs";
+	// Initialize the model object.
+	result = m_map_texture[1]->Initialize(m_Direct3D->GetDevice(), file.c_str());
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the target texture object.", L"Error", MB_OK);
+		return false;
+	}
+
+
+	m_space_texture = new TextureClass;
+	if (!m_space_texture)
+	{
+		return false;
+	}
+	file = L"../Win32Project1/data/space.DDs";
+	// Initialize the model object.
+	result = m_space_texture->Initialize(m_Direct3D->GetDevice(), file.c_str());
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the target texture object.", L"Error", MB_OK);
+		return false;
+	}
+
 
 	m_spheres = new ModelClass;
 	if (!m_spheres)
@@ -588,6 +706,26 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		return false;
 	}
 
+	if (NETWORK_ENABLED)
+	{
+		m_network = new NetworkClass();
+		if (!m_network)
+		{
+			return false;
+		}
+		m_network->EstrablishConnection();
+	}
+
+
+	//m_flex = new FlexClass;
+	//if (!m_flex)
+	//{
+	//	return false;
+	//}
+	//m_flex->initialize();
+
+
+
 	m_Text = new TextClass;
 	if (!m_Text)
 	{
@@ -626,12 +764,13 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 
 	//m_model = Model::CreateFromSDKMESH(m_Direct3D->GetDevice(), L"teapot.sdkmesh", *m_fxFactory);
 
-	m_world = SimpleMath::Matrix::Identity;
+	//m_world = SimpleMath::Matrix::Identity;
+	//
 
-	m_view = SimpleMath::Matrix::CreateLookAt(Vector3(2.f, 2.f, 2.f),
-		Vector3::Zero, Vector3::UnitY);
-	m_proj = SimpleMath::Matrix::CreatePerspectiveFieldOfView(XM_PI / 4.f,
-		float(1920) / float(1080), 0.1f, 10.f);
+	//m_view = SimpleMath::Matrix::CreateLookAt(SimpleMath::Vector3(2.f, 2.f, 2.f),
+	//	SimpleMath::Vector3::Zero, SimpleMath::Vector3::UnitY);
+	//m_proj = SimpleMath::Matrix::CreatePerspectiveFieldOfView(XM_PI / 4.f,
+	//	float(1920) / float(1080), 0.1f, 10.f);
 
 	globalZ = 0;
 	globalFactor = 1;
@@ -640,7 +779,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	ReadFile();
 	StopCalibrate(false);
 
-	floor_trans = XMMatrixTranslation(0, m_physx->FLOOR_LEVEL, -0.0f);
+	floor_trans = XMMatrixTranslation(0, m_physx->floor_height, -0.0f);
 	floor_scale = XMMatrixScaling(10, 2, 10);
 
 	m_PointCloudShader = new PointCloudShaderClass;
@@ -700,6 +839,26 @@ void GraphicsClass::StopCalibrate(bool writeMode)
 		m_physx->removeActor(pollActor2);
 
 	}
+	if (gameMode == 8)
+	{
+		m_physx->removeActor(pollActor);
+		m_physx->removeActor(pollActor2);
+
+		for (int i = 0; i < contents.size(); i++)
+			deleteContent(contents[i]);
+
+		for (int i = 0; i < joints.size(); i++)
+			if (joints[i] != NULL)
+			{
+				joints[i]->release();
+				joints[i] = NULL;
+			}
+
+		joints.clear();
+		contents.clear();
+
+	}
+
 	
 	m_physx->clearTargetStatus();
 
@@ -838,11 +997,11 @@ void GraphicsClass::StartGameMode(int mode)
 		else if (gameMode == 8)
 		{
 			PxMaterial* mMaterial = m_physx->getPhysicsSDK()->createMaterial(1.0, 1.0, 0.5);
-			pollActor = m_physx->getPhysicsSDK()->createRigidStatic(PxTransform(PxVec3(-1.5, 1.52, 1.25), PxQuat(PxHalfPi, PxVec3(0, 1,0 ))));
+			pollActor = m_physx->getPhysicsSDK()->createRigidStatic(PxTransform(PxVec3(-2, 2, 1.25), PxQuat(PxHalfPi, PxVec3(0, 1,0 ))));
 			PxShape* shape = pollActor->createShape(PxCapsuleGeometry(0.02, 1.25), *mMaterial);
 			m_physx->getScene()->addActor(*pollActor);
 
-			pollActor2 = m_physx->getPhysicsSDK()->createRigidStatic(PxTransform(PxVec3(1.5, 1.52, 1.25), PxQuat(PxHalfPi, PxVec3(0, 1, 0))));
+			pollActor2 = m_physx->getPhysicsSDK()->createRigidStatic(PxTransform(PxVec3(2, 2, 1.25), PxQuat(PxHalfPi, PxVec3(0, 1, 0))));
 			shape = pollActor2->createShape(PxCapsuleGeometry(0.02, 1.25), *mMaterial);
 			m_physx->getScene()->addActor(*pollActor2);
 
@@ -855,9 +1014,9 @@ void GraphicsClass::StartGameMode(int mode)
 
 			for (int i = 0; i < 4; i++)
 			{
-				PxVec3 pose = PxVec3(-2, 3, 1+i/5.0f);
-				PxRigidActor* box = m_physx->createBox(PxVec3(0.25, 0.25, 0.1), pose, PxQuat::createIdentity());
-				PxD6Joint* j = PxD6JointCreate(*m_physx->getPhysicsSDK(), pollActor, PxTransform(PxVec3(0, 0, 0)), box, PxTransform(PxVec3(-0.26, 0.25, 0), PxQuat(PxHalfPi, PxVec3(0, 1, 0))));
+				PxVec3 pose = PxVec3(-2, 3, 2+i/5.0f);
+				PxRigidActor* box = m_physx->createBox(PxVec3(0.3, 0.3, 0.15), pose, PxQuat::createIdentity());
+				PxD6Joint* j = PxD6JointCreate(*m_physx->getPhysicsSDK(), pollActor, PxTransform(PxVec3(0, 0, 0)), box, PxTransform(PxVec3(-0.3, 0.3, 0), PxQuat(PxHalfPi, PxVec3(0, 1, 0))));
 				j->setMotion(PxD6Axis::eX, PxD6Motion::eLIMITED);
 
 				joints.push_back(j);
@@ -867,9 +1026,9 @@ void GraphicsClass::StartGameMode(int mode)
 
 			for (int i = 0; i < 4; i++)
 			{
-				PxVec3 pose = PxVec3(2, 3, 1.25-i/10.0f);
-				PxRigidActor* box = m_physx->createBox(PxVec3(0.25, 0.25, 0.1), pose, PxQuat::createIdentity());
-				PxD6Joint* j = PxD6JointCreate(*m_physx->getPhysicsSDK(), pollActor2, PxTransform(PxVec3(0, 0, 0)), box, PxTransform(PxVec3(0.26, 0.25, 0), PxQuat(PxHalfPi, PxVec3(0, 1, 0))));
+				PxVec3 pose = PxVec3(2, 3, 4-i/10.0f);
+				PxRigidActor* box = m_physx->createBox(PxVec3(0.3, 0.3, 0.15), pose, PxQuat::createIdentity());
+				PxD6Joint* j = PxD6JointCreate(*m_physx->getPhysicsSDK(), pollActor2, PxTransform(PxVec3(0, 0, 0)), box, PxTransform(PxVec3(0.3, 0.3, 0), PxQuat(PxHalfPi, PxVec3(0, 1, 0))));
 				j->setMotion(PxD6Axis::eX, PxD6Motion::eLIMITED);
 
 				joints.push_back(j);
@@ -884,7 +1043,30 @@ void GraphicsClass::StartGameMode(int mode)
 
 			//Createfolder();
 		}
+		else if (gameMode == 9)
+		{
+			mapAlpha = 1.0f;
+			picAlpha = 0.0f;
+			countstart = false;
+			showContent = false;
+			pollActor = m_physx->getPhysicsSDK()->createRigidStatic(PxTransform(PxVec3(0, 2.5, 3)));
+			PxShape* shape = pollActor->createShape(PxSphereGeometry(0.5), *m_physx->mMaterial);
+			shape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, false);
+			
+			globe = m_physx->createSphere(1.0, PxVec3(0, 2.5, 3), PxQuat::createIdentity());
 
+			//globe->setMassSpaceInertiaTensor(PxVec3(100, 100, 100));
+
+			PxD6Joint* joint = PxD6JointCreate(*(m_physx->getPhysicsSDK()), pollActor, PxTransform(PxVec3(0, 0, 0)), globe, PxTransform(PxVec3(0, 0, 0)));
+			joint->setMotion(PxD6Axis::eTWIST, PxD6Motion::eFREE);
+			joint->setMotion(PxD6Axis::eSWING1, PxD6Motion::eFREE);
+			joint->setMotion(PxD6Axis::eSWING2, PxD6Motion::eFREE);
+			m_physx->getScene()->addActor(*pollActor);
+			m_physx->getScene()->addActor(*globe);
+					
+			createPin(PxVec3(1, 2.5, -2));
+
+		}
 		start = std::chrono::steady_clock::now();
 		smallStart = std::chrono::steady_clock::now();
 	}
@@ -992,8 +1174,8 @@ void GraphicsClass::RenderActor(int mode)
 	for (int i = 0; i < spheres.size(); i++)
 	{
 		checkObjectPos(spheres[i]);
-		//RenderSphere(mode, spheres[i], SPHERE_RAD);
-		RenderColorSphere(mode, spheres[i], SPHERE_RAD, XMFLOAT4(0, 1.0, 1.0, 1.0));
+		RenderColorSphere(mode, spheres[i], SPHERE_RAD,true, XMFLOAT4(0.7, 0.4, 0.46f, 1.0f));
+		//RenderTextureSphere(mode, spheres[i], m_earth_texture->GetTexture(), SPHERE_RAD);
 	}
 
 	for (int i = 0; i < cylinders.size(); i++)
@@ -1002,6 +1184,15 @@ void GraphicsClass::RenderActor(int mode)
 		RenderCylinder(mode, cylinders[i], 1.0f, SPHERE_RAD * 4, SPHERE_RAD * 2);
 	}
 
+	for (int i = 0; i < pins.size(); i++)
+	{
+		PxTransform pt = pins[i]->getGlobalPose();
+		pt.q = PxQuat::createIdentity();
+		pt.p.y -= 0.1;
+		RenderColorBox(mode, pt, XMFLOAT4(0, 1.0, 1.0, 1.0), 0.01,0.15,0.01);
+		pt.p.y += 0.2;
+		RenderColorSphere(mode, pt, 0.1, true, XMFLOAT4(1.0,0.0,0.0,1.0));
+	}
 
 
 	for (int i = 0; i < targets.size(); i++)
@@ -1033,10 +1224,10 @@ void GraphicsClass::RenderTexActor(int mode)
 	if (gameMode == 7)
 	{
 		int offset = 5;
-		RenderTexture(mode, PxTransform(PxVec3(-1, 1.1, -1),PxQuat(PxHalfPi,PxVec3(1,0,0))), m_folder_texture[1]->GetTexture(), 0.25, 0.2, 0.01);
-		RenderTexture(mode, PxTransform(PxVec3(-2, 1.1, -2), PxQuat(PxHalfPi, PxVec3(1, 0, 0))), m_folder_texture[2]->GetTexture(), 0.25, 0.2, 0.01);
-		RenderTexture(mode, PxTransform(PxVec3(-2, 1.1, -1), PxQuat(PxHalfPi, PxVec3(1, 0, 0))), m_folder_texture[3]->GetTexture(), 0.25, 0.2, 0.01);
-		RenderTexture(mode, PxTransform(PxVec3(2, 1.1, 1), PxQuat(PxHalfPi, PxVec3(1, 0, 0))), m_folder_texture[4]->GetTexture(), 0.25, 0.2, 0.01);
+		RenderTexture(mode, PxTransform(PxVec3(-1, 1.1, -1),PxQuat(PxHalfPi,PxVec3(1,0,0))), m_folder_texture[1]->GetTexture(),1.0, 0.25, 0.2, 0.01);
+		RenderTexture(mode, PxTransform(PxVec3(-2, 1.1, -2), PxQuat(PxHalfPi, PxVec3(1, 0, 0))), m_folder_texture[2]->GetTexture(),1.0, 0.25, 0.2, 0.01);
+		RenderTexture(mode, PxTransform(PxVec3(-2, 1.1, -1), PxQuat(PxHalfPi, PxVec3(1, 0, 0))), m_folder_texture[3]->GetTexture(),1.0, 0.25, 0.2, 0.01);
+		RenderTexture(mode, PxTransform(PxVec3(2, 1.1, 1), PxQuat(PxHalfPi, PxVec3(1, 0, 0))), m_folder_texture[4]->GetTexture(),1.0, 0.25, 0.2, 0.01);
 		for (int i = 0; i < folders.size(); i++)
 		{
 			RenderTextureBox(mode, folders[i], m_folder_texture[i + offset]->GetTexture(), 0.25, 0.2, 0.01);
@@ -1045,23 +1236,43 @@ void GraphicsClass::RenderTexActor(int mode)
 	if (gameMode == 8)
 	{
 		int offset = 4;
-		RenderTexture(mode, PxTransform(PxVec3(-1, 2, 2)), m_folder_texture[1]->GetTexture(), 0.25, 0.2, 0.01);
-		RenderTexture(mode, PxTransform(PxVec3(-2, 3, 2)), m_folder_texture[2]->GetTexture(), 0.25, 0.2, 0.01);
-		RenderTexture(mode, PxTransform(PxVec3(-2, 2, 2)), m_folder_texture[3]->GetTexture(), 0.25, 0.2, 0.01);
-		RenderTexture(mode, PxTransform(PxVec3(1, 3, 2)), m_folder_texture[1]->GetTexture(), 0.25, 0.2, 0.01);
-		RenderTexture(mode, PxTransform(PxVec3(2, 2, 2)), m_folder_texture[2]->GetTexture(), 0.25, 0.2, 0.01);
-		RenderTexture(mode, PxTransform(PxVec3(2, 3, 2)), m_folder_texture[3]->GetTexture(), 0.25, 0.2, 0.01);
+		//RenderTexture(mode, PxTransform(PxVec3(-1, 2, 2)), m_folder_texture[1]->GetTexture(),1.0, 0.25, 0.2, 0.01);
+		//RenderTexture(mode, PxTransform(PxVec3(-2, 3, 2)), m_folder_texture[2]->GetTexture(),1.0, 0.25, 0.2, 0.01);
+		//RenderTexture(mode, PxTransform(PxVec3(-2, 2, 2)), m_folder_texture[3]->GetTexture(),1.0, 0.25, 0.2, 0.01);
+		//RenderTexture(mode, PxTransform(PxVec3(1, 3, 2)), m_folder_texture[1]->GetTexture(),1.0, 0.25, 0.2, 0.01);
+		//RenderTexture(mode, PxTransform(PxVec3(2, 2, 2)), m_folder_texture[2]->GetTexture(),1.0, 0.25, 0.2, 0.01);
+		//RenderTexture(mode, PxTransform(PxVec3(2, 3, 2)), m_folder_texture[3]->GetTexture(),1.0, 0.25, 0.2, 0.01);
 		for (int i = 0; i < folders.size(); i++)
 		{
-				RenderTextureBox(mode, folders[i], m_folder_texture[i + offset]->GetTexture(), 0.25, 0.2, 0.01);
+				RenderTextureBox(mode, folders[i], m_folder_texture[i + offset]->GetTexture(), 0.3, 0.3, 0.025);
 		}
-		RenderTexture(mode, PxTransform(PxVec3(0, 1, -2), PxQuat(PxPi / 2, PxVec3(1, 0, 0))), m_folder_texture[18]->GetTexture(), 1, 1, 0.01);
+		RenderTexture(mode, PxTransform(PxVec3(0, 1, -2), PxQuat(PxPi / 2, PxVec3(1, 0, 0))), m_folder_texture[18]->GetTexture(),1.0, 2, 1, 0.01);
 
-		if(showContent)
-		RenderTexture(mode, PxTransform(PxVec3(0, 2, -1), PxQuat(PxPi / 3, PxVec3(1, 0, 0))), m_folder_texture[17]->GetTexture(), 1.5, 1.5, 0.01);
+		for (int i = 0; i < contents.size(); i++)
+		{
+			if (contents[i]->rendering)
+			{
+				PxTransform pt = contents[i]->board->getGlobalPose();
+
+				RenderTexture(mode, pt, m_content_texture[i%2]->GetTexture(), -pt.p.z - 0.9, 1.3*contents[i]->scale, 0.75*contents[i]->scale, 0.01);
+
+			}
+
+		}
 	}
+	if (gameMode == 9)
+	{
+		RenderTexture(mode, PxTransform(PxVec3(0, 2, 4)), m_space_texture->GetTexture(), 1.0, 6, 4, 0.1);
+		RenderTextureSphere(mode, globe, m_earth_texture->GetTexture(), 1.0);		
+		RenderTexture(mode, PxTransform(PxVec3(0, 2.5, 2)), m_maptarget_texture->GetTexture(), 1.0, 0.1, 0.1, 0.01);
+		if(showContent)
+			RenderTexture(mode, PxTransform(PxVec3(0, 2, 1.25)), m_content_texture[2]->GetTexture(), picAlpha, 5, 2, 0.1);
 
-
+		RenderTextureTerrain(mode, PxTransform(PxVec3(0, 0.99, 0)), m_map_texture[0]->GetTexture(), 1-mapAlpha, 6, 4, 0.05);
+		RenderTextureTerrain(mode, PxTransform(PxVec3(0, 1, 0)), m_map_texture[1]->GetTexture(), mapAlpha, 6, 4, 0.1);
+		
+	
+	}
 }
 
 void GraphicsClass::RenderHand(int mode)
@@ -1077,11 +1288,9 @@ void GraphicsClass::RenderHand(int mode)
 		{
 			for (int j = 0; j < 5; j++)
 			{
-				//for (int k = 0; k < 5; k++)
-				//{
-				//	Leap::Vector px = Leap::Vector( mHandlist[i]->leapJointPosition[j * 4 + k].x, mHandlist[i]->leapJointPosition[j * 4 + k].y, mHandlist[i]->leapJointPosition[j * 4 + k].z);
-				//	RenderDebugSphere(mode, m_Leap->leapToWorld(px,HandMode::Normal), 0.05, handColor);
-				//}
+
+				
+			RenderColorSphere(mode,mHandlist[i]->finger_tip_actor[j], mHandlist[i]->fingerWidth[j][3]/2.0,true, handColor);
 
 				//for (int k = 0; k < 5; k++)
 				//{
@@ -1126,7 +1335,7 @@ void GraphicsClass::RenderHand(int mode)
 				//	RenderDebugSphere(mode, m_Leap->leapToWorld(px), 0.05, handColor);
 				//}
 
-				//RenderColorSphere(mode, mHandlist[i]->finger_tip_achor[j], mHandlist[i]->fingerWidth[j][3]/2, handColor);
+				RenderColorSphere(mode, mHandlist[i]->finger_tip_actor[j], mHandlist[i]->fingerWidth[j][3]/2.0,true, handColor);
 
 				if (j == 0)
 				{
@@ -1212,8 +1421,121 @@ void GraphicsClass::RenderTextureBox(int mode, PxRigidActor* box,
 	}
 }
 
+void GraphicsClass::RenderTextureSphere(int mode, PxRigidActor* box,
+	ID3D11ShaderResourceView* texture, float radius)
+{
+	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
+	XMMATRIX lightViewMatrix, lightViewMatrix2, lightProjectionMatrix;
+	PxU32 nShapes = box->getNbShapes();
+	PxShape** shapes = new PxShape*[nShapes];
+
+	box->getShapes(shapes, nShapes);
+	m_Direct3D->GetWorldMatrix(worldMatrix);
+	m_Camera->GetViewMatrix(viewMatrix);
+	m_Direct3D->GetProjectionMatrix(projectionMatrix);
+	m_Light->GetViewMatrix(lightViewMatrix);
+	m_Light->GetProjectionMatrix(lightProjectionMatrix);
+	m_Light->GetMirrorMatrix(lightViewMatrix2);
+
+	while (nShapes--)
+	{
+		PxTransform pT = PxShapeExt::getGlobalPose(*shapes[nShapes], *box);
+		XMMATRIX mat = PxtoXMMatrix(pT);
+		XMMATRIX s = XMMatrixScaling(radius*2,radius*2,radius*2);
+		mat = s*mat;
+
+		m_Shape->Render(m_Direct3D->GetDevice());
+
+		// Put the model vertex and index buffers on the graphics pipeline to prepare them for drawing.
+
+
+		if (mode == 0)
+		{
+			m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetSphereIndexCount(), m_Shape->GetSphereIndexOffset(),
+				m_Shape->GetSphereVertexOffset(), mat, lightViewMatrix, lightProjectionMatrix, m_Camera->GetPosition());
+		}
+		else if (mode == 1)
+		{
+			m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetSphereIndexCount(), m_Shape->GetSphereIndexOffset(),
+				m_Shape->GetSphereVertexOffset(), mat, lightViewMatrix2, lightProjectionMatrix, m_Camera->GetPosition());
+		}
+		else if (mode == 2)
+		{
+			m_ShadowShader->Render(m_Direct3D->GetDeviceContext(),  m_Shape->GetSphereIndexCount(), m_Shape->GetSphereIndexOffset(),
+				m_Shape->GetSphereVertexOffset(), mat, viewMatrix, projectionMatrix, lightViewMatrix,
+				lightProjectionMatrix, m_RenderTexture->GetShaderResourceView(), m_Light->GetPositions(),
+				lightViewMatrix2, lightProjectionMatrix
+				, m_RenderTexture2->GetShaderResourceView());
+		}
+		else
+		{
+			//m_ColorShader->SetShaderPerFrame(m_Direct3D->GetDeviceContext(), m_UpSampleTexure->GetShaderResourceView(), m_Light->GetPositions(), m_Light->GetAmbientColor(), m_Light->GetDiffuseColor(), m_Light->GetSpecularColor(), lightRange, attenuate);
+			Material tempMat = mtextureMaterial;
+			//if (box->userData != NULL)
+			//{
+			//	float* st = reinterpret_cast<float*>(box->userData);
+			//	float s = st[0];
+			//	tempMat.Diffuse = XMFLOAT4(tempMat.Diffuse.x, tempMat.Diffuse.y, tempMat.Diffuse.z + s, tempMat.Diffuse.w);
+			//}
+
+			m_LightShader->SetShaderPerObject(m_Direct3D->GetDeviceContext(), mat, viewMatrix, projectionMatrix, tempMat, texture, m_Camera->GetPosition());
+
+			m_LightShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetSphereIndexCount(), m_Shape->GetSphereIndexOffset(),
+				m_Shape->GetSphereVertexOffset());
+		}
+	}
+}
+
+void GraphicsClass::RenderTextureTerrain(int mode, PxTransform pt,
+	ID3D11ShaderResourceView* texture, float aplha, float width, float height, float depth)
+{
+	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
+	XMMATRIX lightViewMatrix, lightViewMatrix2, lightProjectionMatrix;
+	m_Direct3D->GetWorldMatrix(worldMatrix);
+	m_Camera->GetViewMatrix(viewMatrix);
+	m_Direct3D->GetProjectionMatrix(projectionMatrix);
+	m_Light->GetViewMatrix(lightViewMatrix);
+	m_Light->GetProjectionMatrix(lightProjectionMatrix);
+	m_Light->GetMirrorMatrix(lightViewMatrix2);
+
+	XMMATRIX mat = PxtoXMMatrix(pt);
+	//XMMATRIX s = XMMatrixScaling(width * 2, height * 2, depth * 2);
+	//mat = mat;
+
+	m_Shape->Render(m_Direct3D->GetDevice());
+
+	// Put the model vertex and index buffers on the graphics pipeline to prepare them for drawing.
+
+
+	if (mode == 0)
+	{
+		m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetGridIndexCount(), m_Shape->GetGridIndexOffset(), m_Shape->GetGridVertexOffset(), mat, lightViewMatrix, lightProjectionMatrix, m_Camera->GetPosition());
+	}
+	else if (mode == 1)
+	{
+		m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetGridIndexCount(), m_Shape->GetGridIndexOffset(), m_Shape->GetGridVertexOffset(), mat, lightViewMatrix2, lightProjectionMatrix, m_Camera->GetPosition());
+	}
+	else if (mode == 2)
+	{
+		m_ShadowShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetGridIndexCount(), m_Shape->GetGridIndexOffset(), m_Shape->GetGridVertexOffset(), mat, viewMatrix, projectionMatrix, lightViewMatrix,
+			lightProjectionMatrix, m_RenderTexture->GetShaderResourceView(), m_Light->GetPositions(),
+			lightViewMatrix2, lightProjectionMatrix
+			, m_RenderTexture2->GetShaderResourceView());
+	}
+	else
+	{
+		Material text = mtextMaterial;
+		text.Diffuse.w = aplha;
+
+		m_LightShader->SetShaderPerObject(m_Direct3D->GetDeviceContext(), mat, viewMatrix, projectionMatrix, text, texture, m_Camera->GetPosition());
+
+		m_LightShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetGridIndexCount(), m_Shape->GetGridIndexOffset(), m_Shape->GetGridVertexOffset());
+
+	}
+}
+
 void GraphicsClass::RenderTexture(int mode, PxTransform transform,
-	ID3D11ShaderResourceView* texture, float width, float height, float depth)
+	ID3D11ShaderResourceView* texture,float aplha, float width, float height, float depth)
 {
 	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
 	XMMATRIX lightViewMatrix, lightViewMatrix2, lightProjectionMatrix;
@@ -1253,8 +1575,10 @@ void GraphicsClass::RenderTexture(int mode, PxTransform transform,
 	}
 	else
 	{
+		Material text = mtextMaterial;
+		text.Diffuse.w = aplha;
 
-		m_LightShader->SetShaderPerObject(m_Direct3D->GetDeviceContext(), mat, viewMatrix, projectionMatrix, mtextMaterial, texture, m_Camera->GetPosition());
+		m_LightShader->SetShaderPerObject(m_Direct3D->GetDeviceContext(), mat, viewMatrix, projectionMatrix, text, texture, m_Camera->GetPosition());
 
 		m_LightShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(),
 			m_Shape->GetBoxVertexOffset());
@@ -1465,6 +1789,61 @@ void GraphicsClass::RenderColorBox(int mode, PxRigidActor* box,
 	delete[] shapes;
 }
 
+void GraphicsClass::RenderColorBox(int mode, PxTransform pT,
+	XMFLOAT4 color, float width, float height, float depth)
+{
+	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
+	XMMATRIX lightViewMatrix, lightViewMatrix2, lightProjectionMatrix;
+
+	m_Direct3D->GetWorldMatrix(worldMatrix);
+	m_Camera->GetViewMatrix(viewMatrix);
+	m_Direct3D->GetProjectionMatrix(projectionMatrix);
+	m_Light->GetViewMatrix(lightViewMatrix);
+	m_Light->GetProjectionMatrix(lightProjectionMatrix);
+	m_Light->GetMirrorMatrix(lightViewMatrix2);
+
+
+	XMMATRIX mat = PxtoXMMatrix(pT);
+	XMMATRIX s = XMMatrixScaling(width * 2, height * 2, depth * 2);
+	mat = s*mat;
+
+	m_Shape->Render(m_Direct3D->GetDevice());
+
+	// Put the model vertex and index buffers on the graphics pipeline to prepare them for drawing.
+
+
+	if (mode == 0)
+	{
+		m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(),
+			m_Shape->GetBoxVertexOffset(), mat, lightViewMatrix, lightProjectionMatrix, m_Camera->GetPosition());
+	}
+	else if (mode == 1)
+	{
+		m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(),
+			m_Shape->GetBoxVertexOffset(), mat, lightViewMatrix2, lightProjectionMatrix, m_Camera->GetPosition());
+	}
+	else if (mode == 2)
+	{
+		m_ShadowShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(),
+			m_Shape->GetBoxVertexOffset(), mat, viewMatrix, projectionMatrix, lightViewMatrix,
+			lightProjectionMatrix, m_RenderTexture->GetShaderResourceView(), m_Light->GetPositions(),
+			lightViewMatrix2, lightProjectionMatrix
+			, m_RenderTexture2->GetShaderResourceView());
+	}
+	else
+	{
+		//m_ColorShader->SetShaderPerFrame(m_Direct3D->GetDeviceContext(), m_UpSampleTexure->GetShaderResourceView(), m_Light->GetPositions(), m_Light->GetAmbientColor(), m_Light->GetDiffuseColor(), m_Light->GetSpecularColor(), lightRange, attenuate);
+		Material tempMat = mboxMaterial;
+
+		m_ColorShader->SetShaderPerObject(m_Direct3D->GetDeviceContext(), mat, viewMatrix, projectionMatrix, tempMat, m_Camera->GetPosition());
+
+		m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(),
+			m_Shape->GetBoxVertexOffset());
+	}
+	
+
+}
+
 void GraphicsClass::RenderPalm(int mode, PxRigidActor* box, float alpha, float width, float height, float depth)
 {
 	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
@@ -1525,105 +1904,8 @@ void GraphicsClass::RenderPalm(int mode, PxRigidActor* box, float alpha, float w
 	delete[] shapes;
 }
 
-void GraphicsClass::RenderSphere(int mode, PxRigidActor* sphere, float radius)
-{
-	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
-	XMMATRIX lightViewMatrix, lightViewMatrix2, lightProjectionMatrix;
-	PxU32 nShapes = sphere->getNbShapes();
-	PxShape** shapes = new PxShape*[nShapes];
 
-	sphere->getShapes(shapes, nShapes);
-	m_Direct3D->GetWorldMatrix(worldMatrix);
-	m_Camera->GetViewMatrix(viewMatrix);
-	m_Direct3D->GetProjectionMatrix(projectionMatrix);
-	m_Light->GetViewMatrix(lightViewMatrix);
-	m_Light->GetProjectionMatrix(lightProjectionMatrix);
-	m_Light->GetMirrorMatrix(lightViewMatrix2);
-
-	//while (nShapes--)
-	//{
-	//	PxTransform pT = PxShapeExt::getGlobalPose(*shapes[nShapes], *sphere);
-	//	XMMATRIX mat = PxtoXMMatrix(pT);
-	//	XMMATRIX s = XMMatrixScaling(radius, radius, radius);
-	//	mat = s*mat;
-
-	//	// Put the model vertex and index buffers on the graphics pipeline to prepare them for drawing.
-	//	m_spheres->Render(m_Direct3D->GetDevice());
-
-	//	// Render the model using the color shader.
-	//	if (mode == 0)
-	//	{
-	//		m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_spheres->GetIndexCount(), 0,
-	//			0, mat, lightViewMatrix, lightProjectionMatrix, m_Camera->GetPosition());
-	//	}
-	//	else if (mode == 1)
-	//	{
-	//		m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_spheres->GetIndexCount(), 0,
-	//			0, mat, lightViewMatrix2, lightProjectionMatrix, m_Camera->GetPosition());
-	//	}
-	//	else if (mode == 2)
-	//	{
-	//		m_ShadowShader->Render(m_Direct3D->GetDeviceContext(), m_spheres->GetIndexCount(), 0,
-	//			0, mat, viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_RenderTexture->GetShaderResourceView(), m_Light->GetPositions(),
-	//			lightViewMatrix2, lightProjectionMatrix
-	//			, m_RenderTexture2->GetShaderResourceView());
-	//	}
-	//	else
-	//	{
-	//		m_LightShader->Render(m_Direct3D->GetDeviceContext(), m_spheres->GetIndexCount(),
-	//			mat, viewMatrix, projectionMatrix, m_spheres->GetTexture(), m_UpSampleTexure->GetShaderResourceView(), m_Light->GetPositions(), m_Light->GetAmbientColor(),
-	//			m_Light->GetDiffuseColor(), m_Camera->GetPosition(), globalZ);
-	//	}
-	//}
-
-	delete[] shapes;
-}
-
-void GraphicsClass::RenderDebugSphere(int mode, PxVec3 pos, float radius, XMFLOAT4 color)
-{
-	/*XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
-	XMMATRIX lightViewMatrix, lightViewMatrix2, lightProjectionMatrix;
-
-	m_Direct3D->GetWorldMatrix(worldMatrix);
-	m_Camera->GetViewMatrix(viewMatrix);
-	m_Direct3D->GetProjectionMatrix(projectionMatrix);
-	m_Light->GetViewMatrix(lightViewMatrix);
-	m_Light->GetProjectionMatrix(lightProjectionMatrix);
-	m_Light->GetMirrorMatrix(lightViewMatrix2);
-
-	XMMATRIX mat = XMMatrixTranslation(pos.x, pos.y, pos.z);
-	XMMATRIX s = XMMatrixScaling(radius, radius, radius);
-	mat = s*mat;
-
-	 Put the model vertex and index buffers on the graphics pipeline to prepare them for drawing.
-	m_spheres->Render(m_Direct3D->GetDevice());
-
-	if (mode == 0)
-	{
-		m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_spheres->GetIndexCount(), 0,
-			0, mat, lightViewMatrix, lightProjectionMatrix, m_Camera->GetPosition());
-	}
-	else if (mode == 0)
-	{
-		m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_spheres->GetIndexCount(), 0,
-			0, mat, lightViewMatrix2, lightProjectionMatrix, m_Camera->GetPosition());
-	}
-	else if (mode == 1)
-	{
-		m_ShadowShader->Render(m_Direct3D->GetDeviceContext(), m_spheres->GetIndexCount(), 0,
-			0, mat, viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_RenderTexture->GetShaderResourceView(), m_Light->GetPositions()
-			, lightViewMatrix2, lightProjectionMatrix
-			, m_RenderTexture2->GetShaderResourceView());
-	}
-	else
-	{
-		m_LightShader->Render(m_Direct3D->GetDeviceContext(), m_spheres->GetIndexCount(),
-			mat, viewMatrix, projectionMatrix, m_spheres->GetTexture(), m_UpSampleTexure->GetShaderResourceView(), m_Light->GetPositions(), m_Light->GetAmbientColor(),
-			m_Light->GetDiffuseColor(), m_Camera->GetPosition(), globalZ);
-	}*/
-}
-
-void GraphicsClass::RenderColorSphere(int mode, PxRigidActor* sphere, float radius, XMFLOAT4 color)
+void GraphicsClass::RenderColorSphere(int mode, PxRigidActor* sphere, float radius, bool customedColor = false, XMFLOAT4 color = XMFLOAT4(0,0,0,0))
 {
 	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
 	XMMATRIX lightViewMatrix, lightViewMatrix2, lightProjectionMatrix;
@@ -1668,6 +1950,10 @@ void GraphicsClass::RenderColorSphere(int mode, PxRigidActor* sphere, float radi
 		else
 		{
 			Material tempMat = msphereMaterial;
+			if (customedColor)
+			{
+				tempMat.Diffuse = color;
+			}
 			if (sphere->userData != NULL)
 			{
 				float* st = reinterpret_cast<float*>(sphere->userData);
@@ -1682,6 +1968,59 @@ void GraphicsClass::RenderColorSphere(int mode, PxRigidActor* sphere, float radi
 				m_Shape->GetSphereVertexOffset());
 		}
 	}
+}
+
+void GraphicsClass::RenderColorSphere(int mode, PxTransform pt, float radius,bool customedColor = false, XMFLOAT4 color = XMFLOAT4(0, 0, 0, 0))
+{
+	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
+	XMMATRIX lightViewMatrix, lightViewMatrix2, lightProjectionMatrix;
+
+	m_Direct3D->GetWorldMatrix(worldMatrix);
+	m_Camera->GetViewMatrix(viewMatrix);
+	m_Direct3D->GetProjectionMatrix(projectionMatrix);
+	m_Light->GetViewMatrix(lightViewMatrix);
+	m_Light->GetProjectionMatrix(lightProjectionMatrix);
+	m_Light->GetMirrorMatrix(lightViewMatrix2);
+
+
+		XMMATRIX mat = PxtoXMMatrix(pt);
+		XMMATRIX s = XMMatrixScaling(radius * 2, radius * 2, radius * 2);
+		mat = s*mat;
+
+		// Put the model vertex and index buffers on the graphics pipeline to prepare them for drawing.
+		m_Shape->Render(m_Direct3D->GetDevice());
+
+		if (mode == 0)
+		{
+			m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetSphereIndexCount(), m_Shape->GetSphereIndexOffset(),
+				m_Shape->GetSphereVertexOffset(), mat, lightViewMatrix, lightProjectionMatrix, m_Camera->GetPosition());
+		}
+		else if (mode == 1)
+		{
+			m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetSphereIndexCount(), m_Shape->GetSphereIndexOffset(),
+				m_Shape->GetSphereVertexOffset(), mat, lightViewMatrix2, lightProjectionMatrix, m_Camera->GetPosition());
+		}
+		else if (mode == 2)
+		{
+			m_ShadowShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetSphereIndexCount(), m_Shape->GetSphereIndexOffset(),
+				m_Shape->GetSphereVertexOffset(), mat, viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_RenderTexture->GetShaderResourceView(), m_Light->GetPositions(),
+				lightViewMatrix2, lightProjectionMatrix
+				, m_RenderTexture2->GetShaderResourceView());
+		}
+		else
+		{
+		Material tempMat = msphereMaterial;
+		if (customedColor)
+			tempMat.Diffuse = color;
+
+		//m_ColorShader->SetShaderPerFrame(m_Direct3D->GetDeviceContext(), m_UpSampleTexure->GetShaderResourceView(), m_Light->GetPositions(), m_Light->GetAmbientColor(), m_Light->GetDiffuseColor(), m_Light->GetSpecularColor(), lightRange, attenuate);
+
+		m_ColorShader->SetShaderPerObject(m_Direct3D->GetDeviceContext(), mat, viewMatrix, projectionMatrix, tempMat, m_Camera->GetPosition());
+
+		m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetSphereIndexCount(), m_Shape->GetSphereIndexOffset(),
+			m_Shape->GetSphereVertexOffset());
+	}
+	
 }
 
 void GraphicsClass::CreateBox()
@@ -1701,7 +2040,6 @@ void GraphicsClass::CreateBox()
 		boxes.push_back(box);
 	}
 }
-
 
 void GraphicsClass::Createfolder()
 {
@@ -1731,7 +2069,6 @@ void GraphicsClass::Createfolder()
 
 	
 }
-
 
 void GraphicsClass::CreateSphere()
 {
@@ -1835,80 +2172,84 @@ void GraphicsClass::RenderTerrian(int rendermode, int gamemode)
 	XMMATRIX edgeTrans = XMMatrixTranslation(-3, 0, 0);
 	XMMATRIX edgeTrans2 = XMMatrixTranslation(3, 0, 0);
 	XMMATRIX edgeTrans3 = XMMatrixTranslation(0, 1, 0);
-	XMMATRIX edge2 = XMMatrixScaling(6, 2 * m_physx->FLOOR_LEVEL + 0.1, 0.05);
-	XMMATRIX trans = XMMatrixTranslation(-3, m_physx->FLOOR_LEVEL, -4.0f);
-	XMMATRIX back = XMMatrixTranslation(-3, m_physx->FLOOR_LEVEL, -0.0);
+	XMMATRIX edge2 = XMMatrixScaling(6, 2 * m_physx->floor_height + 0.1, 0.05);
+	XMMATRIX trans = XMMatrixTranslation(-3, m_physx->floor_height, -4.0f);
+	XMMATRIX back = XMMatrixTranslation(-3, m_physx->floor_height, -0.0);
 	XMMATRIX rotate = XMMatrixRotationX(-XM_PI / 2);
 	XMMATRIX slant = XMMatrixRotationX(187 * XM_PI / 180);
 	//XMMATRIX mat = rotat
-	if (rendermode == 0)
+	if (gameMode != 9)
 	{
-		m_Shape->Render(m_Direct3D->GetDevice());
-		m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetGridIndexCount(), m_Shape->GetGridIndexOffset(), m_Shape->GetGridVertexOffset(),
-			floor_trans, lightViewMatrix, lightProjectionMatrix, m_Camera->GetPosition());
+		if (rendermode == 0)
+		{
+			m_Shape->Render(m_Direct3D->GetDevice());
+			m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetGridIndexCount(), m_Shape->GetGridIndexOffset(), m_Shape->GetGridVertexOffset(),
+				floor_trans, lightViewMatrix, lightProjectionMatrix, m_Camera->GetPosition());
 
-		m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset(),
-			edge*edgeTrans, lightViewMatrix, lightProjectionMatrix, m_Camera->GetPosition());
+			m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset(),
+				edge*edgeTrans, lightViewMatrix, lightProjectionMatrix, m_Camera->GetPosition());
 
-		m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset(),
-			edge*edgeTrans2, lightViewMatrix, lightProjectionMatrix, m_Camera->GetPosition());
+			m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset(),
+				edge*edgeTrans2, lightViewMatrix, lightProjectionMatrix, m_Camera->GetPosition());
 
-		m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset(),
-			edge2, lightViewMatrix, lightProjectionMatrix, m_Camera->GetPosition());
+			m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset(),
+				edge2, lightViewMatrix, lightProjectionMatrix, m_Camera->GetPosition());
+		}
+		else if (rendermode == 1)
+		{
+			m_Shape->Render(m_Direct3D->GetDevice());
+			m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetGridIndexCount(), m_Shape->GetGridIndexOffset(), m_Shape->GetGridVertexOffset(),
+				floor_trans, lightViewMatrix2, lightProjectionMatrix, m_Camera->GetPosition());
+
+			m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset(),
+				edge*edgeTrans, lightViewMatrix2, lightProjectionMatrix, m_Camera->GetPosition());
+
+			m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset(),
+				edge*edgeTrans2, lightViewMatrix2, lightProjectionMatrix, m_Camera->GetPosition());
+
+			m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset(),
+				edge2, lightViewMatrix2, lightProjectionMatrix, m_Camera->GetPosition());
+		}
+		else if (rendermode == 2)
+		{
+			m_Shape->Render(m_Direct3D->GetDevice());
+			m_ShadowShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetGridIndexCount(), m_Shape->GetGridIndexOffset(), m_Shape->GetGridVertexOffset(),
+				floor_trans, viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_RenderTexture->GetShaderResourceView(), m_Light->GetPositions(),
+				lightViewMatrix2, lightProjectionMatrix
+				, m_RenderTexture2->GetShaderResourceView());
+
+			m_ShadowShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset(),
+				edge*edgeTrans, viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_RenderTexture->GetShaderResourceView(), m_Light->GetPositions(),
+				lightViewMatrix2, lightProjectionMatrix
+				, m_RenderTexture2->GetShaderResourceView());
+
+			m_ShadowShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset(),
+				edge*edgeTrans2, viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_RenderTexture->GetShaderResourceView(), m_Light->GetPositions(),
+				lightViewMatrix2, lightProjectionMatrix
+				, m_RenderTexture2->GetShaderResourceView());
+
+			m_ShadowShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset(),
+				edge2, viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_RenderTexture->GetShaderResourceView(), m_Light->GetPositions(),
+				lightViewMatrix2, lightProjectionMatrix
+				, m_RenderTexture2->GetShaderResourceView());
+		}
+		else
+		{
+			m_Shape->Render(m_Direct3D->GetDevice());
+			m_ColorShader->SetShaderPerObject(m_Direct3D->GetDeviceContext(), floor_trans, viewMatrix, projectionMatrix, mfloorMaterial, m_Camera->GetPosition());
+			m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetGridIndexCount(), m_Shape->GetGridIndexOffset(), m_Shape->GetGridVertexOffset());
+
+			m_ColorShader->SetShaderPerObject(m_Direct3D->GetDeviceContext(), edge*edgeTrans, viewMatrix, projectionMatrix, medgeMaterial, m_Camera->GetPosition());
+			m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset());
+
+			m_ColorShader->SetShaderPerObject(m_Direct3D->GetDeviceContext(), edge*edgeTrans2, viewMatrix, projectionMatrix, medgeMaterial, m_Camera->GetPosition());
+			m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset());
+
+			m_ColorShader->SetShaderPerObject(m_Direct3D->GetDeviceContext(), edge2, viewMatrix, projectionMatrix, medgeMaterial, m_Camera->GetPosition());
+			m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset());
+		}
 	}
-	else if (rendermode == 1)
-	{
-		m_Shape->Render(m_Direct3D->GetDevice());
-		m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetGridIndexCount(), m_Shape->GetGridIndexOffset(), m_Shape->GetGridVertexOffset(),
-			floor_trans, lightViewMatrix2, lightProjectionMatrix, m_Camera->GetPosition());
-
-		m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset(),
-			edge*edgeTrans, lightViewMatrix2, lightProjectionMatrix, m_Camera->GetPosition());
-
-		m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset(),
-			edge*edgeTrans2, lightViewMatrix2, lightProjectionMatrix, m_Camera->GetPosition());
-
-		m_DepthShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset(),
-			edge2, lightViewMatrix2, lightProjectionMatrix, m_Camera->GetPosition());
-	}
-	else if (rendermode == 2)
-	{
-		m_Shape->Render(m_Direct3D->GetDevice());
-		m_ShadowShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetGridIndexCount(), m_Shape->GetGridIndexOffset(), m_Shape->GetGridVertexOffset(),
-			floor_trans, viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_RenderTexture->GetShaderResourceView(), m_Light->GetPositions(),
-			lightViewMatrix2, lightProjectionMatrix
-			, m_RenderTexture2->GetShaderResourceView());
-
-		m_ShadowShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset(),
-			edge*edgeTrans, viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_RenderTexture->GetShaderResourceView(), m_Light->GetPositions(),
-			lightViewMatrix2, lightProjectionMatrix
-			, m_RenderTexture2->GetShaderResourceView());
-
-		m_ShadowShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset(),
-			edge*edgeTrans2, viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_RenderTexture->GetShaderResourceView(), m_Light->GetPositions(),
-			lightViewMatrix2, lightProjectionMatrix
-			, m_RenderTexture2->GetShaderResourceView());
-
-		m_ShadowShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset(),
-			edge2, viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_RenderTexture->GetShaderResourceView(), m_Light->GetPositions(),
-			lightViewMatrix2, lightProjectionMatrix
-			, m_RenderTexture2->GetShaderResourceView());
-	}
-	else
-	{
-		m_Shape->Render(m_Direct3D->GetDevice());
-		m_ColorShader->SetShaderPerObject(m_Direct3D->GetDeviceContext(), floor_trans, viewMatrix, projectionMatrix, mfloorMaterial, m_Camera->GetPosition());
-		m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetGridIndexCount(), m_Shape->GetGridIndexOffset(), m_Shape->GetGridVertexOffset());
-
-		m_ColorShader->SetShaderPerObject(m_Direct3D->GetDeviceContext(), edge*edgeTrans, viewMatrix, projectionMatrix, medgeMaterial, m_Camera->GetPosition());
-		m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset());
-
-		m_ColorShader->SetShaderPerObject(m_Direct3D->GetDeviceContext(), edge*edgeTrans2, viewMatrix, projectionMatrix, medgeMaterial, m_Camera->GetPosition());
-		m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset());
-
-		m_ColorShader->SetShaderPerObject(m_Direct3D->GetDeviceContext(), edge2, viewMatrix, projectionMatrix, medgeMaterial, m_Camera->GetPosition());
-		m_ColorShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset());
-	}
+	
 
 	//m_groundShader->Render(m_Direct3D->GetDeviceContext(), m_Shape->GetBoxIndexCount(), m_Shape->GetBoxIndexOffset(), m_Shape->GetBoxVertexOffset(), edge*edgeTrans,
 	//	viewMatrix, projectionMatrix, lightViewMatrix, lightProjectionMatrix, m_UpSampleTexure->GetShaderResourceView(),
@@ -1993,6 +2334,14 @@ void GraphicsClass::Shutdown()
 	m_fxFactory.reset();
 	m_model.reset();
 	// Release the color shader object.
+
+	//if (m_flex)
+	//{
+	//	m_flex->shutdown();
+	//	delete m_flex;
+	//	m_flex = 0;
+	//}
+
 	if (m_ColorShader)
 	{
 		m_ColorShader->Shutdown();
@@ -2017,6 +2366,13 @@ void GraphicsClass::Shutdown()
 		m_RenderTexture3->Shutdown();
 		delete m_RenderTexture3;
 		m_RenderTexture3 = 0;
+	}
+
+	if (m_network)
+	{
+		m_network->Shutdown();
+		delete m_network;
+		m_network = 0;
 	}
 
 
@@ -2308,7 +2664,7 @@ void GraphicsClass::GameFrame()
 
 		for (int i = 0; i < spheres.size(); i++)
 		{
-			if (((PxRigidDynamic*)spheres[i])->getGlobalPose().p.y < m_physx->FLOOR_LEVEL || targetHit)
+			if (((PxRigidDynamic*)spheres[i])->getGlobalPose().p.y < m_physx->floor_height || targetHit)
 			{
 				m_physx->removeActor(spheres[i]);
 				spheres.clear();
@@ -2412,13 +2768,13 @@ void GraphicsClass::GameFrame()
 		{
 			PxVec3 boxPosition;
 			PxVec3 targetPostion;
-			boxPosition.y = m_physx->FLOOR_LEVEL + 0.25;
+			boxPosition.y = m_physx->floor_height + 0.25;
 			boxPosition.x = 3 * rand() / RAND_MAX - 1.5;
 			boxPosition.z = -3 * rand() / RAND_MAX;
 			float distance;
 			do
 			{
-				targetPostion.y = m_physx->FLOOR_LEVEL + 0.05;
+				targetPostion.y = m_physx->floor_height + 0.05;
 				targetPostion.x = 2 * rand() / RAND_MAX - 1;
 				targetPostion.z = -2 * rand() / RAND_MAX - 1;
 				distance = (targetPostion.x - boxPosition.x)*(targetPostion.x - boxPosition.x) + (targetPostion.z - boxPosition.z)*(targetPostion.z - boxPosition.z);
@@ -2548,26 +2904,227 @@ void GraphicsClass::GameFrame()
 				PxVec3 tp = t.p;
 				if (tp.x < -1 && tp.x > -2.5 && tp.z > 1 && tp.z < 3.5)
 				{
-					joints[i] = PxD6JointCreate(*m_physx->getPhysicsSDK(), pollActor, PxTransform(PxVec3(tp.z, 0, 0)), folders[i], PxTransform(PxVec3(-0.26, 0.25, 0), PxQuat(PxHalfPi, PxVec3(0, 1, 0))));
+					joints[i] = PxD6JointCreate(*m_physx->getPhysicsSDK(), pollActor, PxTransform(PxVec3(tp.z, 0, 0)), folders[i], PxTransform(PxVec3(-0.3, 0.3, 0), PxQuat(PxHalfPi, PxVec3(0, 1, 0))));
 					((PxD6Joint*)joints[i])->setMotion(PxD6Axis::eX, PxD6Motion::eLIMITED);
 
 				}
-				if (tp.x > 1 && tp.x < 2.5 && tp.z > 1 && tp.z < 3.5)
+				else if (tp.x > 1 && tp.x < 2.5 && tp.z > 1 && tp.z < 3.5)
 				{
-					joints[i] = PxD6JointCreate(*m_physx->getPhysicsSDK(), pollActor2, PxTransform(PxVec3(tp.z, 0, 0)), folders[i], PxTransform(PxVec3(0.26, 0.25, 0), PxQuat(PxHalfPi, PxVec3(0, 1, 0))));
+					joints[i] = PxD6JointCreate(*m_physx->getPhysicsSDK(), pollActor2, PxTransform(PxVec3(tp.z, 0, 0)), folders[i], PxTransform(PxVec3(0.3, 0.3, 0), PxQuat(PxHalfPi, PxVec3(0, 1, 0))));
 					((PxD6Joint*)joints[i])->setMotion(PxD6Axis::eX, PxD6Motion::eLIMITED);
 
 				}
-				showContent = false;
-				if (tp.x > -1 && tp.x < 1 && tp.y <1.5 && tp.z > -2.5 && tp.z < -1)
+				else if (tp.x > -2 && tp.x < 2 && tp.y <1.5 && tp.z > -3.5 && tp.z < -1)
 				{
-					showContent = true;
+					bool exist = false;
+					for (int m = 0; m < contents.size(); m++)
+					{
+						if (i == contents[m]->associateFolder)
+						{
+							exist = true;
 
+							contents[m]->rendering = true;
+							PxShape* shapes;
+							contents[m]->board->getShapes(&shapes, 1);
+							shapes->setFlag(PxShapeFlag::eSIMULATION_SHAPE, true);
+							PxVec3 t = tp;
+							t.z = t.z-0.2;
+							updateContent(contents[m], t);
+							if (mHandlist.size() > 0 && contents[m]->zoomStart == false)
+							{
+								PxTransform thump = mHandlist[0]->finger_tip_actor[0]->getGlobalPose();
+								PxTransform index = mHandlist[0]->finger_tip_actor[1]->getGlobalPose();
+								float pinch = mHandlist[0]->pinchDistance;
+
+								if (abs(thump.p.x - tp.x) < 0.5 && abs(thump.p.z - tp.z) < 0.5 &&
+									abs(index.p.x - tp.x) < 0.5 && abs(index.p.z - tp.z) < 0.5 && thump.p.y>2.0f&& pinch > 0.5)
+								{
+									contents[m]->pinchStart = pinch;
+									contents[m]->zoomStart = true;
+								}
+							}
+							else if (mHandlist.size() > 0 && contents[m]->zoomStart)
+							{
+								float pinch = mHandlist[0]->pinchDistance;
+								contents[m]->scale += contents[m]->pinchStart - pinch;
+								PxTransform thump = mHandlist[0]->finger_tip_actor[0]->getGlobalPose();
+								PxTransform index = mHandlist[0]->finger_tip_actor[1]->getGlobalPose();
+
+								if (contents[m]->scale > 1.5)
+									contents[m]->scale = 1.5;
+								else if (contents[m]->scale < 0.5)
+									contents[m]->scale = 0.5;
+
+								if (abs(thump.p.x - tp.x) > 0.5 || abs(thump.p.z - tp.z) < 0.5 ||
+									abs(index.p.x - tp.x) > 0.5 || abs(index.p.z - tp.z) < 0.5 ||thump.p.y<2.0f)
+								{
+									contents[m]->zoomStart = false;
+								}
+
+							}
+						}
+							
+					}
+					if (!exist)
+					{
+						PxVec3 t = tp;
+						t.z = t.z - 0.2;
+						createContent(i, tp);
+					}
+						
 				}
+				else
+				{
+					for (int m = 0; m < contents.size(); m++)
+					{
+
+						if (i == contents[m]->associateFolder)
+						{
+							contents[m]->rendering = false;
+							PxShape* shapes;
+							contents[m]->board->getShapes(&shapes, 1);
+							shapes->setFlag(PxShapeFlag::eSIMULATION_SHAPE, false);
+						}
+					}
+				}
+			
+
+
 			}
 
 		}
 	}
+	else if (gameMode == 9)
+	{
+		if (globe != NULL)
+		{
+			bool userTouch = false;
+			PxVec3 g = globe->getAngularVelocity();
+			if (g.x != 0 || g.y != 0 || g.z != 0)
+			{
+				PxVec3 gm = g *0.8;
+				globe->setAngularVelocity(gm);
+				userTouch = true;
+			}
+			if (userTouch)
+			{
+				if (g.magnitude() < 0.1)
+				{
+					start = std::chrono::steady_clock::now();
+					countstart = true;
+				}
+
+			}
+			else if (countstart)
+			{
+				end = std::chrono::steady_clock::now();
+				long long mils = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+				if (mils < 10000000)
+				{
+					mapAlpha = mapAlpha - (mils / 10000000.0);
+				}
+				else
+					mapAlpha = 0.0f;
+			}
+
+		}
+
+		PxTransform p = pins.back()->getGlobalPose();
+		if (p.p.x < 0.75 || p.p.x > 1.25 || p.p.y < 2.25 || p.p.z <-2.25 || p.p.z > -1.75)
+		{
+			createPin(PxVec3(1, 2.5, -2));
+		}
+
+
+
+		for (int i = 0; i < pins.size(); i++)
+		{
+			PxTransform p = pins[i]->getGlobalPose();
+			p.q = PxQuat::createIdentity();
+			((PxRigidDynamic*)pins[i])->setLinearDamping(0);
+			((PxRigidDynamic*)pins[i])->setLinearVelocity(PxVec3(0, -0, 0));
+			pins[i]->setGlobalPose(p);
+
+			if (p.p.y < 1.26)
+			{
+				if(!showContent)
+					start = std::chrono::steady_clock::now();
+
+				showContent = true;
+				
+			}
+
+
+		}
+
+
+
+		if (showContent)
+		{
+			end = std::chrono::steady_clock::now();
+			long long mils = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+			if (mils < 100000)
+			{
+				picAlpha = picAlpha + (mils / 100000.0);
+			}
+			else
+				mils = 100000.0;
+
+		}
+	}
+}
+
+void GraphicsClass::createContent(int folderNo, PxVec3 Position)
+{
+	content* newcontent = new content;
+	newcontent->associateFolder = folderNo;
+	PxVec3 pos = PxVec3(Position.x, 2.5, Position.z);
+	newcontent->core = PxCreateDynamic(*m_physx->getPhysicsSDK(), PxTransform(pos), PxCapsuleGeometry(0.1, 0.26), *m_physx->mMaterial, 1.0);
+	newcontent->board = m_physx->createBox(PxVec3(0.26, 0.25, 0.05), pos, PxQuat::createIdentity());
+	newcontent->board->setMass(100.0f);
+	newcontent->board->setMassSpaceInertiaTensor(PxVec3(110, 0, 0));
+	newcontent->core->setRigidDynamicFlag(PxRigidBodyFlag::eKINEMATIC, true);
+	PxShape* shapes;
+	newcontent->core->getShapes(&shapes, 1);
+	shapes->setFlag(PxShapeFlag::eSIMULATION_SHAPE, false);
+
+	newcontent->scale = 1.0f;
+	newcontent->zoomStart = false;
+	newcontent->rendering = true;
+
+
+	PxRevoluteJoint* joint = PxRevoluteJointCreate(*m_physx->getPhysicsSDK(), newcontent->core, PxTransform(PxVec3(0, 0, 0)), newcontent->board, PxTransform(PxVec3(0, 0, 0)));
+	joint->setLimit(PxJointAngularLimitPair(0, PxPi / 3, 0.01f));
+	joint->setRevoluteJointFlag(PxRevoluteJointFlag::eLIMIT_ENABLED, true);
+	m_physx->getScene()->addActor(*newcontent->core);
+	m_physx->getScene()->addActor(*newcontent->board);
+	contents.push_back(newcontent);
+}
+
+void GraphicsClass::deleteContent(content* con)
+{
+	if (con != NULL)
+	{
+		m_physx->removeActor(con->core);
+		m_physx->removeActor(con->board);
+
+	}
+}
+
+void GraphicsClass::createPin(PxVec3 Position)
+{
+	PxRigidDynamic*box = m_physx->createBox(PxVec3(0.1, 0.25, 0.1), Position, PxQuat::createIdentity());
+	//box->set
+	//box->setMassSpaceInertiaTensor(PxVec3(0, 0, 0));
+	box->setRigidDynamicFlag(PxRigidBodyFlag::eKINEMATIC, true);
+	pins.push_back(box);
+	m_physx->getScene()->addActor(*box);
+}
+
+void GraphicsClass::updateContent(content* c, PxVec3 Position)
+{
+	PxVec3 pos = PxVec3(Position.x, 2, Position.z);
+	c->core->setKinematicTarget(PxTransform(pos));
 }
 
 bool GraphicsClass::Render()
@@ -2591,7 +3148,9 @@ bool GraphicsClass::Render()
 
 	memset(depthDest, 0, 512 * 424 * 3);
 
-	m_Leap->processFrame(m_Camera->GetPosition().x, m_Camera->GetPosition().y, m_Camera->GetPosition().z, 0, view, proj, handlength);
+	std::string rframe = m_network->Read();
+	m_Leap->processFrame(m_Camera->GetPosition().x, m_Camera->GetPosition().y, m_Camera->GetPosition().z, 0, view, proj, handlength,rframe);
+	if(NETWORK_ENABLED)
 	mHandlist = m_Leap->getHandActor();
 
 
@@ -2697,6 +3256,13 @@ bool GraphicsClass::Render()
 
 	m_physx->Render();
 
+	////Add fingertip
+	//m_flex->preupdate();
+
+	//UpdateFlexFingerTip(mHandlist);
+
+	//m_flex->update();
+
 	if (gameMode)
 	{
 		GameFrame();
@@ -2790,6 +3356,15 @@ bool GraphicsClass::Render()
 	RenderHand(3);
 	RenderTerrian(3);
 
+	//for (int i = 0; i < m_flex->particle.size(); i++)
+	//{
+	//	PxTransform p = PxTransform(PxVec3(m_flex->particle[i].x, m_flex->particle[i].y, m_flex->particle[i].z));
+
+	//	RenderColorSphere(3, p, 0.01, true, XMFLOAT4(1, 0, 0, 1.0));
+	//}
+
+
+
 	m_LightShader->SetShaderPerFrame(m_Direct3D->GetDeviceContext(), m_UpSampleTexure->GetShaderResourceView(),
 		m_Light->GetPositions(), m_Light->GetAmbientColor(), m_Light->GetDiffuseColor(), m_Light->GetSpecularColor(),
 		lightRange, attenuate);
@@ -2806,6 +3381,7 @@ bool GraphicsClass::Render()
 		XMMATRIX mat = PxtoXMMatrix(boxEndPosition[randomOffset+logCount]);
 
 		RenderTargetBox(0, mat, m_RenderTexture3->GetShaderResourceView(), BOX_SIZE.x, BOX_SIZE.y, BOX_SIZE.z);
+
 	}
 
 
@@ -2908,7 +3484,7 @@ void GraphicsClass::RenderText(bool Head_Error, Point3f* head_pos)
 
 	else if (gameMode == 1)
 	{
-		if (countDownTimer > 0)
+	/*	if (countDownTimer > 0)
 		{
 			XMFLOAT2 m_fontPos;
 			m_fontPos.x = m_screenWidth / 2.0f;
@@ -2935,7 +3511,7 @@ void GraphicsClass::RenderText(bool Head_Error, Point3f* head_pos)
 				m_fontPos, Colors::LightGreen, 0.f);
 		}
 		std::wstring s = L"Score : " + std::to_wstring(score) + L" / " + std::to_wstring(count);
-		m_font->DrawString(spriteBatch.get(), s.c_str(), XMFLOAT2(100, 200), Colors::GreenYellow);
+		m_font->DrawString(spriteBatch.get(), s.c_str(), XMFLOAT2(100, 200), Colors::GreenYellow);*/
 	}
 
 	else if (gameMode == 2)
@@ -3431,3 +4007,97 @@ void GraphicsClass::ViewProject(int xi, int yi, float zi, PxVec3 &v)
 	v.z = vs.z;
 }
 
+void GraphicsClass::UpdateFlexFingerTip(vector<handActor*> handlist)
+{
+	m_flex->ClearShapes();
+	for (int i = 0; i < handlist.size(); i++)
+	{
+		for (int j = 0; j < 5; j++)
+		{
+			m_flex->AddSphere(handlist[i]->fingerWidth[j][3]/4.0f, Vec3(handlist[i]->fingerTipWorldPosition[j].x, handlist[i]->fingerTipWorldPosition[j].y, handlist[i]->fingerTipWorldPosition[j].z), QuatFromAxisAngle(Vec3(0, 1, 0), 0));
+			
+
+				if (j == 0)
+				{
+					for (int k = 2; k < 4; k++)
+					{
+						PxTransform p = mHandlist[i]->finger_actor[j][k]->getGlobalPose();
+						Vec3 pos = Vec3(p.p.x, p.p.y, p.p.z);
+						float angle;
+						PxVec3 axis;
+						p.q.toRadiansAndUnitAxis(angle, axis);
+						Quat q = QuatFromAxisAngle(Vec3(axis.x, axis.y, axis.z), angle);
+
+						PxTransform prev = mHandlist[i]->previousTransform[j][k];
+
+						Vec3 prevpos = Vec3(prev.p.x, prev.p.y, prev.p.z);
+						prev.q.toRadiansAndUnitAxis(angle, axis);
+						Quat prevq = QuatFromAxisAngle(Vec3(axis.x, axis.y, axis.z), angle);
+
+						float radius = handlist[i]->fingerWidth[j][k] / 4.0f;
+						float halfHeight = handlist[i]->halfHeight[j][k]/2.0f;
+						m_flex->AddCapsule(radius, halfHeight, pos, q,pos,q);
+					}
+
+					PxTransform p = mHandlist[i]->finger_actor[j][1]->getGlobalPose();
+					Vec3 pos = Vec3(p.p.x, p.p.y, p.p.z);
+					float angle;
+					PxVec3 axis;
+					p.q.toRadiansAndUnitAxis(angle, axis);
+					Quat q = QuatFromAxisAngle(Vec3(axis.x, axis.y, axis.z), angle);
+
+					PxTransform prev = mHandlist[i]->previousTransform[j][1];
+
+					Vec3 prevpos = Vec3(prev.p.x, prev.p.y, prev.p.z);
+					prev.q.toRadiansAndUnitAxis(angle, axis);
+					Quat prevq = QuatFromAxisAngle(Vec3(axis.x, axis.y, axis.z), angle);
+
+					float radius = handlist[i]->fingerWidth[j][1] / 4.0f;
+					float halfHeight = handlist[i]->halfHeight[j][1]/2.0f;
+					m_flex->AddBox(Vec3(halfHeight, radius, radius / 2), pos, q, pos, q);
+					
+				}
+				else
+				{
+					for (int k = 1; k < 4; k++)
+					{
+						PxTransform p = mHandlist[i]->finger_actor[j][k]->getGlobalPose();
+						Vec3 pos = Vec3(p.p.x, p.p.y, p.p.z);
+						float angle;
+						PxVec3 axis;
+						p.q.toRadiansAndUnitAxis(angle, axis);
+						Quat q = QuatFromAxisAngle(Vec3(axis.x, axis.y, axis.z), angle);
+
+
+						PxTransform prev = mHandlist[i]->previousTransform[j][k];
+
+						Vec3 prevpos = Vec3(prev.p.x, prev.p.y, prev.p.z);
+						prev.q.toRadiansAndUnitAxis(angle, axis);
+						Quat prevq = QuatFromAxisAngle(Vec3(axis.x, axis.y, axis.z), angle);
+
+						float radius = handlist[i]->fingerWidth[j][k] / 4.0f;
+						float halfHeight = handlist[i]->halfHeight[j][k] / 2.0f;
+						m_flex->AddCapsule(radius, halfHeight, pos, q, pos, q);
+					}
+
+					PxTransform p = mHandlist[i]->finger_actor[j][0]->getGlobalPose();
+					Vec3 pos = Vec3(p.p.x, p.p.y, p.p.z);
+					float angle;
+					PxVec3 axis;
+					p.q.toRadiansAndUnitAxis(angle, axis);
+					Quat q = QuatFromAxisAngle(Vec3(axis.x, axis.y, axis.z), angle);
+
+					PxTransform prev = mHandlist[i]->previousTransform[j][0];
+
+					Vec3 prevpos = Vec3(prev.p.x, prev.p.y, prev.p.z);
+					prev.q.toRadiansAndUnitAxis(angle, axis);
+					Quat prevq = QuatFromAxisAngle(Vec3(axis.x, axis.y, axis.z), angle);
+
+
+					float radius = handlist[i]->fingerWidth[j][0] / 4.0f;
+					float halfHeight = handlist[i]->halfHeight[j][0]/2.0f;
+					m_flex->AddBox(Vec3(halfHeight, radius, radius / 2), pos, q,pos, q);
+				}
+		}
+	}
+}

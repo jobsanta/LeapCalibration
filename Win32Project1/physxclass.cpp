@@ -168,14 +168,14 @@ bool PhysxClass::Initialize()
 	setupFiltering(moveAbleFloor, FilterGroup::eWall, FilterGroup::eBox | FilterGroup::eTarget);
 	gScene->addActor(*moveAbleFloor);
 
-	pose = PxTransform(PxVec3(-3.0f, FLOOR_LEVEL, 0.0f), PxQuat(0.0, PxVec3(0.0f, 1.0f, 0.0f)));
+	pose = PxTransform(PxVec3(-3.0f, floor_height, 0.0f), PxQuat(0.0, PxVec3(0.0f, 1.0f, 0.0f)));
 	PxRigidStatic* plane = gPhysicsSDK->createRigidStatic(pose);
 	shape = plane->createShape(PxPlaneGeometry(), *mMaterial);
 
 	setupFiltering(plane, FilterGroup::eWall, FilterGroup::eBox | FilterGroup::eTarget);
 	gScene->addActor(*plane);
 
-	pose = PxTransform(PxVec3(3.0f, FLOOR_LEVEL, 0.0f), PxQuat(PxPi, PxVec3(0.0f, 1.0f, 0.0f)));
+	pose = PxTransform(PxVec3(3.0f, floor_height, 0.0f), PxQuat(PxPi, PxVec3(0.0f, 1.0f, 0.0f)));
 	plane = gPhysicsSDK->createRigidStatic(pose);
 	shape = plane->createShape(PxPlaneGeometry(), *mMaterial);
 
@@ -196,7 +196,7 @@ bool PhysxClass::Initialize()
 	setupFiltering(moveAbleFrontWall, FilterGroup::eWall, FilterGroup::eBox | FilterGroup::eTarget);
 	gScene->addActor(*moveAbleFrontWall);
 
-	static const PxVec3 convexVerts[] = { PxVec3(-2.0,5,0),PxVec3(2.0,5,0),PxVec3(2.0,0,1),PxVec3(-2.0,0,1),PxVec3(2.0,0,-1),
+	static const PxVec3 convexVerts[] = { PxVec3(-2.0,5,0),PxVec3(2.0,5,0),PxVec3(2.0,0,2),PxVec3(-2.0,0,2),PxVec3(2.0,0,-1),
 		PxVec3(-2.0,0,-1) };
 	PxConvexMeshDesc convexDesc;
 	convexDesc.points.count = 6;
@@ -457,11 +457,11 @@ void PhysxClass::Shutdown()
 
 void PhysxClass::moveBackWall(float zoffset)
 {
-	moveAbleWall->setGlobalPose(PxTransform(PxVec3(0.0f, FLOOR_LEVEL, -0.5 + zoffset), PxQuat(PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f))));
+	moveAbleWall->setGlobalPose(PxTransform(PxVec3(0.0f, floor_height, -0.5 + zoffset), PxQuat(PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f))));
 	PxQuat flatGround = PxQuat(PxHalfPi, PxVec3(0, 0, 1.0f));
 	//PxQuat slant = PxQuat(7 * PxPi / 180, PxVec3(1, 0, 0));
 	//PxQuat slantFloor = slant*flatGround;
-	PxTransform pose = PxTransform(PxVec3(0.0f, FLOOR_LEVEL, -0.5 + zoffset), flatGround);
+	PxTransform pose = PxTransform(PxVec3(0.0f, floor_height, -0.5 + zoffset), flatGround);
 
 	moveAbleFloor->setGlobalPose(pose);
 }

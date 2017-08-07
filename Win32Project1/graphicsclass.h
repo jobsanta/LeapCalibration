@@ -8,6 +8,8 @@
 ///////////////////////
 // MY CLASS INCLUDES //
 ///////////////////////
+#include "networkclass.h"
+
 #include "d3dclass.h"
 #include "cameraclass.h"
 #include "modelclass.h"
@@ -36,15 +38,17 @@
 #include "orthowindowclass.h"
 #include "horizontalblurshaderclass.h"
 #include "verticalblurshaderclass.h"
+#include "flex.h"
 
 #include <SpriteFont.h>
 #include <Model.h>
 #include <Effects.h>
-#include <SimpleMath.h>
 
-#include <Eigen/Eigen>
-#include <Eigen/SVD>
-#include <Eigen/Geometry>
+//#include <SimpleMath.h>
+//
+//#include <Eigen/Eigen>
+//#include <Eigen/SVD>
+//#include <Eigen/Geometry>
 #include "groundshaderclass.h"
 
 #include <chrono>
@@ -52,13 +56,14 @@
 // GLOBALS //
 /////////////
 
-using namespace Eigen;
+//using namespace Eigen;
 
 const std::string logfile = "Pa19";
 
 const bool FULL_SCREEN = false;
 const bool VSYNC_ENABLED = false;
 const bool SHADOW_ENABLED = true;
+const bool NETWORK_ENABLED = true;
 
 const bool CORRECT_PERPECTIVE = true;
 const float SCREEN_DEPTH = 50.0f;
@@ -84,6 +89,17 @@ const XMFLOAT3 RIGHT(3.0, 0.0, 0.0);
 const XMFLOAT3 TOP(-3.0, 3.4, 0.0);
 
 const int NUM_POINT = 32;
+
+struct content
+{
+	int associateFolder;
+	PxRigidDynamic* core;
+	PxRigidDynamic* board;
+	float scale = 1.0f;
+	bool zoomStart;
+	float pinchStart;
+	bool rendering;
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class name: GraphicsClass
@@ -131,17 +147,20 @@ private:
 	void RenderText(bool, Point3f*);
 	void RenderTextureBox(int mode, PxRigidActor* box,
 		ID3D11ShaderResourceView* texture, float width, float height, float depth);
-	void RenderTexture(int mode, PxTransform transform, ID3D11ShaderResourceView * texture, float width, float height, float depth);
+	void RenderTextureSphere(int mode, PxRigidActor * box, ID3D11ShaderResourceView * texture, float radius);
+	void RenderTextureTerrain(int mode, PxTransform pt,
+		ID3D11ShaderResourceView* texture, float aplha, float width, float height, float depth);
+	void RenderTexture(int mode, PxTransform transform, ID3D11ShaderResourceView * texture,float alpha, float width, float height, float depth);
 	void RenderTargetBox(int mode, XMMATRIX transform, ID3D11ShaderResourceView * texture, float width, float height, float depth);
 	void RenderAxis(XMMATRIX transform);
 
 	void RenderColorBox(int mode, PxRigidActor* box,
 		XMFLOAT4 color, float width, float height, float depth);
+	void RenderColorBox(int mode, PxTransform pT, XMFLOAT4 color, float width, float height, float depth);
 	void RenderPalm(int mode, PxRigidActor* box, float alpha, float width, float height, float depth);
-	void RenderSphere(int mode, PxRigidActor* sphere, float radius);
 	void RenderCylinder(int mode, PxRigidActor* cylinder, float alpha, float height, float radius);
-	void RenderDebugSphere(int mode, PxVec3, float radius, XMFLOAT4 color);
-	void RenderColorSphere(int mode, PxRigidActor* sphere, float radius, XMFLOAT4 color);
+	void RenderColorSphere(int mode, PxRigidActor* sphere, float radius,bool, XMFLOAT4 color);
+	void RenderColorSphere(int mode, PxTransform pt, float radius,bool, XMFLOAT4 color);
 	void RenderTerrian(int rendermode, int gamemode = 0);
 	void RenderPointCloud();
 	//void RenderPillar(PxVec3 endPoint);
@@ -156,6 +175,14 @@ private:
 
 	bool UpSampleTexture();
 	void GameFrame();
+
+	void createContent(int folderNo, PxVec3 Position);
+
+	void deleteContent(content* con);
+
+	void createPin(PxVec3 Position);
+
+	void updateContent(content * c, PxVec3 Position);
 
 	void WriteFile();
 	void ReadFile();
@@ -185,6 +212,11 @@ private:
 	TextureShaderClass* m_TextureShader;
 	TextureClass* m_Target_Texture;
 	TextureClass* m_folder_texture[19];
+	TextureClass* m_earth_texture;
+	TextureClass* m_space_texture;
+	TextureClass* m_map_texture[2];
+	TextureClass* m_content_texture[3];
+	TextureClass* m_maptarget_texture;
 	TerrainClass* m_Terrain;
 	TextClass* m_Text;
 	LeapClass* m_Leap;
@@ -203,6 +235,9 @@ private:
 	VerticalBlurShaderClass* m_VerticalBlurShader;
 	PointCloudShaderClass* m_PointCloudShader;
 
+	NetworkClass* m_network;
+	FlexClass* m_flex;
+
 	XMMATRIX zoffset_matrix;
 
 	vector<PxRigidActor*> boxes;
@@ -211,6 +246,8 @@ private:
 	vector<PxRigidActor*> folders;
 	vector<PxRigidActor*> targets;
 	vector<PxRigidActor*> obstacles;
+	vector<PxRigidActor*> pins;
+	vector<content*> contents;
 
 	vector<PxJoint*> joints;
 
@@ -247,9 +284,9 @@ private:
 	std::chrono::steady_clock::time_point switchZoneStart;
 	std::chrono::steady_clock::time_point switchZoneNow;
 
-	DirectX::SimpleMath::Matrix m_world;
-	DirectX::SimpleMath::Matrix m_view;
-	DirectX::SimpleMath::Matrix m_proj;
+	//DirectX::SimpleMath::Matrix m_world;
+	//DirectX::SimpleMath::Matrix m_view;
+	//DirectX::SimpleMath::Matrix m_proj;
 
 	std::unique_ptr<DirectX::CommonStates> m_states;
 	std::unique_ptr<DirectX::IEffectFactory> m_fxFactory;
@@ -271,6 +308,8 @@ private:
 	void ViewUnProject(int xi, int yi, float depth, PxVec3 & v);
 
 	void ViewProject(int xi, int yi, float zi, PxVec3 & v);
+
+	void UpdateFlexFingerTip(vector<handActor*> handlist);
 
 	Material mhandMaterial;
 	Material mboxMaterial;
@@ -300,7 +339,14 @@ private:
 
 	PxRigidStatic* pollActor;
 	PxRigidStatic* pollActor2;
+	PxRigidDynamic* globe;
 	bool showContent;
+	double mapAlpha;
+	double picAlpha;
+	bool countstart;
+	bool zoomstart;
+	float pinch_start;
+	float scale;
 
 
 };

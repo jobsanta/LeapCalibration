@@ -215,7 +215,7 @@ diffuse += D;
 spec += S;
 
 // Sample the pixel color from the texture using the sampler at this texture coordinate location.
-textureColor = shaderTexture.Sample(SampleTypeWrap, input.tex);
+textureColor = shaderTexture.Sample(SampleTypeClamp, input.tex);
 
 
 // Calculate the projected texture coordinates to be used with the shadow texture.
@@ -227,7 +227,11 @@ shadowValue = shadowTexture.Sample(SampleTypeClamp, projectTexCoord).r;
 
 // Combine the shadows with the final color.
 float4 litColor = textureColor*(ambient + diffuse + spec)*shadowValue;
+
 litColor.a = gMat.Diffuse.a;
+if (textureColor.a == 0)
+litColor.a = textureColor.a;
+
 return litColor;
 
 }

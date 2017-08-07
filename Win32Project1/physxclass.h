@@ -26,7 +26,7 @@ using namespace std;
 class PhysxClass : public PxSimulationEventCallback
 {
 public:
-	const PxReal FLOOR_LEVEL = 1.0f;
+	const PxReal floor_height = 1.0f;
 
 public:
 
@@ -35,6 +35,7 @@ public:
 	bool Initialize();
 	void Render();
 	void Shutdown();
+	PxMaterial* mMaterial;
 	PxRigidDynamic* createBox(PxVec3 dimension, PxVec3 pose, PxQuat quat);
 	PxRigidDynamic* createSphere(PxReal radius, PxVec3 pose, PxQuat quat);
 
@@ -89,7 +90,7 @@ private:
 	PxScene*				  gScene = NULL;
 	PxCooking*				  gCooking = NULL;
 	PxReal                    myTimestep = 1.0f / 30.0f;
-	PxMaterial* mMaterial;
+	
 	PxMaterial* mGlass;
 	PxRigidStatic* moveAbleWall;
 	PxRigidStatic* moveAbleFrontWall;

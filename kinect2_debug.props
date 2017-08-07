@@ -9,6 +9,7 @@
   <ItemDefinitionGroup>
     <Link>
       <AdditionalDependencies>kinect20.lib;Kinect20.Face.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>

@@ -34,8 +34,8 @@ void TrackerClass::getPointCloudData(float* dest, bool mirror)
 	float* fdest = (float*)dest;
 	for (int i = 0; i < nDepthHeight*nDepthWidth; i++) {
 		point = cameraToWorldSpace(depthToCamera_points[i]);
-		if (affine_set && point.x > -3 && point.x < 3 && point.y > 0 && point.y < 3 && point.z <0 && point.z>-6)
-			point = precompute[int(point.x*100+300)*180000+int(point.y*100)*600+int(-point.z*100)];
+		//if (affine_set && point.x > -3 && point.x < 3 && point.y > 0 && point.y < 3 && point.z <0 && point.z>-6)
+		//	point = precompute[int(point.x*100+300)*180000+int(point.y*100)*600+int(-point.z*100)];
 			
 
 		if (point.z < -10)
@@ -508,17 +508,17 @@ void TrackerClass::estimateAffineTransform()
 			}
 		}
 		int j, k;
-#pragma omp parallel for private(j,k)
-		for (int i = 0; i < 600; i++)
-		{
-			for (j = 0; j < 300; j++)
-			{
-				for (k = 0; k < 600; k++)
-				{
-					precompute[i * 180000 + j * 600 + k] = applyAffineTransform_KtoL(Point3f((i - 300.0f) / 100.0f, j / 100.0f, -k / 100.0f));
-				}
-			}
-		}
+//#pragma omp parallel for private(j,k)
+//		for (int i = 0; i < 600; i++)
+//		{
+//			for (j = 0; j < 300; j++)
+//			{
+//				for (k = 0; k < 600; k++)
+//				{
+//					precompute[i * 180000 + j * 600 + k] = applyAffineTransform_KtoL(Point3f((i - 300.0f) / 100.0f, j / 100.0f, -k / 100.0f));
+//				}
+//			}
+//		}
 	}
 
 	leapPoints.clear();
@@ -699,20 +699,20 @@ void TrackerClass::setAffineKtoL(Mat transform)
 		}
 	}
 	int j, k;
-omp_set_num_threads(4);
-#pragma omp parallel for private(j,k)
-	for (int i = 0; i < 600; i++)
-	{
-		for (j = 0; j < 300; j++)
-		{
-			for (k = 0; k < 600; k++)
-			{
-				precompute[i*180000 + j*600+k] = applyAffineTransform_KtoL(Point3f((i - 300.0f) / 100.0f, j / 100.0f, -k / 100.0f));
-			}
-		}
-	}
-
-	affine_set = true;
+//omp_set_num_threads(4);
+//#pragma omp parallel for private(j,k)
+//	for (int i = 0; i < 600; i++)
+//	{
+//		for (j = 0; j < 300; j++)
+//		{
+//			for (k = 0; k < 600; k++)
+//			{
+//				precompute[i*180000 + j*600+k] = applyAffineTransform_KtoL(Point3f((i - 300.0f) / 100.0f, j / 100.0f, -k / 100.0f));
+//			}
+//		}
+//	}
+//
+//	affine_set = true;
 }
 
 Mat TrackerClass::getAffineTransformLtoK()

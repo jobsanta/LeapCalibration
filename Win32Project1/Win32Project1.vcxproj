@@ -22,7 +22,7 @@
     <ProjectGuid>{6D4ADD9D-EB6C-40E5-8367-121414F2F7D9}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>Win32Project1</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
     <ProjectName>LeapCalibration</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -65,10 +65,10 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\physx_debug.props" />
     <Import Project="..\kinect2_debug.props" />
     <Import Project="..\opencv_debug.props" />
-    <Import Project="pcl_debug.props" />
+    <Import Project="..\physx_debug.props" />
+    <Import Project="flex_debug.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -106,7 +106,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_WINSOCKAPI_;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)\DirectXTK\Inc;C:\nvapi-r343\R343-developer;$(LEAP_SDK)\include;C:\eigen-eigen-232945a67991\eigen-eigen-232945a67991;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
@@ -152,6 +152,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\FleX\core\maths.cpp" />
+    <ClCompile Include="..\..\FleX\core\mesh.cpp" />
     <ClCompile Include="3dvisionclass.cpp" />
     <ClCompile Include="bitmapclass.cpp" />
     <ClCompile Include="Camera.cpp" />
@@ -159,6 +161,7 @@
     <ClCompile Include="colorshaderclass.cpp" />
     <ClCompile Include="d3dclass.cpp" />
     <ClCompile Include="depthshaderclass.cpp" />
+    <ClCompile Include="flexclass.cpp" />
     <ClCompile Include="fontclass.cpp" />
     <ClCompile Include="fontshaderclass.cpp" />
     <ClCompile Include="GeometryGenerator.cpp" />
@@ -173,9 +176,11 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MathHelper.cpp" />
     <ClCompile Include="modelclass.cpp" />
+    <ClCompile Include="networkclass.cpp" />
     <ClCompile Include="nvStereo.cpp" />
     <ClCompile Include="orthowindowclass.cpp" />
     <ClCompile Include="physxclass.cpp" />
+    <ClCompile Include="platform.cpp" />
     <ClCompile Include="pointcloudshaderclass.cpp" />
     <ClCompile Include="rendertextureclass.cpp" />
     <ClCompile Include="shadowshaderclass.cpp" />
@@ -187,6 +192,7 @@
     <ClCompile Include="textureshaderclass.cpp" />
     <ClCompile Include="trackerclass.cpp" />
     <ClCompile Include="verticalblurshaderclass.cpp" />
+    <ClCompile Include="ws-util.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="3dvisionclass.h" />
@@ -195,6 +201,7 @@
     <ClInclude Include="cameraclass.h" />
     <ClInclude Include="d3dclass.h" />
     <ClInclude Include="depthshaderclass.h" />
+    <ClInclude Include="flexclass.h" />
     <ClInclude Include="fontclass.h" />
     <ClInclude Include="fontshaderclass.h" />
     <ClInclude Include="GeometryGenerator.h" />
@@ -210,6 +217,7 @@
     <ClInclude Include="lightshaderclass.h" />
     <ClInclude Include="MathHelper.h" />
     <ClInclude Include="modelclass.h" />
+    <ClInclude Include="networkclass.h" />
     <ClInclude Include="nvStereo.h" />
     <ClInclude Include="orthowindowclass.h" />
     <ClInclude Include="physxclass.h" />
@@ -224,6 +232,7 @@
     <ClInclude Include="textureshaderclass.h" />
     <ClInclude Include="trackerclass.h" />
     <ClInclude Include="verticalblurshaderclass.h" />
+    <ClInclude Include="ws-util.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cup.cmo" />

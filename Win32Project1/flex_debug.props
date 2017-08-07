@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <ExecutablePath>C:\Users\sthanyadit\Source\Repos\FleX\bin\win64;$(ExecutablePath)</ExecutablePath>
+    <IncludePath>C:\Users\sthanyadit\Source\Repos\FleX\include;C:\Users\sthanyadit\Source\Repos\FleX\core;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\sthanyadit\Source\Repos\FleX\lib\win64;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <Link>
+      <AdditionalDependencies>NvFlexDebugD3D_x64.lib;NvFlexDeviceDebug_x64.lib;NvFlexExtDebugD3D_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup />
+</Project>

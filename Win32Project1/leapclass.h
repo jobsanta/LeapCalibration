@@ -12,10 +12,10 @@
 #include <PxDefaultSimulationFilterShader.h>
 #include <PxDefaultCpuDispatcher.h>
 #include <PxShapeExt.h>
-#include <PxMat33.h>
 #include <PxSimpleFactory.h>
+#include <PxMat33.h>
 #include <vector>
-#include <PxVisualDebuggerExt.h>
+
 #include <map>
 
 //#include "physxHelper.h"
@@ -24,7 +24,7 @@ using namespace std;
 using namespace Leap;
 using namespace physx;
 using namespace DirectX;
-using namespace Eigen;
+//using namespace Eigen;
 
 #define SWITCHTIME 0.8f
 #define SWITCHRANGE 1.8f
@@ -68,6 +68,7 @@ struct handActor
 	bool isRef;
 	PxRigidDynamic* palm;
 	PxRigidDynamic* finger_actor[5][4];
+	PxRigidDynamic* finger_tip_actor[5];
 	PxD6Joint* finger_joint[5][4];
 	PxReal halfHeight[5][4];
 	PxReal fingerWidth[5][4];
@@ -83,7 +84,7 @@ struct handActor
 	double startTransitTime;
 	double alphaValue;
 	float* pinchStrength;
-
+	float pinchDistance;
 	PxVec3 palmDimension;
 	PxAggregate* aggregate;
 
@@ -94,8 +95,11 @@ struct handActor
 	Leap::Vector wristPosition;
 	std::vector<PxVec3> leapJointPosition;
 	PxVec3* fingerTipPosition;
+	PxVec3* fingerTipWorldPosition;
+
 	bool* isExtended;
 	PxTransform handTransform;
+	PxTransform previousTransform[5][4];
 };
 
 class LeapClass {
@@ -107,7 +111,7 @@ public:
 	vector<PxRigidActor*> proxyParticleJoint;
 
 	void connect();
-	void processFrame(float headPosition_x, float headPosition_y, float headPosition_z, float offset_z, XMFLOAT4X4 mView, XMFLOAT4X4 mProj, float factor);
+	void processFrame(float headPosition_x, float headPosition_y, float headPosition_z, float offset_z, XMFLOAT4X4 mView, XMFLOAT4X4 mProj, float factor, std::string remote_frame = string());
 	void InitPhysx(PxPhysics* sdk, PxScene* scene);
 	vector<PxRigidActor*> getProxyParticle();
 	vector<PxRigidActor*> getProxyJoint();

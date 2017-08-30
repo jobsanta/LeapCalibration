@@ -153,44 +153,14 @@ bool SystemClass::Frame()
 		m_Graphics->toggleGOGO();
 	}
 
-	if (m_Input->IsOnePressed() == true)
-	{
-		m_Graphics->StartGameMode(4);
-	}
-
 	if (m_Input->IsLessPressed() == true)
 	{
 		m_Graphics->m_RenderMirrorHand = !m_Graphics->m_RenderMirrorHand;
 	}
 
-	if (m_Input->IsTwoPressed() == true)
-	{
-		m_Graphics->StartGameMode(5);
-	}
-
-	if (m_Input->IsThreePressed() == true)
-	{
-		m_Graphics->StartGameMode(6);
-	}
-
-	if (m_Input->IsFourPressed() == true)
-	{
-		m_Graphics->setPointCloud();
-	}
-
-	if (m_Input->IsFivePressed() == true)
-	{
-		m_Graphics->StartGameMode(7);
-	}
-	if (m_Input->IsSixPressed() == true)
+	if (m_Input->IsOnePressed() == true)
 	{
 
-		m_Graphics->StartGameMode(8);
-	}
-
-	if (m_Input->IsSevenPressed() == true)
-	{
-		m_Graphics->StartGameMode(9);
 	}
 
 	//if (m_Input->IsCPressed() == true)

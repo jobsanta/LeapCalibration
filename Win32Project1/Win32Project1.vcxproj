@@ -79,7 +79,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <LibraryPath>C:\nvapi-r343\R343-developer\amd64;$(LibraryPath)</LibraryPath>
+    <LibraryPath>C:\protobuf_install\Debug;C:\nvapi-r343\R343-developer\amd64;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\protobuf\protobuf-3.3.0\src;C:\protoc\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -109,11 +110,12 @@
       <PreprocessorDefinitions>_DEBUG;_WINSOCKAPI_;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)\DirectXTK\Inc;C:\nvapi-r343\R343-developer;$(LEAP_SDK)\include;C:\eigen-eigen-232945a67991\eigen-eigen-232945a67991;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OpenMPSupport>true</OpenMPSupport>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>Leap.lib;nvapi64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Leap.lib;nvapi64.lib;libprotobufd.lib;libprotocd.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(LEAP_SDK)\lib\x64</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -175,6 +177,7 @@
     <ClCompile Include="lightshaderclass.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MathHelper.cpp" />
+    <ClCompile Include="message.pb.cc" />
     <ClCompile Include="modelclass.cpp" />
     <ClCompile Include="networkclass.cpp" />
     <ClCompile Include="nvStereo.cpp" />
@@ -216,6 +219,7 @@
     <ClInclude Include="LightHelper.h" />
     <ClInclude Include="lightshaderclass.h" />
     <ClInclude Include="MathHelper.h" />
+    <ClInclude Include="message.pb.h" />
     <ClInclude Include="modelclass.h" />
     <ClInclude Include="networkclass.h" />
     <ClInclude Include="nvStereo.h" />

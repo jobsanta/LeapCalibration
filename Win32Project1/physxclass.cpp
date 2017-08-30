@@ -105,7 +105,7 @@ bool PhysxClass::Initialize()
 
 	//Create the scene
 	PxSceneDesc sceneDesc(gPhysicsSDK->getTolerancesScale());
-	sceneDesc.gravity = PxVec3(0.0f, -9.8f, 0.0f);
+	sceneDesc.gravity = PxVec3(0.0f, -9.80f, 0.0f);
 
 	if (!sceneDesc.cpuDispatcher) {
 		PxDefaultCpuDispatcher* mCpuDispatcher = PxDefaultCpuDispatcherCreate(4);
@@ -332,10 +332,11 @@ PxRigidDynamic* PhysxClass::createBox(PxVec3 dimension, PxVec3 pose, PxQuat quat
 	PxBoxGeometry geometry(dimension);
 	//mMaterial = gPhysicsSDK->createMaterial(0, 0, 0.5);
 	PxRigidDynamic* actor = PxCreateDynamic(*gPhysicsSDK, transform, geometry, *mMaterial, density);
-	actor->setSolverIterationCounts(32, 255);
-	//actor->setMass(1.0);
-	//actor->setMassSpaceInertiaTensor(PxVec3(1.0, 1.0, 1.0));
-	setupFiltering(actor, FilterGroup::eBox, FilterGroup::eBox | FilterGroup::eFinger | FilterGroup::eWall | FilterGroup::eHand | FilterGroup::eTarget);
+	actor->setSolverIterationCounts(16, 24);
+	//float mass = actor->getMass();
+	actor->setLinearDamping(0.8);
+	actor->setAngularDamping(2);
+	setupFiltering(actor, FilterGroup::eBox, FilterGroup::eBox  | FilterGroup::eWall | FilterGroup::eHand | FilterGroup::eTarget);
 	actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
 	gScene->addActor(*actor);
 
@@ -351,7 +352,7 @@ PxRigidActor* PhysxClass::createBarrier(PxVec3 dimension, PxVec3 pose, PxQuat qu
 	PxRigidActor* actor = PxCreateStatic(*gPhysicsSDK, transform, geometry, *mMaterial);
 	//actor->setMass(1.0);
 	//actor->setMassSpaceInertiaTensor(PxVec3(1.0, 1.0, 1.0));
-	setupFiltering(actor, FilterGroup::eWall, FilterGroup::eBox | FilterGroup::eFinger | FilterGroup::eWall | FilterGroup::eHand | FilterGroup::eTarget);
+	setupFiltering(actor, FilterGroup::eWall, FilterGroup::eBox  | FilterGroup::eWall | FilterGroup::eHand | FilterGroup::eTarget);
 	gScene->addActor(*actor);
 
 	return actor;
@@ -382,7 +383,7 @@ PxRigidDynamic* PhysxClass::createSphere(PxReal radius, PxVec3 pose, PxQuat quat
 	actor->setSolverIterationCounts(32, 255);
 	//actor->setMass(1.0);
 	//actor->setMassSpaceInertiaTensor(PxVec3(1.0, 1.0, 1.0));
-	setupFiltering(actor, FilterGroup::eBox, FilterGroup::eBox | FilterGroup::eFinger | FilterGroup::eWall | FilterGroup::eHand | FilterGroup::eTarget);
+	setupFiltering(actor, FilterGroup::eBox, FilterGroup::eBox  | FilterGroup::eWall | FilterGroup::eHand | FilterGroup::eTarget);
 	gScene->addActor(*actor);
 
 	return actor;
@@ -409,7 +410,7 @@ PxRigidDynamic* PhysxClass::createCapsule(PxReal radius, PxReal halfHeight, PxVe
 
 	PxRigidDynamic* actor = PxCreateDynamic(*gPhysicsSDK, transform, geometry, *mMaterial, density);
 	actor->setSolverIterationCounts(16, 8);
-	setupFiltering(actor, FilterGroup::eBox, FilterGroup::eBox | FilterGroup::eFinger | FilterGroup::eWall | FilterGroup::eHand);
+	setupFiltering(actor, FilterGroup::eBox, FilterGroup::eBox  | FilterGroup::eWall | FilterGroup::eHand);
 	gScene->addActor(*actor);
 
 	return actor;

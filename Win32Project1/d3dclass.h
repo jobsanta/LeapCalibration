@@ -52,6 +52,7 @@ public:
 
 	void ChangeFOV(float degree, int screenWidth, int screenHeight, float screenNear, float screenDepth);
 	void ChangeHeadPosition(XMFLOAT3 eye_pos, XMFLOAT3 left, XMFLOAT3 right, XMFLOAT3 top, float screenNear, float screenDepth);
+	XMMATRIX ChangeHeadRemotePosition(XMFLOAT3 eye_pos, XMFLOAT3 left, XMFLOAT3 right, XMFLOAT3 top, float screenNear, float screenDepth);
 	float CalculateFOV(float x, float y, float z);
 
 	void SetBackBufferRenderTarget();

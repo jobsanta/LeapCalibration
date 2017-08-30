@@ -63,7 +63,7 @@ const std::string logfile = "Pa19";
 const bool FULL_SCREEN = false;
 const bool VSYNC_ENABLED = false;
 const bool SHADOW_ENABLED = true;
-const bool NETWORK_ENABLED = true;
+const bool NETWORK_ENABLED = false;
 
 const bool CORRECT_PERPECTIVE = true;
 const float SCREEN_DEPTH = 50.0f;
@@ -123,6 +123,7 @@ public:
 	void StopCalibrate(bool);
 	void StartCalibrate();
 	void StartGameMode(int);
+	void StartExperimentMode(int mode);
 	void setAltPressed(bool);
 	void ChangeZvalue(float);
 	void RotateActorZ(float);
@@ -142,6 +143,7 @@ public:
 private:
 	bool Render();
 	void RenderActor(int mode);
+	void RenderRemoteHead(int mode, float posx, float posy, float posz);
 	void RenderTexActor(int mode);
 	void RenderHand(int mode);
 	void RenderText(bool, Point3f*);
@@ -157,8 +159,8 @@ private:
 	void RenderColorBox(int mode, PxRigidActor* box,
 		XMFLOAT4 color, float width, float height, float depth);
 	void RenderColorBox(int mode, PxTransform pT, XMFLOAT4 color, float width, float height, float depth);
-	void RenderPalm(int mode, PxRigidActor* box, float alpha, float width, float height, float depth);
-	void RenderCylinder(int mode, PxRigidActor* cylinder, float alpha, float height, float radius);
+	void RenderPalm(int mode, PxRigidActor* box, float alpha, float width, float height, float depth, Material mMaterial);
+	void RenderCylinder(int mode, PxRigidActor* cylinder, float alpha, float height, float radius, Material mMaterial);
 	void RenderColorSphere(int mode, PxRigidActor* sphere, float radius,bool, XMFLOAT4 color);
 	void RenderColorSphere(int mode, PxTransform pt, float radius,bool, XMFLOAT4 color);
 	void RenderTerrian(int rendermode, int gamemode = 0);
@@ -175,6 +177,8 @@ private:
 
 	bool UpSampleTexture();
 	void GameFrame();
+
+	void ExperimentFrame();
 
 	void createContent(int folderNo, PxVec3 Position);
 
@@ -195,12 +199,14 @@ private:
 	PxVec3 unpts3[NUM_POINT];
 	bool calibrateMode;
 	int gameMode;
+	int expMode;
 	bool altpressed;
 	int handMode;
 	int lastGameMode;
 
 	D3DClass* m_Direct3D;
 	CameraClass* m_Camera;
+	CameraClass* m_RemoteCamera;
 	ModelClass* m_boxes;
 	ModelClass* m_spheres;
 	ModelClass* m_ground;
@@ -256,7 +262,7 @@ private:
 	std::unique_ptr<DirectX::SpriteFont> m_font_bold;
 
 	vector<handActor*> mHandlist;
-	vector<handActor*> mMirrorHandlist;
+	vector<handActor*> mRHandlist;
 
 	PxTransform actorstartPos;
 	PxTransform handStartPos;
@@ -311,7 +317,12 @@ private:
 
 	void UpdateFlexFingerTip(vector<handActor*> handlist);
 
+	void EncodedMessage(SceneMsg * scnmsg);
+
+	void PxToVObject(VObject* object,PxRigidActor * actor, VObject::VObjectType, float size_x, float size_y, float size_z, XMFLOAT4 color);
+
 	Material mhandMaterial;
+	Material mrHandMaterial;
 	Material mboxMaterial;
 	Material msphereMaterial;
 	Material mfloorMaterial;

@@ -610,6 +610,12 @@ void D3DClass::ChangeHeadPosition(XMFLOAT3 eye_pos, XMFLOAT3 left, XMFLOAT3 righ
 	m_projectionMatrix = GeneralizedPerspectiveProjection(left, right, top, eye_pos, screenNear, screenDepth);
 }
 
+XMMATRIX D3DClass::ChangeHeadRemotePosition(XMFLOAT3 eye_pos, XMFLOAT3 left, XMFLOAT3 right, XMFLOAT3 top, float screenNear, float screenDepth)
+{
+	return GeneralizedPerspectiveProjection(left, right, top, eye_pos, screenNear, screenDepth);
+}
+
+
 float D3DClass::CalculateFOV(float x, float y, float z)
 {
 	float c = 3.4f; //physical Screen size = 34cm

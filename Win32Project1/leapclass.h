@@ -33,8 +33,8 @@ using namespace DirectX;
 //static const float particleRadius = 0.075f;
 #ifndef HA
 #define HA
-const bool OFFAXIS = true;
-
+const bool OFFAXIS = false;
+const bool NOMIRROR = true;
 #ifndef GROUP
 #define GROUP
 struct FilterGroup
@@ -111,11 +111,13 @@ public:
 	vector<PxRigidActor*> proxyParticleJoint;
 
 	void connect();
-	void processFrame(float headPosition_x, float headPosition_y, float headPosition_z, float offset_z, XMFLOAT4X4 mView, XMFLOAT4X4 mProj, float factor, std::string remote_frame = string());
+	void processFrame(float headPosition_x, float headPosition_y, float headPosition_z, float offset_z, XMFLOAT4X4 mView, XMFLOAT4X4 mProj, float factor);
+	void processRemoteFrame(float headPosition_x, float headPosition_y, float headPosition_z, float offset_z, XMFLOAT4X4 mView, XMFLOAT4X4 mProj, float handlength, std::string remote_frame = string());
 	void InitPhysx(PxPhysics* sdk, PxScene* scene);
 	vector<PxRigidActor*> getProxyParticle();
 	vector<PxRigidActor*> getProxyJoint();
 	std::vector<handActor*> getHandActor();
+	std::vector<handActor*> getRHandActor();
 	std::vector<handActor*> getMirrorHandActor();
 	bool captureFingerTip(float * x, float *y, float*z);
 	bool capturePalm(float* z);
@@ -127,7 +129,8 @@ public:
 	void clearHand();
 	std::map<int, PxVec3> computeForce(std::map<int, PxRigidDynamic*> activeContact);
 	PxVec3 getWristPosition(int id);
-	PxVec3 leapToWorld(Leap::Vector bone_center, HandMode::Enum handmode);
+	PxVec3 leapToWorld(Leap::Vector bone_center, HandMode::Enum handmode, bool remote);
+	void setoffset(float leap_y_offset, float leap_z_offset, float screenWidth, float screen_height, PxVec3 remoteHead);
 	void switchMirrorHand(int mode);
 	std::vector<PxRigidActor*> getBoxes();
 	std::vector<PxRigidActor*> deleteBoxes;
@@ -137,6 +140,11 @@ public:
 	void setNoLoseGrip(bool);
 
 private:
+
+	float ly_offset;
+	float lz_offset; 
+	float m_screenWidth;
+	float m_screen_height;
 	Controller controller;
 	int64_t lastFrameID = 0;
 	int64_t lastFrameID_cap = 0;
@@ -150,19 +158,25 @@ private:
 	bool normalHand;
 
 	float x_head, y_head, z_head;
+	PxVec3 r_head;
 
 	std::vector<handActor*> mHandList;
+	std::vector<handActor*> mRHandList;
+
+	
 
 	PxRigidDynamic* CreateSphere(const PxVec3& pos, const PxReal radius, const PxReal density);
 	PxRigidDynamic* CreateBox(PxVec3 dimension, PxVec3 pose, PxQuat quat);
 
-	void createHand(Hand hand, bool goinUp, bool isInTransit, float factor, HandMode::Enum handMode, PxRigidDynamic* grabActor,int grabType);
+	void createHand(Hand hand, bool goinUp, bool isInTransit, float factor, HandMode::Enum handMode, PxRigidDynamic* grabActor,int grabType, bool remote);
 
-	void updateHand(Hand hand, handActor* actor, HandMode::Enum handmode);
+	void updateHand(Hand hand, handActor* actor, HandMode::Enum handmode , bool remote);
 	void deleteHand(handActor* actor);
 
-	void updateHands(Hand hand, handActor* actor);
-	void createHands(Hand hand);
+	void updateHands(Hand hand, handActor* actor, bool remote);
+	void createHands(Hand hand, bool remote);
+
+
 
 	PxRigidDynamic* createJoint(Leap::Vector bone, PxRigidDynamic* finger_joint, PxVec3 attachPosition);
 	PxRigidDynamic* createCylinder(PxReal radius, PxReal halfHeight, PxVec3 pos, PxQuat quat, PxAggregate* aggregate);

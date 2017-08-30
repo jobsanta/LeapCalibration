@@ -55,30 +55,78 @@ int NetworkClass::EstrablishConnection()
 				ntohs(sinRemote.sin_port) << "." << endl;
 		}
 
-		//// Bounce packets from the client back to it.
-		//if (EchoIncomingPackets(sd)) {
-		//	// Successfully bounced all connections back to client, so
-		//	// close the connection down gracefully.
-		//	cout << "Shutting connection down..." << flush;
-		//	if (ShutdownConnection(sd)) {
-		//		cout << "Connection is down." << endl;
-		//	}
-		//	else {
-		//		cout << endl << WSAGetLastErrorMessage(
-		//			"shutdown connection") << endl;
-		//		return 3;
-		//	}
-		//}
-		//else {
-		//	cout << endl << WSAGetLastErrorMessage(
-		//		"echo incoming packets") << endl;
-		//	return 3;
-		//}
 	}
 
 #if defined(_MSC_VER)
 	return 0;       // warning eater
 #endif
+}
+
+int NetworkClass::ClientConnet(const char* pcHost, int nPort)
+{
+
+	// Start Winsock up
+	WSAData wsaData;
+	int nCode;
+	if ((nCode = WSAStartup(MAKEWORD(1, 1), &wsaData)) != 0) {
+		cerr << "WSAStartup() returned error code " << nCode << "." <<
+			endl;
+		return 255;
+	}
+
+	cout << "Looking up address..." << flush;
+	u_long nRemoteAddress = LookupAddress(pcHost);
+	if (nRemoteAddress == INADDR_NONE) {
+		cerr << endl << WSAGetLastErrorMessage("lookup address") <<
+			endl;
+		return 3;
+	}
+	in_addr Address;
+	memcpy(&Address, &nRemoteAddress, sizeof(u_long));
+	cout << inet_ntoa(Address) << ":" << nPort << endl;
+
+	// Connect to the server
+	cout << "Connecting to remote host..." << flush;
+	sd = SocketConnection(nRemoteAddress, htons(nPort));
+	if (sd == INVALID_SOCKET) {
+		const char* test = WSAGetLastErrorMessage("connect to server");
+		return 3;
+	}
+	cout << "connected, socket " << sd << "." << endl;
+
+}
+
+SOCKET NetworkClass::SocketConnection(u_long nRemoteAddr, u_short nPort)
+{
+	// Create a stream socket
+	SOCKET sd = socket(AF_INET, SOCK_STREAM, 0);
+	if (sd != INVALID_SOCKET) {
+		sockaddr_in sinRemote;
+		sinRemote.sin_family = AF_INET;
+		sinRemote.sin_addr.s_addr = nRemoteAddr;
+		sinRemote.sin_port = nPort;
+		if (connect(sd, (sockaddr*)&sinRemote, sizeof(sockaddr_in)) ==
+			SOCKET_ERROR) {
+			sd = INVALID_SOCKET;
+		}
+	}
+
+	return sd;
+}
+
+u_long NetworkClass::LookupAddress(const char* pcHost)
+{
+	u_long nRemoteAddr = inet_addr(pcHost);
+	if (nRemoteAddr == INADDR_NONE) {
+		// pcHost isn't a dotted IP, so resolve it through DNS
+		hostent* pHE = gethostbyname(pcHost);
+		if (pHE == 0) {
+			return INADDR_NONE;
+		}
+		nRemoteAddr = *((u_long*)pHE->h_addr_list[0]);
+	}
+
+	return nRemoteAddr;
 }
 
 //// SetUpListener /////////////////////////////////////////////////////
@@ -119,91 +167,65 @@ SOCKET NetworkClass::AcceptConnection(SOCKET ListeningSocket, sockaddr_in& sinRe
 }
 
 
-//// EchoIncomingPackets ///////////////////////////////////////////////
-// Bounces any incoming packets back to the client.  We return false
-// on errors, or true if the client closed the socket normally.
-
-bool NetworkClass::EchoIncomingPackets(SOCKET sd)
-{
-	// Read data from client
-	char acReadBuffer[kBufferSize];
-	int nReadBytes;
-
-		if (nReadBytes > 0) {
-			cout << "Received " << nReadBytes <<
-				" bytes from client." << endl;
-
-			int nSentBytes = 0;
-			while (nSentBytes < nReadBytes) {
-				int nTemp = send(sd, acReadBuffer + nSentBytes,
-					nReadBytes - nSentBytes, 0);
-				if (nTemp > 0) {
-					cout << "Sent " << nTemp <<
-						" bytes back to client." << endl;
-					nSentBytes += nTemp;
-				}
-				else if (nTemp == SOCKET_ERROR) {
-					return false;
-				}
-				else {
-					// Client closed connection before we could reply to
-					// all the data it sent, so bomb out early.
-					cout << "Peer unexpectedly dropped connection!" <<
-						endl;
-					return true;
-				}
-			}
-		}
-		else if (nReadBytes == SOCKET_ERROR) {
-			return false;
-		}
-
-
-	cout << "Connection closed by peer." << endl;
-	return true;
-}
-
 std::string NetworkClass::Read()
 {
-	char acReadBuffer[kBufferSize];
-	int nReadBytes = 0;
-	int nTotalBytes = 0;
+	char acReadBuffer[20480];
 
-	do {
-		nReadBytes = recv(sd, acReadBuffer, kBufferSize, 0);
-	} while (nReadBytes == 0);
+	u_short nLength;
 
-	if (nReadBytes > 0) {
-		cout << "Received " << nReadBytes <<
-			" bytes from client." << endl;
+	int packet_size = -1;
 
-		int nSentBytes = 0;
-		while (nSentBytes < nReadBytes) {
-			int nTemp = send(sd, acReadBuffer + nSentBytes,
-				nReadBytes - nSentBytes, 0);
-			if (nTemp > 0) {
-				cout << "Sent " << nTemp <<
-					" bytes back to client." << endl;
-				nSentBytes += nTemp;
-			}
-			else if (nTemp == SOCKET_ERROR) {
-				return string();
-			}
-			else {
-				// Client closed connection before we could reply to
-				// all the data it sent, so bomb out early.
-				cout << "Peer unexpectedly dropped connection!" <<
-					endl;
-				return string();
-			}
-		}
+	
+	packet_size = recv_packet(sd, acReadBuffer, 20480);
+	if (packet_size > 0)
+	{
+		string str(acReadBuffer + 2, packet_size - 2);
+		return str;
 	}
-	else if (nReadBytes == SOCKET_ERROR) {
+	else
+	{
 		return string();
 	}
-		
 
-	return string(acReadBuffer, nReadBytes);
+
+
+}
+
+bool NetworkClass::Reply(string st, int length)
+{
+	u_short nLength = htons(length + 2);
+	string header((char*)&nLength, 2);
+	string combine(header + st);
+
+	if (send(sd, combine.c_str(), combine.size(), 0) == SOCKET_ERROR) {
+
+		return false;
+	}
+
+}
+
+bool NetworkClass::SendFrame(FrameMsg framemsg)
+{
+	std::string st;
+	framemsg.SerializeToString(&st);
+
+	u_short hostshort = framemsg.ByteSize() + 2;
+	u_short nlength = htons(hostshort);
+	string header((char*)&nlength, 2);
+	string combine(header + st);
+
+	if (send(sd, combine.c_str(), combine.size(), 0) == SOCKET_ERROR) {
+
+		return false;
+	}
+}
+
+std::string NetworkClass::ReadReply()
+{
+	char frameBuffer[20480];
+	int packet_size = -1;
+	packet_size = recv_packet(sd, frameBuffer, 20480);
+	return string (frameBuffer, packet_size);
 }
 
 bool NetworkClass::Shutdown()
@@ -218,4 +240,60 @@ bool NetworkClass::Shutdown()
 	}
 	// Shut Winsock back down and take off.
 	WSACleanup();
+}
+
+
+
+int NetworkClass::recv_packet(SOCKET sd, char* p_out_buffer, int buffer_size)
+{
+	int bytes_read = 0;
+	int packet_size;
+	bool building_prefix = true;
+
+	assert(buffer_size == sizeof(g_holding_buffer));
+
+	// Copy any data remaining from previous call into output buffer.
+	if (g_held_bytes > 0) {
+		assert(buffer_size >= g_held_bytes);
+		memcpy(p_out_buffer, g_holding_buffer, g_held_bytes);
+		bytes_read += g_held_bytes;
+		g_held_bytes = 0;
+	}
+
+	// Read the packet
+	while (1) {
+		if (building_prefix) {
+			if (bytes_read >= prefix_size) {
+				packet_size = 0;
+				for (int i = 0; i < prefix_size; ++i) {
+					packet_size <<= 8;
+					packet_size |= p_out_buffer[i] & 0xff;
+				}
+				building_prefix = false;
+				if (packet_size > buffer_size) {
+					// Buffer's too small to hold the packet!
+					// Do error handling here.
+					return 0;
+				}
+			}
+		}
+
+		if (!building_prefix && (bytes_read >= packet_size)) {
+			break;  // finished building packet
+		}
+
+		int new_bytes_read = recv(sd, p_out_buffer + bytes_read,
+			buffer_size - bytes_read, 0);
+		if ((new_bytes_read == 0) || (new_bytes_read == SOCKET_ERROR)) {
+			return 0;       // do proper error handling here!
+		}
+		bytes_read += new_bytes_read;
+	}
+
+	// If anything is left in the read buffer, keep a copy of it
+	// for the next call.
+	g_held_bytes = bytes_read - packet_size;
+	memcpy(g_holding_buffer, p_out_buffer + packet_size, g_held_bytes);
+
+	return packet_size;
 }

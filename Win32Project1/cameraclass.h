@@ -27,6 +27,7 @@ public:
 	XMFLOAT3 GetRotation();
 
 	void Render(XMFLOAT3);
+	XMMATRIX GetRemoteViewMatrix(XMFLOAT3 lookAt);
 	void GetViewMatrix(XMMATRIX&);
 	void RenderBaseViewMatrix();
 	void GetBaseViewMatrix(XMMATRIX& viewMatrix);
